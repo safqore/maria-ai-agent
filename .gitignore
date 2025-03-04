@@ -62,7 +62,8 @@ instance/
 
 # IDE / Text editor specific
 .idea/
-.vscode/
+.vscode/*
+!.vscode/launch.json
 *.swp
 *~
 .#*
@@ -82,3 +83,6 @@ data/
 
 # Variable files
 *.env
+
+# Node js
+node_modules/

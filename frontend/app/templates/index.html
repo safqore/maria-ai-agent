@@ -8,25 +8,15 @@
 </head>
 <body>
     <div class="chat-container">
-        <div id="chat-header">
-            <h2>Hello! I am Maria, your AI Agent</h2>
-            <p>I can help transform your customer experience, let's talk</p>
+        <div class="chat-history" id="chat-history">
+            <!-- Chat messages will be added here -->
         </div>
-        <div id="chat-messages">
-            <div class="message bot-message">Hello! How can I help you today?</div>
-        </div>
-        <div class="chat-input">
-            <input type="text" id="text-input" placeholder="Type your message...">
+        <div class="chat-input-area">
+            <input type="text" id="user-input" placeholder="Type your message here...">
             <button id="send-button">Send</button>
-        </div>
-        <div id="suggestion-label-container">
-            <span id="suggestion-label">Suggested Prompt: </span>
-        </div>
-        <div id="suggestion-container">
-            <!--suggestion links will be added here-->
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

@@ -2,6 +2,31 @@
 
 Welcome to the MariaAiAgent Crew project, powered by [crewAI](https://crewai.com). This template is designed to help you set up a multi-agent AI system with ease, leveraging the powerful and flexible framework provided by crewAI. Our goal is to enable your agents to collaborate effectively on complex tasks, maximizing their collective intelligence and capabilities.
 
+## Install NPM 
+```bash
+sudo apt install nodejs npm
+```
+
+## Verify Node.js and NPM Installation
+```bash
+node -v
+npm -v
+```
+
+## Install NPM Libraries
+```bash
+cd ~/frontend/client
+npm install xstate dropzone lodash
+
+cd ~/frontend/client
+npm install xstate @xstate/react
+```
+
+## Run React Application
+```bash
+npm start
+```
+
 ## Virtual Environment Setup
 
 Create a virtual environment running Python version 3.12
