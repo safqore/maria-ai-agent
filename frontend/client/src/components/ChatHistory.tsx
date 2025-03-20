@@ -21,7 +21,8 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ messages, onTypingComplete, o
             <TypingEffect message={message.text} onTypingComplete={() => onTypingComplete(message.id)} />
           ) : (
             <>
-              {message.text && <span>{message.text}</span>}
+              {/* Removed the <span> tag here */}
+              {message.text && <div dangerouslySetInnerHTML={{ __html: message.text.replace(/\n/g, '<br>') }} />}
               {message.buttons && (
                 <ButtonGroup buttons={message.buttons} onButtonClick={onButtonClick} isButtonGroupVisible={isButtonGroupVisible} />
               )}
@@ -51,6 +52,6 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ messages, onTypingComplete, o
       )}
     </div>
   );
-}
+};
 
 export default ChatHistory;
