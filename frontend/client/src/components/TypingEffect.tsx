@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface TypingEffectProps {
   message: string;
@@ -6,44 +6,33 @@ interface TypingEffectProps {
 }
 
 const TypingEffect: React.FC<TypingEffectProps> = ({ message, onTypingComplete }) => {
-  const messageRef = useRef<HTMLDivElement>(null); // Changed to HTMLDivElement
-  const [typedMessage, setTypedMessage] = useState('');
+  const messageRef = useRef<HTMLDivElement>(null);
+  let index = 0;
+  let intervalId: NodeJS.Timeout | null = null;
 
   useEffect(() => {
     const messageDiv = messageRef.current;
     if (!messageDiv || !message) return;
 
-    let index = 0;
-    const intervalId = setInterval(() => {
+    intervalId = setInterval(() => {
       if (index < message.length) {
         const char = message[index];
-        setTypedMessage(prev => prev + char);
+        if (char === '\n') {
+          messageDiv.appendChild(document.createElement('br'));
+        } else {
+          messageDiv.appendChild(document.createTextNode(char));
+        }
         index++;
       } else {
-        clearInterval(intervalId);
+        clearInterval(intervalId!);
         onTypingComplete();
       }
     }, 30);
 
-    return () => clearInterval(intervalId);
+    return () => clearInterval(intervalId!);
   }, [message, onTypingComplete]);
 
-  useEffect(() => {
-    const messageDiv = messageRef.current;
-    if (!messageDiv) return;
-    messageDiv.innerHTML = ''; // Clear before re-rendering
-
-    for (let i = 0; i < typedMessage.length; i++) {
-      const char = typedMessage[i];
-      if (char === '\n') {
-        messageDiv.appendChild(document.createElement('br'));
-      } else {
-        messageDiv.appendChild(document.createTextNode(char));
-      }
-    }
-  }, [typedMessage]);
-
-  return <div ref={messageRef} />; // Changed to <div>
+  return <div ref={messageRef} />;
 };
 
 export default TypingEffect;
