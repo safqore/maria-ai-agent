@@ -1,73 +1,102 @@
-import React, { useState, ChangeEvent } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import Uppy, { UppyFile, UploadResult } from '@uppy/core';
+import { Dashboard } from '@uppy/react';
+import XHRUpload from '@uppy/xhr-upload';
+import '@uppy/core/dist/style.css';
+import '@uppy/dashboard/dist/style.css';
+import type { BasePlugin, Uppy as UppyType } from '@uppy/core'; // Import BasePlugin and Uppy type
+import type { Meta } from '@uppy/core';
 
 interface FileUploadProps {
   onFileUploaded: (file: File) => void;
 }
 
+// Define a type for DashboardProps that matches the Uppy version
+type DashboardProps = {
+  uppy: UppyType<Meta, Record<string, never>>;
+  inline?: boolean;
+  showProgressDetails?: boolean;
+  height?: number;
+  width?: string | number;
+  plugins?: string[]; // Changed to string[]
+  // Add other properties as needed from the Dashboard component
+};
+
 const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded }) => {
-  const [dragActive, setDragActive] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
+  const uppyRef = useRef<Uppy | null>(null);
+  const [uppyReady, setUppyReady] = useState(false);
+  const [isUppyDestroyed, setIsUppyDestroyed] = useState(false);
 
-  const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
-  };
+  useEffect(() => {
+    const uppyInstance = new Uppy({
+      debug: true,
+      autoProceed: false,
+      restrictions: {
+        maxFileSize: 10 * 1024 * 1024,
+        maxNumberOfFiles: 1,
+        allowedFileTypes: ['application/pdf'],
+      },
+    });
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    const files = e.dataTransfer?.files;
-    if (files && files.length > 0) {
-      const firstFile = files[0];
-      if (firstFile.type === 'application/pdf' && firstFile.size <= 10 * 1024 * 1024) {
-        setFile(firstFile);
-        onFileUploaded(firstFile);
+    uppyInstance.use(XHRUpload, {
+      endpoint: '/upload',
+      fieldName: 'file',
+    });
+
+    uppyInstance.on('file-added', (file: UppyFile<Record<string, any>, any>) => {
+      console.log('Added file', file);
+    });
+
+    uppyInstance.on('complete', (result: UploadResult<Record<string, any>, any>) => {
+      console.log('Upload complete:', result);
+      if (result.successful && result.successful.length > 0) {
+        const uploadedFile = result.successful[0].data as File;
+        onFileUploaded(uploadedFile);
       } else {
-        alert('Please upload a PDF file smaller than 10MB.');
+        console.error('Upload failed:', result.failed);
+        alert('There was an error uploading your file. Please try again.');
       }
-    }
+    });
+
+    uppyInstance.on('error', (error: any) => {
+      console.error('Upload error:', error);
+      alert('There was an error uploading your file. Please try again.');
+    });
+
+    uppyRef.current = uppyInstance;
+    setUppyReady(true);
+
+    return () => {
+      if (uppyRef.current) {
+        try {
+          uppyRef.current.destroy();
+          console.log('Uppy instance destroyed successfully.');
+        } catch (error) {
+          console.error('Error destroying Uppy instance:', error);
+        } finally {
+          setIsUppyDestroyed(true);
+        }
+      }
+    };
+  }, [onFileUploaded]);
+
+  // Define the type for the props we're passing to Dashboard
+  const dashboardProps: Partial<DashboardProps> = {
+    inline: true,
+    showProgressDetails: true,
+    height: 300,
+    width: '100%',
+    uppy: uppyRef.current!,
+    // plugins: [] // Remove this line or set it to an empty array if you don't use plugins
   };
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.type === 'application/pdf' && file.size <= 10 * 1024 * 1024) {
-        setFile(file);
-        onFileUploaded(file);
-      } else {
-        alert('Please upload a PDF file smaller than 10MB.');
-      }
-    }
-  };
-
-  return (
-    <div
-      className={`file-upload ${dragActive ? 'drag-active' : ''}`}
-      onDragEnter={handleDrag}
-      onDragOver={handleDrag}
-      onDragLeave={handleDrag}
-      onDrop={handleDrop}
-    >
-      {file ? (
-        <div>
-          <p>File Uploaded: {file.name}</p>
-        </div>
-      ) : (
-        <>
-          <input type="file" accept=".pdf" onChange={handleInputChange} style={{ display: 'none' }} id="file-upload" />
-          <label htmlFor="file-upload" className="upload-button">
-            Upload PDF
-          </label>
-          <p>Drag and drop a PDF file here, or click to select a file.</p>
-        </>
-      )}
-    </div>
+  return uppyReady && !isUppyDestroyed ? (
+    <Dashboard
+      uppy={uppyRef.current!}
+      {...dashboardProps}
+    />
+  ) : (
+    <p>Loading Uppy...</p>
   );
 };
 
