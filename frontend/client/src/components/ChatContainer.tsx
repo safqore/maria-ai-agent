@@ -13,7 +13,7 @@ function ChatContainer() {
   const [messages, setMessages] = useState<Message[]>([initialBotMessage]);
   const [userInput, setUserInput] = useState<string>('');
   const [isInputDisabled, setIsInputDisabled] = useState<boolean>(true);
-  const { fsm, buttonClickHandler, typingCompleteHandler, processTextInputHandler, isButtonGroupVisible } = useChatStateMachine({
+  const { fsm, buttonClickHandler, typingCompleteHandler, processTextInputHandler, fileUploadHandler, isButtonGroupVisible } = useChatStateMachine({
     messages,
     setMessages,
     setIsInputDisabled,
@@ -47,7 +47,8 @@ function ChatContainer() {
         onTypingComplete={typingCompleteHandler} 
         onButtonClick={(value) => {
           buttonClickHandler(value);
-        }} 
+        }}
+        onFileUploaded={fileUploadHandler} 
         currentState={fsm.getState()} 
         isButtonGroupVisible={isButtonGroupVisible}
       />

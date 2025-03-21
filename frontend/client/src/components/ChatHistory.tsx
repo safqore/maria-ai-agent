@@ -1,6 +1,7 @@
 import React from 'react';
 import TypingEffect from './TypingEffect';
 import ButtonGroup from './ButtonGroup';
+import FileUpload from './FileUpload';
 import { States } from '../state/FiniteStateMachine';
 import { Message } from '../utils/chatUtils';
 
@@ -10,9 +11,10 @@ interface ChatHistoryProps {
   onButtonClick: (value: string) => void;
   currentState: string;
   isButtonGroupVisible: boolean;
+  onFileUploaded: (file: File) => void;
 }
 
-const ChatHistory: React.FC<ChatHistoryProps> = ({ messages, onTypingComplete, onButtonClick, currentState, isButtonGroupVisible }) => {
+const ChatHistory: React.FC<ChatHistoryProps> = ({ messages, onTypingComplete, onButtonClick, onFileUploaded, currentState, isButtonGroupVisible }) => {
   return (
     <div className="chat-history" id="chat-history">
       {messages.map((message, index) => (
@@ -50,6 +52,9 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ messages, onTypingComplete, o
           onButtonClick={onButtonClick}
           isButtonGroupVisible={isButtonGroupVisible}
         />
+      )}
+      {currentState === States.UPLOAD_DOCUMENTS && (
+        <FileUpload onFileUploaded={onFileUploaded} />
       )}
     </div>
   );

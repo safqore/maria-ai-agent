@@ -110,7 +110,14 @@ const useChatStateMachine = ({ messages, setMessages, setIsInputDisabled, setIsB
     // setMessages((prevMessages) => [...prevMessages, botReply]);
   };
 
-  return { fsm, buttonClickHandler, typingCompleteHandler, processTextInputHandler, isButtonGroupVisible: true };
+  const fileUploadHandler = (file: File) => {
+    //  Process the uploaded file.  This is a placeholder; replace with your actual logic.
+    console.log('File uploaded:', file);
+    // Example: Add a message to indicate file upload
+    setMessages([...messages, { text: `File "${file.name}" uploaded successfully!`, isUser: false, isTyping: true, id: messages.length + 1 }]);
+  };
+
+  return { fsm, buttonClickHandler, typingCompleteHandler, processTextInputHandler, fileUploadHandler, isButtonGroupVisible: true };
 };
 
 export default useChatStateMachine;
