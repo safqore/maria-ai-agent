@@ -23,13 +23,17 @@ const useChatStateMachine = ({ messages, setMessages, setIsInputDisabled, setIsB
       setIsInputDisabled(false);
     }
 
-    if (fsm.getState() === States.OPPORTUNITIES_EXIST && messageId === messages.length - 1) {
-      fsm.transition(Transitions.OPPORTUNITIES_EXIST_COMPLETE);
+    if (fsm.getState() === States.OPPTYS_EXIST_MSG && messageId === messages.length - 1) {
+      fsm.transition(Transitions.OPPTYS_EXIST_MSG_COMPLETE);
       setIsButtonGroupVisible(true);
     }
 
     if (fsm.getState() === States.ENGAGE_USR_AGAIN && messageId === messages.length - 1) {
       setIsButtonGroupVisible(true);
+    }
+
+    if (fsm.getState() === States.UPLOAD_DOCS_MSG && messageId === messages.length - 1) {
+      fsm.transition(Transitions.UPLOAD_DOCS_MSG_COMPLETE);
     }
   };
 
@@ -88,7 +92,7 @@ const useChatStateMachine = ({ messages, setMessages, setIsInputDisabled, setIsB
         setUserName(userInput);
         fsm.transition(Transitions.NAME_PROVIDED);
         const botMessage: Message = { 
-          text: `Nice to meet you, ${userInput}! Let’s build your personalized AI agent.\n\nTo get started, I’ll need a document to train on—like a PDF of your business materials, process guides, or product details. This helps me tailor insights just for you!\n\nWhat happens next?\n\nUpload: Share your file (PDF/JPEG under 10MB).\n\nTrain: I’ll analyze and convert it into AI-friendly data.\n\nVerify: I’ll check for clarity and completeness.\n\nDon’t worry—your data is secure and only used to power your AI tools. Ready to begin?`,
+          text: `Nice to meet you, ${userInput}! Let’s build your personalized AI agent.\n\nTo get started, I’ll need a document to train on—like a PDF of your business materials, process guides, or product details. This helps me tailor insights just for you!`,
           isUser: false, 
           isTyping: true, 
           id: messages.length + 1 

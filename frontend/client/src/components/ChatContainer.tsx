@@ -23,7 +23,7 @@ function ChatContainer() {
   useEffect(() => {
     if (messages.length > 0 && !messages[0].isTyping && messages[0].id === 0) {
       setIsInputDisabled(false);
-      fsm.transition(Transitions.WELCOME_COMPLETE);
+      fsm.transition(Transitions.WELCOME_MSG_COMPLETE);
     } else if (messages.length === 0 || messages[0].isTyping) {
       setIsInputDisabled(true);
     }

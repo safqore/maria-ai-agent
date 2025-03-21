@@ -1,25 +1,27 @@
 export enum States {
-  WELCOME = 'WELCOME',
-  OPPORTUNITIES_EXIST = 'OPPORTUNITIES_EXIST',
+  WELCOME_MSG = 'WELCOME_MSG',
+  OPPTYS_EXIST_MSG = 'OPPTYS_EXIST_MSG',
   USR_INIT_OPTIONS = 'USR_INIT_OPTIONS',
   ENGAGE_USR_AGAIN = 'ENGAGE_USR_AGAIN',
   COLLECTING_NAME = 'COLLECTING_NAME',
   COLLECTING_EMAIL = 'COLLECTING_EMAIL',
-  UPLOAD_DOCUMENTS = 'UPLOAD_DOCUMENTS',
+  UPLOAD_DOCS_MSG = 'UPLOAD_DOCS_MSG',
+  UPLOAD_DOCS = 'UPLOAD_DOCS',
   CREATE_BOT = 'CREATE_BOT',
   END_WORKFLOW = 'END_WORKFLOW',
 }
 
 export enum Transitions {
-  WELCOME_COMPLETE = 'WELCOME_COMPLETE',
+  WELCOME_MSG_COMPLETE = 'WELCOME_MSG_COMPLETE',
   YES_CLICKED = 'YES_CLICKED',
   NO_CLICKED = 'NO_CLICKED',
-  OPPORTUNITIES_EXIST_COMPLETE = 'OPPORTUNITIES_EXIST_COMPLETE',
+  OPPTYS_EXIST_MSG_COMPLETE = 'OPPTYS_EXIST_MSG_COMPLETE',
   LETS_GO_CLICKED = 'LETS_GO_CLICKED',
   MAYBE_NEXT_TIME_CLICKED = 'MAYBE_NEXT_TIME_CLICKED',
   NAME_PROVIDED = 'NAME_PROVIDED',
   EMAIL_PROVIDED = 'EMAIL_PROVIDED',
-  DOCUMENTS_PROVIDED = 'DOCUMENTS_PROVIDED',
+  UPLOAD_DOCS_MSG_COMPLETE = 'UPLOAD_DOCS_MSG_COMPLETE',
+  DOCS_UPLOADED = 'DOCS_UPLOADED',
   BOT_CREATION_INITIALISED = 'BOT_CREATION_INITIALISED',
 }
 
@@ -41,36 +43,37 @@ const responseDisplayValues: { [key: string]: string } = {
 };
 
 const stateTransitionMap: { [key in State]?: { [key in Transition]?: State } } = {
-  [States.WELCOME]: {
-    [Transitions.WELCOME_COMPLETE]: States.USR_INIT_OPTIONS,
+  [States.WELCOME_MSG]: {
+    [Transitions.WELCOME_MSG_COMPLETE]: States.USR_INIT_OPTIONS,
   },
   [States.USR_INIT_OPTIONS]: {
     [Transitions.YES_CLICKED]: States.COLLECTING_NAME,
-    [Transitions.NO_CLICKED]: States.OPPORTUNITIES_EXIST,
+    [Transitions.NO_CLICKED]: States.OPPTYS_EXIST_MSG,
   },
-  [States.OPPORTUNITIES_EXIST]: {
-    [Transitions.OPPORTUNITIES_EXIST_COMPLETE]: States.ENGAGE_USR_AGAIN,
+  [States.OPPTYS_EXIST_MSG]: {
+    [Transitions.OPPTYS_EXIST_MSG_COMPLETE]: States.ENGAGE_USR_AGAIN,
   },
   [States.ENGAGE_USR_AGAIN]: {
     [Transitions.LETS_GO_CLICKED]: States.COLLECTING_NAME,
     [Transitions.MAYBE_NEXT_TIME_CLICKED]: States.END_WORKFLOW,
   },
   [States.COLLECTING_NAME]: {
-    [Transitions.NAME_PROVIDED]: States.UPLOAD_DOCUMENTS,
+    [Transitions.NAME_PROVIDED]: States.UPLOAD_DOCS_MSG,
   },
-  [States.UPLOAD_DOCUMENTS]: {
-    [Transitions.DOCUMENTS_PROVIDED]: States.COLLECTING_EMAIL,
-  },
-  [States.COLLECTING_EMAIL]: {
-    [Transitions.EMAIL_PROVIDED]: States.CREATE_BOT,
-  },
-  [States.CREATE_BOT]: {
-    [Transitions.BOT_CREATION_INITIALISED]: States.END_WORKFLOW,
+  [States.UPLOAD_DOCS_MSG]: {
+    [Transitions.UPLOAD_DOCS_MSG_COMPLETE]: States.UPLOAD_DOCS,
   }
+  // ,
+  // [States.COLLECTING_EMAIL]: {
+  //   [Transitions.EMAIL_PROVIDED]: States.CREATE_BOT,
+  // },
+  // [States.CREATE_BOT]: {
+  //   [Transitions.BOT_CREATION_INITIALISED]: States.END_WORKFLOW,
+  // }
 };
 
 class FiniteStateMachine implements StateMachine {
-  private currentState: State = States.WELCOME;
+  private currentState: State = States.WELCOME_MSG;
 
   transition(action: Transition) {
     console.log(`Transitioning from ${this.currentState} with action ${action}`);

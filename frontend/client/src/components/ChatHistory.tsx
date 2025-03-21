@@ -53,7 +53,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ messages, onTypingComplete, o
           isButtonGroupVisible={isButtonGroupVisible}
         />
       )}
-      {currentState === States.UPLOAD_DOCUMENTS && (
+      {currentState === States.UPLOAD_DOCS && (
         <FileUpload onFileUploaded={onFileUploaded} />
       )}
     </div>
