@@ -38,79 +38,29 @@
 - **Development Workflow**: Ensure that the frontend and backend are developed in parallel, with clear integration points. After frontend development, prioritize code cleanup and optimization.
 - **Environment Setup**: Use the provided requirements.txt and package.json files to set up the Python and Node.js environments, respectively. Follow the README for detailed setup instructions.
 
-## Project File Structure
+## Project Folder Structure
 The project is organized into the following structure:
 
 Maria AI Agent Project
-├── .env
-├── .gitignore
-├── package.json
-├── README.md
-├── requirements.txt
-├── Story Requirements.md
-├── .github/
-│   └── copilot-instructions.md
-├── .vscode/
-│   └── launch.json
-├── backend/
-│   ├── crewai/
-│   │   ├── pyproject.toml
-│   │   ├── knowledge/
-│   │   │   └── user_preference.txt
-│   │   ├── src/
-│   │       ├── maria_ai_agent/
-│   │       │   ├── __init__.py
-│   │       │   ├── main.py
-│   │       │   ├── crew.py
-│   │       │   ├── tools/
-│   │       │   │   ├── __init__.py
-│   │       │   │   └── custom_tool.py
-│   │       │   ├── config/
-│   │       │       ├── agents.yaml
-│   │       │       └── tasks.yaml
-├── frontend/
-│   ├── config.py
-│   ├── run.py
-│   ├── app/
-│   │   ├── __init__.py
-│   │   ├── routes.py
-│   │   ├── controllers/
-│   │   │   ├── __init__.py
-│   │   │   └── main_controller.py
-│   │   ├── models/
-│   │   │   ├── __init__.py
-│   │   │   └── base_model.py
-│   │   ├── static/
-│   │   │   ├── css/
-│   │   │   │   └── style.css
-│   │   │   ├── js/
-│   │   │   │   ├── script.js
-│   │   │   │   └── workflow.js
-│   │   ├── templates/
-│   │       └── index.html
-│   ├── client/
-│       ├── .gitignore
-│       ├── package.json
-│       ├── README.md
-│       ├── tsconfig.json
-│       ├── public/
-│       │   └── index.html
-│       ├── src/
-│       │   ├── App.tsx
-│       │   ├── App.css
-│       │   ├── index.tsx
-│       │   ├── index.css
-│       │   ├── react-app-env.d.ts
-│       │   ├── components/
-│       │   │   ├── ButtonGroup.tsx
-│       │   │   ├── ChatContainer.tsx
-│       │   │   ├── ChatHistory.tsx
-│       │   │   ├── ChatInputArea.tsx
-│       │   │   ├── FileUpload.tsx
-│       │   │   └── TypingEffect.tsx
-│       │   ├── hooks/
-│       │   │   └── useChatStateMachine.ts
-│       │   ├── state/
-│       │   │   └── FiniteStateMachine.ts
-│       │   └── utils/
-│               └── chatUtils.ts
+.env                                       # Environment variables for the project
+.gitignore                                 # Git ignore file to exclude specific files/folders from version control
+package.json                               # Node.js dependencies and scripts for the frontend
+README.md                                  # Project overview and setup instructions
+requirements.txt                           # Python dependencies for the backend
+EPIC Requirements.md                       # High-level project requirements and user stories
+Story Requirements.md                      # Documentation of project requirements and user stories
+.github/copilot-instructions.md            # Custom instructions for GitHub Copilot
+.vscode/launch.json                        # Debugging configurations for VS Code
+backend/crewai/knowledge                   # Knowledge base for CrewAI
+backend/crewai/src/maria_ai_agent/tools    # Custom tools for CrewAI
+backend/crewai/src/maria_ai_agent/config   # Configuration files for CrewAI
+frontend/app/controllers                   # Controllers for handling business logic
+frontend/app/models                        # Models for database interactions
+frontend/app/static/css                    # CSS files for styling
+frontend/app/static/js                     # JavaScript files for frontend logic
+frontend/app/templates                     # HTML templates for the app
+frontend/client/public                     # Public assets for the React-based frontend client
+frontend/client/src/components             # Reusable React components
+frontend/client/src/hooks                  # Custom React hooks
+frontend/client/src/state                  # State management logic
+frontend/client/src/utils                  # Utility functions
