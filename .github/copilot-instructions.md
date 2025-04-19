@@ -37,3 +37,80 @@
 - **Agentic Capabilities**: The project leverages crewAI to define agents and tasks. Configurations are stored in YAML files, and the crew.py file orchestrates the agents and tasks.
 - **Development Workflow**: Ensure that the frontend and backend are developed in parallel, with clear integration points. After frontend development, prioritize code cleanup and optimization.
 - **Environment Setup**: Use the provided requirements.txt and package.json files to set up the Python and Node.js environments, respectively. Follow the README for detailed setup instructions.
+
+## Project File Structure
+The project is organized into the following structure:
+
+Maria AI Agent Project
+├── .env
+├── .gitignore
+├── package.json
+├── README.md
+├── requirements.txt
+├── Story Requirements.md
+├── .github/
+│   └── copilot-instructions.md
+├── .vscode/
+│   └── launch.json
+├── backend/
+│   ├── crewai/
+│   │   ├── pyproject.toml
+│   │   ├── knowledge/
+│   │   │   └── user_preference.txt
+│   │   ├── src/
+│   │       ├── maria_ai_agent/
+│   │       │   ├── __init__.py
+│   │       │   ├── main.py
+│   │       │   ├── crew.py
+│   │       │   ├── tools/
+│   │       │   │   ├── __init__.py
+│   │       │   │   └── custom_tool.py
+│   │       │   ├── config/
+│   │       │       ├── agents.yaml
+│   │       │       └── tasks.yaml
+├── frontend/
+│   ├── config.py
+│   ├── run.py
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── routes.py
+│   │   ├── controllers/
+│   │   │   ├── __init__.py
+│   │   │   └── main_controller.py
+│   │   ├── models/
+│   │   │   ├── __init__.py
+│   │   │   └── base_model.py
+│   │   ├── static/
+│   │   │   ├── css/
+│   │   │   │   └── style.css
+│   │   │   ├── js/
+│   │   │   │   ├── script.js
+│   │   │   │   └── workflow.js
+│   │   ├── templates/
+│   │       └── index.html
+│   ├── client/
+│       ├── .gitignore
+│       ├── package.json
+│       ├── README.md
+│       ├── tsconfig.json
+│       ├── public/
+│       │   └── index.html
+│       ├── src/
+│       │   ├── App.tsx
+│       │   ├── App.css
+│       │   ├── index.tsx
+│       │   ├── index.css
+│       │   ├── react-app-env.d.ts
+│       │   ├── components/
+│       │   │   ├── ButtonGroup.tsx
+│       │   │   ├── ChatContainer.tsx
+│       │   │   ├── ChatHistory.tsx
+│       │   │   ├── ChatInputArea.tsx
+│       │   │   ├── FileUpload.tsx
+│       │   │   └── TypingEffect.tsx
+│       │   ├── hooks/
+│       │   │   └── useChatStateMachine.ts
+│       │   ├── state/
+│       │   │   └── FiniteStateMachine.ts
+│       │   └── utils/
+│               └── chatUtils.ts
