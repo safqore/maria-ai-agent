@@ -5,14 +5,21 @@ interface FileUploadProps {
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded }) => {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      const selectedFile = event.target.files[0];
-      setFile(selectedFile);
-      uploadFile(selectedFile);
+    if (event.target.files) {
+      const selectedFiles = Array.from(event.target.files);
+      const validFiles = selectedFiles.filter(file => file.size <= 5 * 1024 * 1024); // Limit file size to 5 MB
+
+      if (validFiles.length + files.length > 3) {
+        alert('You can only upload up to 3 files.');
+        return;
+      }
+
+      setFiles(prevFiles => [...prevFiles, ...validFiles]);
+      validFiles.forEach(uploadFile);
     }
   };
 
@@ -27,15 +34,15 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded }) => {
       });
 
       if (response.ok) {
-        console.log('File uploaded successfully');
+        console.log(`File ${file.name} uploaded successfully`);
         onFileUploaded(file);
       } else {
-        console.error('File upload failed');
-        alert('There was an error uploading your file. Please try again.');
+        console.error(`File ${file.name} upload failed`);
+        alert(`There was an error uploading ${file.name}. Please try again.`);
       }
     } catch (error) {
-      console.error('Error during file upload:', error);
-      alert('There was an error uploading your file. Please try again.');
+      console.error(`Error during file upload for ${file.name}:`, error);
+      alert(`There was an error uploading ${file.name}. Please try again.`);
     }
   };
 
@@ -43,12 +50,12 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded }) => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
-  }
+  };
 
   return (
     <div className="button-container"> {/* Added button-container */}
       <button className="chat-button" onClick={handleClick}> {/* Added chat-button */}
-        Upload File
+        Upload Files
       </button>
       <input
         type="file"
@@ -56,7 +63,15 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded }) => {
         ref={fileInputRef}
         style={{ display: 'none' }}
         onChange={handleFileChange}
+        multiple
       />
+      <div className="uploaded-files">
+        {files.map((file, index) => (
+          <div key={index} className="uploaded-file">
+            {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
