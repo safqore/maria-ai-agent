@@ -57,6 +57,18 @@ cd frontend
 npm install
 ```
 
+- To check for outdated packages:
+
+```bash
+npm outdated
+```
+
+- To update all packages to the latest compatible versions:
+
+```bash
+npm update
+```
+
 - To start the React app:
 
 ```bash
