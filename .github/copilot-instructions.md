@@ -6,7 +6,6 @@
 - Use functional components for React development.
 - For React, use TypeScript and ensure type safety.
 - For backend development, adhere to Flask best practices and modularize code where possible.
-- For agentic capabilities, leverage crewAI's tools and configurations effectively.
 
 ## Test Generation Instructions
 - Always use pytest for Python testing.
@@ -19,7 +18,6 @@
 - Ensure proper error handling is implemented in both frontend and backend.
 - Verify that all functions and components have appropriate docstrings or comments.
 - Ensure React components are optimized and reusable.
-- Confirm that crewAI configurations (agents.yaml, tasks.yaml) are well-documented and logically structured.
 
 ## Commit Message Generation Instructions
 - Use imperative mood in commit messages (e.g., "Add feature" instead of "Added feature").
@@ -32,9 +30,8 @@
 - Provide testing instructions if applicable.
 
 ## Project-Specific Notes
-- **Frontend**: The frontend is built using React with TypeScript. It includes components for chat functionality, state management using a finite state machine, and file upload capabilities. Once development is complete, a code cleanup will be performed to ensure maintainability.
-- **Backend**: The backend uses Flask and crewAI for agentic capabilities. It includes configurations for agents and tasks, as well as a modular structure for controllers, models, and routes.
-- **Agentic Capabilities**: The project leverages crewAI to define agents and tasks. Configurations are stored in YAML files, and the crew.py file orchestrates the agents and tasks.
+- **Frontend**: The frontend is built using React with TypeScript. It includes components for chat functionality, state management using a finite state machine, and file upload capabilities.
+- **Backend**: The backend uses Flask.
 - **Development Workflow**: Ensure that the frontend and backend are developed in parallel, with clear integration points. After frontend development, prioritize code cleanup and optimization.
 - **Environment Setup**: Use the provided requirements.txt and package.json files to set up the Python and Node.js environments, respectively. Follow the README for detailed setup instructions.
 
@@ -44,23 +41,19 @@ The project is organized into the following structure:
 Maria AI Agent Project
 .env                                       # Environment variables for the project
 .gitignore                                 # Git ignore file to exclude specific files/folders from version control
-package.json                               # Node.js dependencies and scripts for the frontend
 README.md                                  # Project overview and setup instructions
 requirements.txt                           # Python dependencies for the backend
-EPIC Requirements.md                       # High-level project requirements and user stories
-Story Requirements.md                      # Documentation of project requirements and user stories
-.github/copilot-instructions.md            # Custom instructions for GitHub Copilot
-.vscode/launch.json                        # Debugging configurations for VS Code
-backend/crewai/knowledge                   # Knowledge base for CrewAI
-backend/crewai/src/maria_ai_agent/tools    # Custom tools for CrewAI
-backend/crewai/src/maria_ai_agent/config   # Configuration files for CrewAI
-frontend/app/controllers                   # Controllers for handling business logic
-frontend/app/models                        # Models for database interactions
-frontend/app/static/css                    # CSS files for styling
-frontend/app/static/js                     # JavaScript files for frontend logic
-frontend/app/templates                     # HTML templates for the app
-frontend/client/public                     # Public assets for the React-based frontend client
-frontend/client/src/components             # Reusable React components
-frontend/client/src/hooks                  # Custom React hooks
-frontend/client/src/state                  # State management logic
-frontend/client/src/utils                  # Utility functions
+requirements/                              # Requirements documentation and images
+backend/                                   # Flask backend
+    app.py                                 # Main Flask app entry point
+frontend/                                  # React frontend (TypeScript)
+    package.json                           # Node.js dependencies and scripts
+    tsconfig.json                          # TypeScript configuration
+    public/                                # Public assets for the React frontend
+    src/                                   # Source code for React frontend
+        App.tsx                            # Main React app component
+        components/                        # Reusable React components
+        hooks/                             # Custom React hooks
+        state/                             # State management logic
+        utils/                             # Utility functions
+        ...                                # Other frontend files
