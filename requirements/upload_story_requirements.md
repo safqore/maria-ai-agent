@@ -39,6 +39,36 @@ The file upload feature is implemented in `components/FileUpload.tsx` and is int
 
 ---
 
+## File Upload Workflow
+
+Explaining the file upload workflow in the chat interface:
+
+Step 1:
+
+|[Upload Files]                         	    |  ← Existing button
+|-------------------------------------------- |
+| [Type message…            |  Send]          |  ← *DISABLED*
+----------------------------------------------
+
+Step 2: After user clicks upload files button in step 1, they start uploading files 
+
+| [dummy.pdf ✅] [X]  [plan.doc 40% ▓▓▓░] [X]   |
+| + Add more files                             |
+|--------------------------------------------  |
+|[Done & Continue]                      	     |  ← Button ENABLED if at least 1 file finished uploading
+|--------------------------------------------  |
+| [Type message…            |  Send]           |  ← *STILL DISABLED*
+----------------------------------------------
+
+Step 3: Once user has uploaded all files, they click Done & Continue. Chat transitions to next state
+
+| Chat continues to next state…                 |
+|--------------------------------------------   |
+| [Type message…            |  Send]            |  ← *ENABLED*
+----------------------------------------------
+
+---
+
 ## Implementation Steps for File Upload to S3
 
 This guide explains how to implement backend file upload functionality to AWS S3, tailored to your current project structure.
