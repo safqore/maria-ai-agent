@@ -11,7 +11,7 @@ The file upload feature allows users to select and upload up to 3 PDF files, eac
 
 ## React Frontend Structure & Artifacts (for Copilot Context)
 
-The frontend is a React app (TypeScript) located in the `frontend/` folder. Key files and components related to file upload and chat UI:
+The frontend is a React app (TypeScript) located in the `frontend/` folder. Key files and components related to file upload and chat UI. This is located in `src/`:
 
 - `App.tsx`: Main app entry point.
 - `components/ChatContainer.tsx`: Manages chat state, input, and history.
@@ -45,9 +45,9 @@ This section explains the file upload workflow in the chat interface.
 
 ### Step 1: Initial State
 
-| Button/Field         | State/Description         |
-|----------------------|--------------------------|
-| Upload Files         | Existing button          |
+| Button/Field          | State/Description           |
+| --------------------- | --------------------------- |
+| Upload Files          | Existing button             |
 | Type message… \| Send | Send button is **disabled** |
 
 ---
@@ -56,15 +56,15 @@ This section explains the file upload workflow in the chat interface.
 
 - After clicking **Upload Files**, users can upload files. The UI displays each file's status:
 
-| File Example                                 | Status Description                                  | Actions         |
-|----------------------------------------------|-----------------------------------------------------|-----------------|
-| dummy.pdf ✅                                 | Uploaded successfully (green tick)                  | [X] Remove      |
-| plan.doc 40% ▓▓▓░                            | Uploading, shows progress bar                       | [X] Cancel      |
-| contract.pdf ❌ Network error                 | Upload error (network), can retry                    | [Retry] [X]     |
-| dummy2.pdf ❌ File too large                  | File too large, can retry                           | [Retry] [X]     |
-| plan2.doc ❌ Unsupported file type            | Unsupported type, can remove                        | [Remove]        |
-| dummy3.pdf ❌ Failed to upload                | Failed to upload, can retry                         | [Retry] [X]     |
-| + Add more files                             | Add more files button                               |                 |
+| File Example                       | Status Description                 | Actions     |
+| ---------------------------------- | ---------------------------------- | ----------- |
+| dummy.pdf ✅                       | Uploaded successfully (green tick) | [X] Remove  |
+| plan.doc 40% ▓▓▓░                  | Uploading, shows progress bar      | [X] Cancel  |
+| contract.pdf ❌ Network error      | Upload error (network), can retry  | [Retry] [X] |
+| dummy2.pdf ❌ File too large       | File too large, can retry          | [Retry] [X] |
+| plan2.doc ❌ Unsupported file type | Unsupported type, can remove       | [Remove]    |
+| dummy3.pdf ❌ Failed to upload     | Failed to upload, can retry        | [Retry] [X] |
+| + Add more files                   | Add more files button              |             |
 
 - **Done & Continue** button is **enabled** if at least one file finished uploading.
 - **Send** button remains **disabled**.
@@ -76,9 +76,9 @@ This section explains the file upload workflow in the chat interface.
 - Once all files are uploaded, user clicks **Done & Continue**.
 - Chat transitions to the next state.
 
-| Button/Field         | State/Description         |
-|----------------------|--------------------------|
-| Chat continues…      | Next state is active     |
+| Button/Field          | State/Description          |
+| --------------------- | -------------------------- |
+| Chat continues…       | Next state is active       |
 | Type message… \| Send | Send button is **enabled** |
 
 ---
@@ -152,27 +152,33 @@ This guide explains how to implement backend file upload functionality to AWS S3
 ## Additional Implementation Clarifications
 
 1. **/upload Endpoint Request Format**
+
    - The `/upload` endpoint should accept a single file per request (not batch uploads).
    - Use `multipart/form-data` as the request format, with the file field named `file`.
    - The endpoint will be provided by a Flask application.
 
 2. **Progress Bar Behavior**
+
    - Progress bar is shown per file.
    - Progress reflects both frontend upload progress and backend processing (i.e., file is only marked as uploaded when successfully stored in S3).
 
 3. **File Removal**
+
    - Users can remove files both before and after upload.
    - Removing an uploaded file should also trigger a backend delete request to remove the file from S3.
 
 4. **Error Feedback**
+
    - Error messages and feedback should follow the file upload workflow described above (see File Upload Workflow section).
    - Errors should be shown inline, next to each file, and allow retry/removal as appropriate.
 
 5. **Accessibility & UX**
+
    - Accessibility: Error text and status messages must be readable by screen readers (e.g., "Upload failed: File too large, try a smaller file.").
    - UI elements should be navigable via keyboard.
 
 6. **Integration with State Machine**
+
    - After clicking "Done & Continue", the chat should transition to the next state and prompt the user for their email address.
 
 7. **Testing Requirements**
