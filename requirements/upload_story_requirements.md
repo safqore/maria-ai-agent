@@ -52,7 +52,9 @@ Step 1:
 
 Step 2: After user clicks upload files button in step 1, they start uploading files 
 
-| [dummy.pdf ✅] [X]  [plan.doc 40% ▓▓▓░] [X]   |
+| [dummy.pdf ✅] [X]                            |  ← File is uploaded successfully and displays a green tick 
+| [plan.doc 40% ▓▓▓░] [X]                      |  ← File is uploading and displays upload percentage progress
+| [contract.pdf ❌ Network error] [Retry] [X]   |  ← File encountered upload error and can be retried
 | + Add more files                             |
 |--------------------------------------------  |
 |[Done & Continue]                      	     |  ← Button ENABLED if at least 1 file finished uploading
