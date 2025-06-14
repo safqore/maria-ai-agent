@@ -55,6 +55,9 @@ Step 2: After user clicks upload files button in step 1, they start uploading fi
 | [dummy.pdf ✅] [X]                            |  ← File is uploaded successfully and displays a green tick 
 | [plan.doc 40% ▓▓▓░] [X]                      |  ← File is uploading and displays upload percentage progress
 | [contract.pdf ❌ Network error] [Retry] [X]   |  ← File encountered upload error and can be retried
+| [dummy2.pdf ❌ File too large] [Retry] [X]    |  ← File is too large and can be retried
+| [plan2.doc ❌ Unsupported file type] [Remove] |  ← File is of unsupported type and can be removed
+| [dummy3.pdf ❌ Failed to upload] [Retry] [X]  |  ← File failed to upload and can be retried
 | + Add more files                             |
 |--------------------------------------------  |
 |[Done & Continue]                      	     |  ← Button ENABLED if at least 1 file finished uploading
