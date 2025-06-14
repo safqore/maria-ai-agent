@@ -41,36 +41,45 @@ The file upload feature is implemented in `components/FileUpload.tsx` and is int
 
 ## File Upload Workflow
 
-Explaining the file upload workflow in the chat interface:
+This section explains the file upload workflow in the chat interface.
 
-Step 1:
+### Step 1: Initial State
 
-|[Upload Files]                         	    |  ← Existing button
-|-------------------------------------------- |
-| [Type message…            |  Send]          |  ← *DISABLED*
-----------------------------------------------
+| Button/Field         | State/Description         |
+|----------------------|--------------------------|
+| Upload Files         | Existing button          |
+| Type message… \| Send | Send button is **disabled** |
 
-Step 2: After user clicks upload files button in step 1, they start uploading files 
+---
 
-| [dummy.pdf ✅] [X]                            |  ← File is uploaded successfully and displays a green tick 
-| [plan.doc 40% ▓▓▓░] [X]                      |  ← File is uploading and displays upload percentage progress
-| [contract.pdf ❌ Network error] [Retry] [X]   |  ← File encountered upload error and can be retried
-| [dummy2.pdf ❌ File too large] [Retry] [X]    |  ← File is too large and can be retried
-| [plan2.doc ❌ Unsupported file type] [Remove] |  ← File is of unsupported type and can be removed
-| [dummy3.pdf ❌ Failed to upload] [Retry] [X]  |  ← File failed to upload and can be retried
-| + Add more files                             |
-|--------------------------------------------  |
-|[Done & Continue]                      	     |  ← Button ENABLED if at least 1 file finished uploading
-|--------------------------------------------  |
-| [Type message…            |  Send]           |  ← *STILL DISABLED*
-----------------------------------------------
+### Step 2: Uploading Files
 
-Step 3: Once user has uploaded all files, they click Done & Continue. Chat transitions to next state
+- After clicking **Upload Files**, users can upload files. The UI displays each file's status:
 
-| Chat continues to next state…                 |
-|--------------------------------------------   |
-| [Type message…            |  Send]            |  ← *ENABLED*
-----------------------------------------------
+| File Example                                 | Status Description                                  | Actions         |
+|----------------------------------------------|-----------------------------------------------------|-----------------|
+| dummy.pdf ✅                                 | Uploaded successfully (green tick)                  | [X] Remove      |
+| plan.doc 40% ▓▓▓░                            | Uploading, shows progress bar                       | [X] Cancel      |
+| contract.pdf ❌ Network error                 | Upload error (network), can retry                    | [Retry] [X]     |
+| dummy2.pdf ❌ File too large                  | File too large, can retry                           | [Retry] [X]     |
+| plan2.doc ❌ Unsupported file type            | Unsupported type, can remove                        | [Remove]        |
+| dummy3.pdf ❌ Failed to upload                | Failed to upload, can retry                         | [Retry] [X]     |
+| + Add more files                             | Add more files button                               |                 |
+
+- **Done & Continue** button is **enabled** if at least one file finished uploading.
+- **Send** button remains **disabled**.
+
+---
+
+### Step 3: After Upload
+
+- Once all files are uploaded, user clicks **Done & Continue**.
+- Chat transitions to the next state.
+
+| Button/Field         | State/Description         |
+|----------------------|--------------------------|
+| Chat continues…      | Next state is active     |
+| Type message… \| Send | Send button is **enabled** |
 
 ---
 

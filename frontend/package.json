@@ -10,7 +10,8 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "tsc": "tsc"
+    "tsc": "tsc",
+    "test": "jest"
   },
   "eslintConfig": {
     "extends": [
