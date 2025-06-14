@@ -137,3 +137,40 @@ This guide explains how to implement backend file upload functionality to AWS S3
 
 - Once implemented, the backend will be ready for integration with the frontend file upload component.
 - Additional features (e.g., progress tracking, file removal) can be added later as needed.
+
+---
+
+## Additional Implementation Clarifications
+
+1. **/upload Endpoint Request Format**
+   - The `/upload` endpoint should accept a single file per request (not batch uploads).
+   - Use `multipart/form-data` as the request format, with the file field named `file`.
+   - The endpoint will be provided by a Flask application.
+
+2. **Progress Bar Behavior**
+   - Progress bar is shown per file.
+   - Progress reflects both frontend upload progress and backend processing (i.e., file is only marked as uploaded when successfully stored in S3).
+
+3. **File Removal**
+   - Users can remove files both before and after upload.
+   - Removing an uploaded file should also trigger a backend delete request to remove the file from S3.
+
+4. **Error Feedback**
+   - Error messages and feedback should follow the file upload workflow described above (see File Upload Workflow section).
+   - Errors should be shown inline, next to each file, and allow retry/removal as appropriate.
+
+5. **Accessibility & UX**
+   - Accessibility: Error text and status messages must be readable by screen readers (e.g., "Upload failed: File too large, try a smaller file.").
+   - UI elements should be navigable via keyboard.
+
+6. **Integration with State Machine**
+   - After clicking "Done & Continue", the chat should transition to the next state and prompt the user for their email address.
+
+7. **Testing Requirements**
+   - Begin with failing unit tests (red state) for the file upload feature.
+   - Implement the feature to pass the tests (green state).
+   - Tests should cover edge cases, error handling, and state transitions.
+
+---
+
+If further clarification is needed, specify the scenario or workflow in question for additional detail.
