@@ -82,6 +82,7 @@ data/
 
 # Variable files
 *.env
+*.env.*
 
 # Node js
 node_modules/

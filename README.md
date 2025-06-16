@@ -79,6 +79,17 @@ npm start
   - `npm test` — Run tests with Jest
   - `npm run build` — Build for production
 
+## Environment Variables
+
+To configure the backend API URL for the frontend, create a `.env` file in the `frontend/` directory with the following content:
+
+```
+REACT_APP_API_BASE_URL=https://your-backend-url.com
+```
+
+- Do not commit your `.env` file to version control; it is already listed in `.gitignore`.
+- The frontend will use this variable to connect to the backend for file uploads and other API requests.
+
 ## Customizing & Extending
 
 - Modify backend logic in `backend/`

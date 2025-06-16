@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { API_BASE_URL } from '../utils/config';
 
 interface FileUploadProps {
   onFileUploaded: (file: File) => void;
@@ -59,7 +60,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded }) => {
       const formData = new FormData();
       formData.append('file', file);
       const xhr = new XMLHttpRequest();
-      xhr.open('POST', 'http://localhost:5001/upload');
+      xhr.open('POST', `${API_BASE_URL}/upload`);
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {
           const percent = Math.round((e.loaded / e.total) * 100);
@@ -98,10 +99,10 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded }) => {
     if (fileObj?.status === 'uploaded' && fileObj.url) {
       // Backend delete request
       try {
-        await fetch('http:/localhost:5001/delete', {
+        await fetch(`${API_BASE_URL}/delete`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: fileObj.url }),
+          body: JSON.stringify({ filename: fileObj.file.name }),
         });
       } catch (e) {
         // Optionally show error
