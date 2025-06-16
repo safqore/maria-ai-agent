@@ -36,6 +36,10 @@ The file upload feature is implemented in `components/FileUpload.tsx` and is int
 4. Files are uploaded to `/upload` via POST; progress bar and upload status are shown per file.
 5. Users receive feedback on upload success/failure.
 6. UI is visually consistent with the chat interface.
+7. **Frontend and backend must be fully decoupled:**
+   - All backend URLs (such as `/upload`) must be specified via configuration (e.g., environment variables or config files) in the frontend code, never hardcoded.
+   - The frontend and backend will be deployed to different servers/services.
+   - There must be no hard dependencies between frontend and backend code.
 
 ---
 
@@ -48,7 +52,7 @@ This section explains the file upload workflow in the chat interface.
 | Button/Field          | State/Description           |
 | --------------------- | --------------------------- |
 | Upload Files          | Existing button             |
-| Type message… \| Send | Send button is **disabled** |
+| Type message… | Send | Send button is **disabled** |
 
 ---
 
@@ -79,7 +83,7 @@ This section explains the file upload workflow in the chat interface.
 | Button/Field          | State/Description          |
 | --------------------- | -------------------------- |
 | Chat continues…       | Next state is active       |
-| Type message… \| Send | Send button is **enabled** |
+| Type message… | Send | Send button is **enabled** |
 
 ---
 
@@ -132,6 +136,10 @@ This guide explains how to implement backend file upload functionality to AWS S3
 ### 6. Integration with Frontend
 
 - The `/upload` endpoint should accept POST requests with files from the React frontend.
+- **Frontend/Backend Integration Requirements:**
+  - The frontend and backend will be deployed to different servers/services.
+  - All backend URLs (such as `/upload`) must be specified via configuration (e.g., environment variables or config files) in the frontend code, never hardcoded.
+  - There must be no hard dependencies between frontend and backend code.
 - On success, return:
   ```json
   { "files": [ { "filename": "...", "url": "..." }, ... ] }
