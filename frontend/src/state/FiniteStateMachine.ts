@@ -62,14 +62,16 @@ const stateTransitionMap: { [key in State]?: { [key in Transition]?: State } } =
   },
   [States.UPLOAD_DOCS_MSG]: {
     [Transitions.UPLOAD_DOCS_MSG_COMPLETE]: States.UPLOAD_DOCS,
+  },
+  [States.UPLOAD_DOCS]: {
+    [Transitions.DOCS_UPLOADED]: States.COLLECTING_EMAIL,
+  },
+  [States.COLLECTING_EMAIL]: {
+    [Transitions.EMAIL_PROVIDED]: States.CREATE_BOT,
+  },
+  [States.CREATE_BOT]: {
+    [Transitions.BOT_CREATION_INITIALISED]: States.END_WORKFLOW,
   }
-  // ,
-  // [States.COLLECTING_EMAIL]: {
-  //   [Transitions.EMAIL_PROVIDED]: States.CREATE_BOT,
-  // },
-  // [States.CREATE_BOT]: {
-  //   [Transitions.BOT_CREATION_INITIALISED]: States.END_WORKFLOW,
-  // }
 };
 
 class FiniteStateMachine implements StateMachine {

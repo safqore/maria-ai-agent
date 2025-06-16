@@ -40,6 +40,22 @@ function ChatContainer() {
     }
   }
 
+  const onFileUploadDone = () => {
+    // Transition state machine to next state after file upload
+    fsm.transition(Transitions.DOCS_UPLOADED);
+    // Add bot message to prompt for email
+    setMessages(prevMessages => [
+      ...prevMessages,
+      {
+        text: "Great! Now, please enter your email address so I can send you updates and results.",
+        isUser: false,
+        isTyping: true,
+        id: prevMessages.length
+      }
+    ]);
+    setIsInputDisabled(false);
+  };
+
   return (
     <div className="chat-container">
       <ChatHistory 
@@ -49,10 +65,7 @@ function ChatContainer() {
           buttonClickHandler(value);
         }}
         onFileUploaded={fileUploadHandler} 
-        onFileUploadDone={() => {
-          // Transition state machine to next state after file upload
-          fsm.transition(Transitions.DOCS_UPLOADED);
-        }}
+        onFileUploadDone={onFileUploadDone}
         currentState={fsm.getState()} 
         isButtonGroupVisible={isButtonGroupVisible}
       />
