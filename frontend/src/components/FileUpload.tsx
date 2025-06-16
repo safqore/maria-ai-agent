@@ -165,15 +165,15 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone }) => {
           </div>
         ))}
       </div>
-      <button
-        className="chat-button"
-        disabled={uploadedCount === 0}
-        aria-disabled={uploadedCount === 0}
-        style={{ marginTop: 8 }}
-        onClick={onDone}
-      >
-        Done & Continue
-      </button>
+      {uploadedCount > 0 && (
+        <button
+          className="chat-button"
+          style={{ marginTop: 8 }}
+          onClick={onDone}
+        >
+          Done & Continue
+        </button>
+      )}
     </div>
   );
 };
