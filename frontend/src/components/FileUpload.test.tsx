@@ -22,8 +22,8 @@ class MockXHR {
 global.XMLHttpRequest = MockXHR as any;
 
 describe('FileUpload Component', () => {
-  const setup = (onFileUploaded = jest.fn()) => {
-    render(<FileUpload onFileUploaded={onFileUploaded} />);
+  const setup = (onFileUploaded = jest.fn(), onDone = jest.fn()) => {
+    render(<FileUpload onFileUploaded={onFileUploaded} onDone={onDone} />);
   };
 
   it('should only allow PDF files', async () => {

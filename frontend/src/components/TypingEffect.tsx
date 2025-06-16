@@ -23,6 +23,8 @@ const TypingEffect: React.FC<TypingEffectProps> = ({ message, onTypingComplete }
           messageDiv.appendChild(document.createTextNode(char));
         }
         index++;
+        // Scroll into view after each character
+        messageDiv.scrollIntoView({ behavior: 'smooth' });
       } else {
         clearInterval(intervalId!);
         onTypingComplete();

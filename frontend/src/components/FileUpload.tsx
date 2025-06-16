@@ -3,6 +3,7 @@ import { API_BASE_URL } from '../utils/config';
 
 interface FileUploadProps {
   onFileUploaded: (file: File) => void;
+  onDone: () => void;
 }
 
 interface UploadingFile {
@@ -17,7 +18,7 @@ const MAX_FILES = 3;
 const MAX_SIZE_MB = 5;
 const ACCEPTED_TYPE = 'application/pdf';
 
-const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded }) => {
+const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone }) => {
   const [files, setFiles] = useState<UploadingFile[]>([]);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -169,7 +170,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded }) => {
         disabled={uploadedCount === 0}
         aria-disabled={uploadedCount === 0}
         style={{ marginTop: 8 }}
-        onClick={() => {/* TODO: integrate with state machine */}}
+        onClick={onDone}
       >
         Done & Continue
       </button>

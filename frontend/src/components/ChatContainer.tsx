@@ -49,6 +49,10 @@ function ChatContainer() {
           buttonClickHandler(value);
         }}
         onFileUploaded={fileUploadHandler} 
+        onFileUploadDone={() => {
+          // Transition state machine to next state after file upload
+          fsm.transition(Transitions.DOCS_UPLOADED);
+        }}
         currentState={fsm.getState()} 
         isButtonGroupVisible={isButtonGroupVisible}
       />

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import TypingEffect from './TypingEffect';
 import ButtonGroup from './ButtonGroup';
 import FileUpload from './FileUpload';
@@ -12,9 +12,24 @@ interface ChatHistoryProps {
   currentState: string;
   isButtonGroupVisible: boolean;
   onFileUploaded: (file: File) => void;
+  onFileUploadDone: () => void;
 }
 
-const ChatHistory: React.FC<ChatHistoryProps> = ({ messages, onTypingComplete, onButtonClick, onFileUploaded, currentState, isButtonGroupVisible }) => {
+const ChatHistory: React.FC<ChatHistoryProps> = ({ messages, onTypingComplete, onButtonClick, onFileUploaded, onFileUploadDone, currentState, isButtonGroupVisible }) => {
+  const endOfMessagesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Also scroll when a message is typing
+  useEffect(() => {
+    const typing = messages.some(msg => msg.isTyping);
+    if (typing) {
+      endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
   return (
     <div className="chat-history" id="chat-history">
       {messages.map((message, index) => (
@@ -54,8 +69,9 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ messages, onTypingComplete, o
         />
       )}
       {currentState === States.UPLOAD_DOCS && (
-        <FileUpload onFileUploaded={onFileUploaded} />
+        <FileUpload onFileUploaded={onFileUploaded} onDone={onFileUploadDone} />
       )}
+      <div ref={endOfMessagesRef} />
     </div>
   );
 };
