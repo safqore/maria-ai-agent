@@ -32,6 +32,7 @@
 ## Project-Specific Notes
 - **Frontend**: The frontend is built using React with TypeScript. It includes components for chat functionality, state management using a finite state machine, and file upload capabilities.
 - **Backend**: The backend uses Flask.
+- **Frontend/Backend Integration**: The frontend and backend will be deployed to different servers/services. All backend URLs in the frontend code must be specified via configuration (e.g., environment variables or config files), not hardcoded. There must be no hard dependencies between frontend and backend code.
 - **Development Workflow**: Ensure that the frontend and backend are developed in parallel, with clear integration points. After frontend development, prioritize code cleanup and optimization.
 - **Environment Setup**: Use the provided requirements.txt and package.json files to set up the Python and Node.js environments, respectively. Follow the README for detailed setup instructions.
 
