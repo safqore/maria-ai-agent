@@ -3,3 +3,4 @@ flask
 python-dotenv
 boto3
 python-multipart
+flask_cors
