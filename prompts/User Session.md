@@ -80,10 +80,11 @@
 
 ## Open Questions & Next Steps
 
-- Confirm session persistence requirements and data retention policy.
+- Session persistence: If a user does not complete their session, they will start from the beginning on their next visit. Users cannot delete or reset their session manually.
+- UUID uniqueness: The UUID is a required, unique key for each session. The system must ensure that UUIDs are never duplicated and are always generated for every session.
+- Error handling: If an error occurs (e.g., on the chatbot frontend), display a user-friendly message such as: "The system has encountered an error, which has been notified to the administrator to investigate. Please try again later."
+- Multi-device/browser support: Session resumption is not supported. If a user joins from a different device or browser, a new session will be started.
 - Define the exact schema for PostgreSQL (fields, relationships).
-- Decide on user authentication/authorization needs.
-- Plan for error handling and session cleanup.
 
 ---
 
