@@ -63,10 +63,18 @@
 
 ## 5. Security & Privacy
 
-- To be reviewed at implementation time.
-- Open questions:
-  - How do we authenticate/authorize users (if at all)?
-  - What measures are needed for GDPR or similar compliance?
+- **Authentication & Authorization:**
+  - No authentication or authorization is required for users. A session starts when the user provides their name in the chatbot interface.
+- **Security Measures:**
+  - All data transmission should use standard encryption protocols (e.g., SSL/TLS).
+- **GDPR Compliance:**
+  - Explicit user consent is collected for storing personal data and for using uploaded files to train the AI agent.
+  - Users will have the ability to request deletion of their account and associated data at any time.
+  - Data minimization: Only essential data is collected and stored.
+  - Data access: Users can request access to the data stored about them.
+  - Data portability: Users can request a copy of their data in a portable format.
+  - Data rectification: Users can request corrections to their stored data if inaccurate.
+  - Data retention: Data is only retained for as long as necessary for the stated purposes.
 
 ---
 
