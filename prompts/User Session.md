@@ -32,17 +32,16 @@
 - **Preferred Option:**  
   Use PostgreSQL to persist user sessions, file metadata, and user information.
 - **Persistence Strategy:**  
-  - Incrementally persist session data as the user progresses through each step (e.g., after uploading a file, entering their name, etc.).
-  - Track session status with a field such as `incomplete`, `pending_verification`, or `complete`.
-  - When the user verifies their email, update the session status to `complete`.
-  - Allow users to resume incomplete sessions by retrieving their session data using the UUID.
-  - Implement housekeeping routines to periodically clean up sessions with `incomplete` or `pending_verification` status that have been inactive for a defined period.
+  - Only persist sessions that are either pending email verification or complete (i.e., email has been verified).
+  - If a user leaves a session before providing their email address, immediately delete any uploaded files from S3 and do not persist the session in the database.
+  - When a user provides their email address, store the session as pending verification. Once the user clicks the unique verification link (which expires after use), update the session to complete.
+  - There is no need to track or sync multiple session statuses between frontend and backend; the workflow is simple enough to start fresh if a user abandons a session.
+  - No housekeeping jobs are required, as incomplete sessions and their data are deleted immediately.
 - **Data Fields to Store:**
   - `uuid` (unique identifier for the session/user)
   - `name` (user's name)
   - `email` (user's email address)
   - `timestamps` (created_at, updated_at, completed_at)
-  - `workflow_state` (e.g., incomplete, pending_verification, complete)
   - `ip_address` (user's IP address)
   - `consent_personal_data` (explicit consent for storing personal data)
   - `consent_ai_training` (explicit consent for using uploaded files to train AI agent)
@@ -50,8 +49,10 @@
 - **Benefits:**  
   - Enables querying for analytics, lead tracking, and licensing/subscription management.
   - Scalable and robust for production use.
-- **Clarification Needed:**  
-  - What is the expected data retention policy?
+- **Data Retention Policy:**
+  - Incomplete sessions and their data are deleted immediately.
+  - Sessions that are pending email verification or complete are retained indefinitely as user records.
+  - Users are not notified of incomplete session deletion.
 
 ## 4. Workflow Summary
 
