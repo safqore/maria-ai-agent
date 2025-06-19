@@ -41,8 +41,7 @@
   - `email` (user's email address)
   - `timestamps` (created_at, updated_at, completed_at)
   - `ip_address` (user's IP address)
-  - `consent_personal_data` (explicit consent for storing personal data)
-  - `consent_ai_training` (explicit consent for using uploaded files to train AI agent)
+  - `consent_user_data` (explicit consent for storing personal data and using uploaded files to train the AI agent)
   - **Note:** File URLs are not stored; all files are stored in S3 under a folder named after the UUID, tying all files to the user/session.
 - **Benefits:**  
   - Enables querying for analytics, lead tracking, and licensing/subscription management.
