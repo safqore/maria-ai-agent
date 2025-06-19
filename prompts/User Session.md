@@ -37,11 +37,20 @@
   - When the user verifies their email, update the session status to `complete`.
   - Allow users to resume incomplete sessions by retrieving their session data using the UUID.
   - Implement housekeeping routines to periodically clean up sessions with `incomplete` or `pending_verification` status that have been inactive for a defined period.
+- **Data Fields to Store:**
+  - `uuid` (unique identifier for the session/user)
+  - `name` (user's name)
+  - `email` (user's email address)
+  - `timestamps` (created_at, updated_at, completed_at)
+  - `workflow_state` (e.g., incomplete, pending_verification, complete)
+  - `ip_address` (user's IP address)
+  - `consent_personal_data` (explicit consent for storing personal data)
+  - `consent_ai_training` (explicit consent for using uploaded files to train AI agent)
+  - **Note:** File URLs are not stored; all files are stored in S3 under a folder named after the UUID, tying all files to the user/session.
 - **Benefits:**  
   - Enables querying for analytics, lead tracking, and licensing/subscription management.
   - Scalable and robust for production use.
 - **Clarification Needed:**  
-  - What specific data fields should be stored for each session/user? (e.g., name, email, file URLs, timestamps, workflow state)
   - What is the expected data retention policy?
 
 ## 4. Workflow Summary
