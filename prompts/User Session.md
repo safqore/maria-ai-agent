@@ -23,7 +23,7 @@
 - **Backend:**  
   - Require the UUID in all relevant endpoints.
   - Namespace file storage and user data by UUID.
-  - The frontend (React) will generate a UUID at the start of the workflow if one does not already exist in localStorage. To ensure uniqueness, the backend (Flask) will provide an endpoint to generate and/or validate UUIDs. If a UUID is found to not be unique, the backend will generate a new unique UUID and all relevant data will be moved to this new UUID. This ensures the integrity of user sessions and associated data. The bot and all user data will be referenced by this unique UUID.
+  - The frontend (React) will generate a UUID at the start of the workflow if one does not already exist in localStorage. To ensure uniqueness, the backend (Flask) will provide an endpoint to generate and/or validate UUIDs. The backend will check against all existing UUIDs in the database and continue generating new UUIDs until a unique one is found. Data migration or UUID conflict handling is not required, as a unique UUID will always be ensured before use.
 
 ## 3. Data Persistence (Database)
 
@@ -52,7 +52,7 @@
   - Sessions that are pending email verification or complete are retained indefinitely as user records.
   - Users are not notified of incomplete session deletion.
 - **Audit Logging:**
-  - An audit table will be maintained to record key user actions (e.g., consent withdrawal, account deletion) to ensure traceability without retaining personal data after deletion.
+  - An audit table will be maintained to record all significant user and system events (not just key actions) to provide a full chronology of activity for traceability and compliance.
 
 ## 4. Workflow Summary
 
@@ -75,17 +75,16 @@
   - Data portability: Users can request a copy of their data in a portable format.
   - Data rectification: Users can request corrections to their stored data if inaccurate.
   - Data retention: Data is only retained for as long as necessary for the stated purposes.
-  - **IP Address Disclosure:** Users are informed in the privacy notice that their IP address is collected for analytics purposes to understand geographic interest in the software. No explicit disclosure is currently planned, but this can be revisited if needed.
+  - **IP Address Disclosure:** Users are informed in the privacy notice that their IP address is collected for analytics purposes to understand geographic interest in the software. A link to the privacy notice will be presented in the chatbot UI, and users must explicitly agree to it in the chatbot interface to provide explicit consent.
 
 ---
 
 ## Open Questions & Next Steps
 
 - Session persistence: If a user does not complete their session, they will start from the beginning on their next visit. Users cannot delete or reset their session manually.
-- UUID uniqueness: The UUID is a required, unique key for each session. The system must ensure that UUIDs are never duplicated and are always generated for every session. The backend will provide an endpoint to generate/validate UUIDs and handle any edge cases by moving data to a new unique UUID if necessary.
-- Error handling: If an error occurs (e.g., on the chatbot frontend), display a user-friendly message such as: "The system has encountered an error, which has been notified to the administrator to investigate. Please try again later." An email with relevant logs (including user UUID, error logs, timestamp, and user actions leading to the error, limited to the first 200 characters of the log) will be sent to a configurable admin address for review. Emails are sent immediately, with no batching.
-- Define the exact schema for PostgreSQL (fields, relationships), including the audit table for user actions.
-- Proceed with a draft PostgreSQL schema and refine as needed.
+- UUID uniqueness: The UUID is a required, unique key for each session. The system must ensure that UUIDs are never duplicated and are always generated for every session. The backend will provide an endpoint to generate/validate UUIDs and will only use a UUID once uniqueness is confirmed. Data migration or conflict handling is not required.
+- Error handling: If an error occurs (e.g., on the chatbot frontend), display a user-friendly message such as: "The system has encountered an error, which has been notified to the administrator to investigate. Please try again later." An email with relevant logs (including user UUID, error logs, timestamp, and user actions leading to the error, limited to the first 200 characters of the log, with a reference to the full log) will be sent to a configurable admin address for review. Emails are sent immediately, with no batching.
+- Define the exact schema for PostgreSQL (fields, relationships), including only the user session and audit tables for now.
 
 ---
 
