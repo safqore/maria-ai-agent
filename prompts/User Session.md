@@ -88,4 +88,12 @@
 
 ---
 
+## Implementation Notes & Best Practices
+
+- The chatbot UI must require users to explicitly agree to the privacy notice before proceeding. The privacy notice should be easily accessible via a link in the chatbot interface.
+- Audit logging should include a timestamp, event type, user UUID, and any relevant metadata for each event to ensure a complete and traceable record.
+- For error log references in admin notifications, ensure the full log is accessible to administrators (e.g., in a secure log file or database), in addition to the truncated message sent by email.
+
+---
+
 This document will guide the implementation and ensure clarity for all contributors. Please review and provide feedback or further requirements.
