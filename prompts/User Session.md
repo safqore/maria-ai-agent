@@ -22,6 +22,7 @@
 - **Backend:**  
   - Require the UUID in all relevant endpoints.
   - Namespace file storage and user data by UUID.
+  - The frontend (React) will generate a UUID at the start of the workflow if one does not already exist in localStorage. To ensure uniqueness, the backend (Flask) will provide an endpoint to generate and/or validate UUIDs. If a UUID is found to not be unique, the backend will generate a new unique UUID and all relevant data will be moved to this new UUID. This ensures the integrity of user sessions and associated data. The bot and all user data will be referenced by this unique UUID.
 
 ## 3. Data Persistence (Database)
 
@@ -64,25 +65,25 @@
 - **Security Measures:**
   - All data transmission should use standard encryption protocols (e.g., SSL/TLS).
 - **GDPR Compliance:**
-  - Explicit user consent is collected for storing personal data and for using uploaded files to train the AI agent. Users can withdraw consent or delete their account at any time via the chatbot interface provided after verification. The timestamp of consent is logged in the database.
+  - Explicit user consent is collected for storing personal data and for using uploaded files to train the AI agent. Users can withdraw consent or delete their account at any time via the chatbot interface provided after verification. The timestamp of consent is logged in the database. Once confirmed, deletion is immediate and irreversible.
   - On the user’s bot webpage, options will be available to withdraw consent, request data access, request a copy, or request correction. These requests will be emailed to a designated address and fulfilled as soon as possible.
   - Data minimization: Only essential data is collected and stored.
   - Data access: Users can request access to the data stored about them.
   - Data portability: Users can request a copy of their data in a portable format.
   - Data rectification: Users can request corrections to their stored data if inaccurate.
   - Data retention: Data is only retained for as long as necessary for the stated purposes.
+  - **IP Address Disclosure:** Users are informed that their IP address is collected for analytics purposes to understand geographic interest in the software. No explicit disclosure is currently planned, but this can be revisited if needed.
 
 ---
 
 ## Open Questions & Next Steps
 
 - Session persistence: If a user does not complete their session, they will start from the beginning on their next visit. Users cannot delete or reset their session manually.
-- UUID uniqueness: The UUID is a required, unique key for each session. The system must ensure that UUIDs are never duplicated and are always generated for every session.
-- Error handling: If an error occurs (e.g., on the chatbot frontend), display a user-friendly message such as: "The system has encountered an error, which has been notified to the administrator to investigate. Please try again later." An email with relevant logs will be sent to a configurable admin address for review.
+- UUID uniqueness: The UUID is a required, unique key for each session. The system must ensure that UUIDs are never duplicated and are always generated for every session. The backend will provide an endpoint to generate/validate UUIDs and handle any edge cases by moving data to a new unique UUID if necessary.
+- Error handling: If an error occurs (e.g., on the chatbot frontend), display a user-friendly message such as: "The system has encountered an error, which has been notified to the administrator to investigate. Please try again later." An email with relevant logs (including user UUID, error logs, timestamp, and user actions leading to the error) will be sent to a configurable admin address for review. Emails are sent immediately, with no batching.
+- Pending-verification sessions will be deleted after 30 minutes if not completed. This is checked on access/verification attempt, not via a scheduled job.
 - Multi-device/browser support: Session resumption is not supported. If a user joins from a different device or browser, a new session will be started.
 - Define the exact schema for PostgreSQL (fields, relationships).
-- Pending-verification sessions will be deleted after 30 minutes if not completed.
-- IP addresses are stored for analytics purposes to understand geographic interest in the software. No explicit disclosure is currently planned, but this can be revisited if needed.
 - Proceed with a draft PostgreSQL schema and refine as needed.
 
 ---
