@@ -9,13 +9,9 @@
 - **Clarification & Best Practices:**  
   - The session/user ID should persist across browser reloads. Store the UUID in localStorage to uniquely identify the same user every time they return to the application from the same browser. The frontend should read the UUID from localStorage and include it in all API requests to the backend.
   - **Handling abandoned sessions:**  
-    - **Session Expiry:** Implement a timeout (e.g., 7 or 30 days) after which inactive sessions are considered abandoned and can be cleaned up.
-    - **Soft Deletion/Archival:** Mark incomplete or abandoned sessions in the database for potential later cleanup, rather than deleting immediately.
-    - **User Prompt on Return:** When a user returns with an incomplete session, prompt them to continue or discard the previous session.
-    - **Periodic Cleanup Job:** Schedule a background job to remove or archive sessions that have been inactive past a certain threshold.
-    - **Analytics:** Track abandonment rates to inform UX improvements.
-    - **Session Completion:** A session is only considered complete after the user has provided their email address and verified it by clicking a link sent to their email. Until this point, all sessions are considered partial/incomplete. Partial sessions are not treated differently, but must be cleaned up to avoid unnecessary storage usage.
-    - **S3 Storage Management:** Incomplete sessions that have uploaded files to S3 should have those files removed during housekeeping to free up storage space.
+    - Incomplete sessions and their data are deleted immediately. No housekeeping jobs or user prompts are needed.
+    - **Session Completion:** A session is only considered complete after the user has provided their email address and verified it by clicking a link sent to their email. Until this point, all sessions are considered partial/incomplete and are deleted immediately if abandoned.
+    - **S3 Storage Management:** Incomplete sessions that have uploaded files to S3 should have those files removed immediately as part of the deletion process.
 
 ## 2. Frontend & Backend Integration
 
@@ -34,7 +30,7 @@
 - **Persistence Strategy:**  
   - Only persist sessions that are either pending email verification or complete (i.e., email has been verified).
   - If a user leaves a session before providing their email address, immediately delete any uploaded files from S3 and do not persist the session in the database.
-  - When a user provides their email address, store the session as pending verification. Once the user clicks the unique verification link (which expires after use), update the session to complete.
+  - When a user provides their email address, store the session as pending verification. Once the user clicks the unique verification link (which expires after use or after 30 minutes), update the session to complete. If the link expires before use, delete the user's files from S3 and remove their record from the users table. If a user tries to verify after the link has expired, inform them that the link has expired and they must start again.
   - There is no need to track or sync multiple session statuses between frontend and backend; the workflow is simple enough to start fresh if a user abandons a session.
   - No housekeeping jobs are required, as incomplete sessions and their data are deleted immediately.
 - **Data Fields to Store:**
@@ -68,8 +64,8 @@
 - **Security Measures:**
   - All data transmission should use standard encryption protocols (e.g., SSL/TLS).
 - **GDPR Compliance:**
-  - Explicit user consent is collected for storing personal data and for using uploaded files to train the AI agent.
-  - Users will have the ability to request deletion of their account and associated data at any time.
+  - Explicit user consent is collected for storing personal data and for using uploaded files to train the AI agent. Users can withdraw consent or delete their account at any time via the chatbot interface provided after verification. The timestamp of consent is logged in the database.
+  - On the user’s bot webpage, options will be available to withdraw consent, request data access, request a copy, or request correction. These requests will be emailed to a designated address and fulfilled as soon as possible.
   - Data minimization: Only essential data is collected and stored.
   - Data access: Users can request access to the data stored about them.
   - Data portability: Users can request a copy of their data in a portable format.
@@ -82,9 +78,12 @@
 
 - Session persistence: If a user does not complete their session, they will start from the beginning on their next visit. Users cannot delete or reset their session manually.
 - UUID uniqueness: The UUID is a required, unique key for each session. The system must ensure that UUIDs are never duplicated and are always generated for every session.
-- Error handling: If an error occurs (e.g., on the chatbot frontend), display a user-friendly message such as: "The system has encountered an error, which has been notified to the administrator to investigate. Please try again later."
+- Error handling: If an error occurs (e.g., on the chatbot frontend), display a user-friendly message such as: "The system has encountered an error, which has been notified to the administrator to investigate. Please try again later." An email with relevant logs will be sent to a configurable admin address for review.
 - Multi-device/browser support: Session resumption is not supported. If a user joins from a different device or browser, a new session will be started.
 - Define the exact schema for PostgreSQL (fields, relationships).
+- Pending-verification sessions will be deleted after 30 minutes if not completed.
+- IP addresses are stored for analytics purposes to understand geographic interest in the software. No explicit disclosure is currently planned, but this can be revisited if needed.
+- Proceed with a draft PostgreSQL schema and refine as needed.
 
 ---
 
