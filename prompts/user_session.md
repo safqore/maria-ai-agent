@@ -1,5 +1,37 @@
 # User Session & File Association Strategy
 
+## Clarifications & Implementation Decisions (June 2025)
+
+The following points clarify and document key implementation decisions for UUID/session management and related flows:
+
+1. **Session Reset on UUID Loss/Tampering:**
+   - If the UUID is missing or tampered with (e.g., deleted or changed in localStorage), the frontend will immediately generate a new UUID and start a new session. No warning or confirmation is required before data loss. The user will see: “Your session has been reset due to a technical issue. Please start again.”
+   - There is no attempt to recover or tie back previously uploaded files to a new UUID. Orphaned files are subject to backend cleanup policy.
+
+2. **Backend UUID Uniqueness & File Migration:**
+   - On session persistence, the backend checks if the UUID is unique. If not, and the UUID has not been tampered with, the backend will generate a new unique UUID and move all files on S3 to the new UUID folder, ensuring all data (name, files, email) is tied to the new UUID before persisting.
+   - If the UUID has been tampered with (detected by backend or frontend), the user receives the same reset message as above, and a new session is started.
+
+3. **S3 File Namespacing:**
+   - All file uploads are immediately namespaced as `uploads/{uuid}/filename`. There is no need to support legacy or flat uploads, as this is a greenfield implementation.
+
+4. **UUID Requirement for All Endpoints:**
+   - All backend endpoints that handle user data or actions require and validate the UUID.
+
+5. **Unit Test Coverage:**
+   - Basic tampering detection is sufficient for unit tests. No need to simulate rapid or advanced tampering scenarios.
+
+6. **Multi-Device/Tab Support:**
+   - No synchronization of UUIDs across devices or tabs is required. Each device/session is independent.
+
+7. **UUID Generation Responsibility:**
+   - The frontend is responsible for UUID generation, except in the case of backend-detected collisions, where the backend will generate a new UUID and migrate files as needed.
+
+8. **Consent Timing:**
+   - UUID/session logic can proceed before explicit user consent. If consent is later denied, all relevant records will be removed as per policy.
+
+---
+
 ## 1. User/Session Identifier
 
 - **Approach:**  
