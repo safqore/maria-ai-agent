@@ -19,6 +19,32 @@
     - **S3 Storage Management:** Incomplete sessions that have uploaded files to S3 should have those files removed immediately as part of the deletion process.
   - UUID generation occurs prior to any communication with the user, as it is the primary key for all session data. This process is handled silently and transparently to the user.
 
+## 1.1 UUID Session Integrity & Tampering Handling
+
+- The frontend generates a UUID and stores it in localStorage when a user action requires it (e.g., file upload, session persistence).
+- All uploads and API calls include this UUID.
+- If the UUID is missing from localStorage (e.g., user deleted it), a new UUID is generated and a new session is started. Any previous files uploaded under a different UUID become orphaned and are subject to backend cleanup policy.
+- If the UUID in localStorage is changed (tampered with) by the user, the backend will detect that the UUID does not match any known session or S3 folder for the current user’s workflow.
+- On session persistence (when the user provides their name/email), the backend checks that the UUID:
+  - Matches the S3 folder containing the user’s uploaded files (if any).
+  - Is not already associated with a completed or pending session.
+- If the UUID is invalid, missing, or does not match the S3 folder, the backend rejects the request and returns an error.
+- If the backend detects a tampered or invalid session, the frontend:
+  - Shows a user-friendly message: “Your session has been reset due to a technical issue. Please start again.”
+  - Clears the UUID from localStorage and starts a new session.
+- No attempt is made to recover or merge with previous uploads or sessions if the UUID is missing or invalid.
+- The system assumes that if a user deletes or tampers with the UUID, they are intentionally or unintentionally starting a new session. This approach is simple, robust, and user-proof: tampering always results in a fresh session, and no broken associations or confusing recovery flows.
+- The backend logs all tampering/invalid session events for audit and compliance, and cleans up orphaned files according to the incomplete session policy.
+
+## 1.2 Future Considerations & Edge Cases
+
+- If multi-device or multi-tab support is introduced, UUID management and synchronization may need to be revisited to ensure session continuity across contexts.
+- If user experience requires resuming incomplete sessions, a more sophisticated recovery mechanism (e.g., backend session lookup, user authentication) may be needed.
+- The backend’s orphaned file cleanup policy should be clearly defined and implemented to avoid storage bloat and privacy issues.
+- If the system ever needs to support merging or recovering sessions, clear rules and user flows must be established to avoid confusion and maintain data integrity.
+- All tampering, invalid session, and orphaned file events should be logged for audit and compliance purposes.
+- Regularly review and test the session management logic to ensure it remains robust as the application evolves.
+
 ## 2. Frontend & Backend Integration
 
 - **Frontend:**  
