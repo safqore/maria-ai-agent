@@ -8,6 +8,10 @@
   This ensures all files and data are associated with the correct user, even in a multi-user environment.
 - **Clarification & Best Practices:**  
   - The session/user ID should persist across browser reloads. Store the UUID in localStorage to uniquely identify the same user every time they return to the application from the same browser. The frontend should read the UUID from localStorage and include it in all API requests to the backend.
+  - **UUID Generation & Uniqueness Strategy:**
+    - The frontend generates a UUID at app start (before any user interaction) if one does not already exist in localStorage. This UUID is used to associate all user actions and file uploads from the outset, ensuring a consistent identifier for the session.
+    - The backend only checks for UUID uniqueness when the session is about to be persisted (i.e., when the user provides their name and the session is created in the database). If a collision is detected, the backend generates a new UUID, returns it to the frontend, and the frontend updates its localStorage and state accordingly.
+    - This approach ensures robust tracking from the first interaction, avoids unnecessary backend calls for users who never proceed past the initial screen, and guarantees UUID uniqueness for persisted sessions.
   - **Handling abandoned sessions:**  
     - Incomplete sessions and their data are deleted immediately. No housekeeping jobs or user prompts are needed.
     - **Session Completion:** A session is only considered complete after the user has provided their email address and verified it by clicking a link sent to their email. Until this point, all sessions are considered partial/incomplete and are deleted immediately if abandoned.
