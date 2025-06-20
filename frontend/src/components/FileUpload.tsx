@@ -4,6 +4,7 @@ import { API_BASE_URL } from '../utils/config';
 interface FileUploadProps {
   onFileUploaded: (file: File) => void;
   onDone: () => void;
+  sessionUUID: string; // Add sessionUUID prop for associating uploads
 }
 
 interface UploadingFile {
@@ -18,7 +19,7 @@ const MAX_FILES = 3;
 const MAX_SIZE_MB = 5;
 const ACCEPTED_TYPE = 'application/pdf';
 
-const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone }) => {
+const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone, sessionUUID }) => {
   const [files, setFiles] = useState<UploadingFile[]>([]);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -60,6 +61,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone }) => {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('session_uuid', sessionUUID); // Attach UUID to upload
       const xhr = new XMLHttpRequest();
       xhr.open('POST', `${API_BASE_URL}/upload`);
       xhr.upload.onprogress = (e) => {

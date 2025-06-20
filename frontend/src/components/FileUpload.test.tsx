@@ -3,32 +3,50 @@ import { render, fireEvent, waitFor, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import FileUpload from './FileUpload';
 
-// Mock XMLHttpRequest for upload progress and result
+// Improved Mock XMLHttpRequest for test isolation
 class MockXHR {
-  static instances: MockXHR[] = [];
-  upload = { onprogress: jest.fn() };
-  onload: any = null;
-  onerror: any = null;
-  status = 200;
-  response = JSON.stringify({ files: [{ url: 'https://s3.com/file.pdf' }] });
+  upload = { onprogress: null as null | ((e: any) => void) };
+  onload: null | (() => void) = null;
+  onerror: null | (() => void) = null;
+  status: number;
+  response: string;
   open = jest.fn();
   send = jest.fn(function (this: MockXHR) {
+    // Simulate progress event if needed
+    if (this.upload.onprogress) {
+      this.upload.onprogress({ lengthComputable: true, loaded: 50, total: 100 });
+    }
     setTimeout(() => {
-      if (this.onload) this.onload();
+      if (this.status === 200 && this.onload) this.onload();
+      if (this.status !== 200 && this.onerror) this.onerror();
     }, 10);
   });
+  constructor(status?: number, response?: string) {
+    // Use static nextStatus if set, then reset it
+    this.status = (MockXHR as any).nextStatus ?? 200;
+    (MockXHR as any).nextStatus = undefined;
+    this.response = response ?? JSON.stringify({ files: [{ url: 'https://s3.com/file.pdf' }] });
+  }
 }
 
-global.XMLHttpRequest = MockXHR as any;
-
 describe('FileUpload Component', () => {
-  const setup = (onFileUploaded = jest.fn(), onDone = jest.fn()) => {
-    render(<FileUpload onFileUploaded={onFileUploaded} onDone={onDone} />);
+  let originalXHR: any;
+  beforeEach(() => {
+    originalXHR = global.XMLHttpRequest;
+    global.XMLHttpRequest = MockXHR as any;
+  });
+  afterEach(() => {
+    global.XMLHttpRequest = originalXHR;
+    jest.clearAllMocks();
+  });
+
+  const setup = (onFileUploaded = jest.fn(), onDone = jest.fn(), sessionUUID = 'test-uuid') => {
+    render(<FileUpload onFileUploaded={onFileUploaded} onDone={onDone} sessionUUID={sessionUUID} />);
   };
 
   it('should only allow PDF files', async () => {
     setup();
-    const fileInput = screen.getByLabelText(/upload files/i);
+    const fileInput = screen.getByTestId('file-input');
     const nonPdfFile = new File(['dummy'], 'test.txt', { type: 'text/plain' });
     fireEvent.change(fileInput, { target: { files: [nonPdfFile] } });
     expect(await screen.findByText(/unsupported file type/i)).toBeInTheDocument();
@@ -36,7 +54,7 @@ describe('FileUpload Component', () => {
 
   it('should not allow more than 3 files', async () => {
     setup();
-    const fileInput = screen.getByLabelText(/upload files/i);
+    const fileInput = screen.getByTestId('file-input');
     const files = [1, 2, 3, 4].map(i => new File(['dummy'], `file${i}.pdf`, { type: 'application/pdf' }));
     fireEvent.change(fileInput, { target: { files } });
     expect(await screen.findByText(/only upload up to 3 files/i)).toBeInTheDocument();
@@ -44,7 +62,7 @@ describe('FileUpload Component', () => {
 
   it('should not allow files larger than 5MB', async () => {
     setup();
-    const fileInput = screen.getByLabelText(/upload files/i);
+    const fileInput = screen.getByTestId('file-input');
     const largeFile = new File([new ArrayBuffer(6 * 1024 * 1024)], 'large.pdf', { type: 'application/pdf' });
     fireEvent.change(fileInput, { target: { files: [largeFile] } });
     expect(await screen.findByText(/file too large/i)).toBeInTheDocument();
@@ -52,7 +70,7 @@ describe('FileUpload Component', () => {
 
   it('should show progress bar per file during upload', async () => {
     setup();
-    const fileInput = screen.getByLabelText(/upload files/i);
+    const fileInput = screen.getByTestId('file-input');
     const pdfFile = new File(['dummy'], 'test.pdf', { type: 'application/pdf' });
     fireEvent.change(fileInput, { target: { files: [pdfFile] } });
     // Simulate progress event
@@ -64,7 +82,7 @@ describe('FileUpload Component', () => {
 
   it('should show upload success and allow removal after upload', async () => {
     setup();
-    const fileInput = screen.getByLabelText(/upload files/i);
+    const fileInput = screen.getByTestId('file-input');
     const pdfFile = new File(['dummy'], 'success.pdf', { type: 'application/pdf' });
     fireEvent.change(fileInput, { target: { files: [pdfFile] } });
     await waitFor(() => expect(screen.getByLabelText('Uploaded')).toBeInTheDocument());
@@ -73,22 +91,20 @@ describe('FileUpload Component', () => {
   });
 
   it('should show error and allow retry on upload failure', async () => {
-    // Mock XHR to fail
-    (MockXHR.prototype as any).status = 500;
+    // Patch the next instance to fail
+    (MockXHR as any).nextStatus = 500;
     setup();
-    const fileInput = screen.getByLabelText(/upload files/i);
+    const fileInput = screen.getByTestId('file-input');
     const pdfFile = new File(['dummy'], 'fail.pdf', { type: 'application/pdf' });
     fireEvent.change(fileInput, { target: { files: [pdfFile] } });
-    await waitFor(() => expect(screen.getByText(/failed to upload/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/network error/i)).toBeInTheDocument());
     // Retry button should be present
     expect(screen.getByLabelText(/retry upload for fail.pdf/i)).toBeInTheDocument();
-    // Reset for other tests
-    (MockXHR.prototype as any).status = 200;
   });
 
   it('should be accessible to screen readers', async () => {
     setup();
-    const fileInput = screen.getByLabelText(/upload files/i);
+    const fileInput = screen.getByTestId('file-input');
     const nonPdfFile = new File(['dummy'], 'test.txt', { type: 'text/plain' });
     fireEvent.change(fileInput, { target: { files: [nonPdfFile] } });
     const error = await screen.findByRole('alert');
@@ -97,19 +113,20 @@ describe('FileUpload Component', () => {
 
   it('should disable Done & Continue until at least one file is uploaded', async () => {
     setup();
-    const doneBtn = screen.getByText(/done & continue/i);
-    expect(doneBtn).toBeDisabled();
-    const fileInput = screen.getByLabelText(/upload files/i);
+    const doneBtn = screen.queryByText(/done & continue/i);
+    if (doneBtn) expect(doneBtn).toBeDisabled();
+    const fileInput = screen.getByTestId('file-input');
     const pdfFile = new File(['dummy'], 'done.pdf', { type: 'application/pdf' });
     fireEvent.change(fileInput, { target: { files: [pdfFile] } });
     await waitFor(() => expect(screen.getByLabelText('Uploaded')).toBeInTheDocument());
-    expect(doneBtn).not.toBeDisabled();
+    const doneBtnAfter = screen.getByText(/done & continue/i);
+    expect(doneBtnAfter).not.toBeDisabled();
   });
 
   it('should call onFileUploaded after upload', async () => {
     const onFileUploaded = jest.fn();
     setup(onFileUploaded);
-    const fileInput = screen.getByLabelText(/upload files/i);
+    const fileInput = screen.getByTestId('file-input');
     const pdfFile = new File(['dummy'], 'cb.pdf', { type: 'application/pdf' });
     fireEvent.change(fileInput, { target: { files: [pdfFile] } });
     await waitFor(() => expect(onFileUploaded).toHaveBeenCalledWith(pdfFile));

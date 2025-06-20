@@ -9,7 +9,11 @@ import { Message } from '../utils/chatUtils';
 const welcomeMessage = "👋 Hi there! I’m Maria, your AI guide at Safqore. Ready to discover how we can help you grow?";
 const initialBotMessage: Message = { text: welcomeMessage, isUser: false, isTyping: true, id: 0 };
 
-function ChatContainer() {
+interface ChatContainerProps {
+  sessionUUID: string;
+}
+
+function ChatContainer({ sessionUUID }: ChatContainerProps) {
   const [messages, setMessages] = useState<Message[]>([initialBotMessage]);
   const [userInput, setUserInput] = useState<string>('');
   const [isInputDisabled, setIsInputDisabled] = useState<boolean>(true);
@@ -56,6 +60,8 @@ function ChatContainer() {
     setIsInputDisabled(false);
   };
 
+  // sessionUUID is now available for all API/file upload calls
+
   return (
     <div className="chat-container">
       <ChatHistory 
@@ -68,6 +74,7 @@ function ChatContainer() {
         onFileUploadDone={onFileUploadDone}
         currentState={fsm.getState()} 
         isButtonGroupVisible={isButtonGroupVisible}
+        sessionUUID={sessionUUID}
       />
       <ChatInputArea
         userInput={userInput}

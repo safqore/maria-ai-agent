@@ -13,9 +13,10 @@ interface ChatHistoryProps {
   isButtonGroupVisible: boolean;
   onFileUploaded: (file: File) => void;
   onFileUploadDone: () => void;
+  sessionUUID: string; // Added for downstream use (e.g., FileUpload)
 }
 
-const ChatHistory: React.FC<ChatHistoryProps> = ({ messages, onTypingComplete, onButtonClick, onFileUploaded, onFileUploadDone, currentState, isButtonGroupVisible }) => {
+const ChatHistory: React.FC<ChatHistoryProps> = ({ messages, onTypingComplete, onButtonClick, onFileUploaded, onFileUploadDone, currentState, isButtonGroupVisible, sessionUUID }) => {
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -69,7 +70,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({ messages, onTypingComplete, o
         />
       )}
       {currentState === States.UPLOAD_DOCS && (
-        <FileUpload onFileUploaded={onFileUploaded} onDone={onFileUploadDone} />
+        <FileUpload onFileUploaded={onFileUploaded} onDone={onFileUploadDone} sessionUUID={sessionUUID} />
       )}
       <div ref={endOfMessagesRef} />
     </div>
