@@ -13,3 +13,21 @@ export function getOrCreateSessionUUID(): string {
   }
   return uuid;
 }
+
+/**
+ * Resets the session UUID, clearing any existing value and generating a new one.
+ * Use this when the backend signals a tampered/invalid session.
+ */
+export function resetSessionUUID(): string {
+  localStorage.removeItem('session_uuid');
+  const newUUID = uuidv4();
+  localStorage.setItem('session_uuid', newUUID);
+  return newUUID;
+}
+
+/**
+ * Updates the session UUID to a new value (e.g., after backend collision resolution).
+ */
+export function updateSessionUUID(newUUID: string): void {
+  localStorage.setItem('session_uuid', newUUID);
+}

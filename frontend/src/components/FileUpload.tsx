@@ -81,6 +81,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone, session
             f.file === file ? { ...f, status: 'uploaded', progress: 100, url: JSON.parse(xhr.response).files?.[0]?.url } : f
           ));
           onFileUploaded(file);
+        } else if (xhr.status === 400 && xhr.responseText.includes('invalid session')) {
+          // Handle backend invalid/tampered UUID error
+          window.location.reload(); // Optionally, trigger a full reload to reset session
         } else {
           setFiles(prev => prev.map(f =>
             f.file === file ? { ...f, status: 'error', error: 'Failed to upload' } : f
@@ -105,11 +108,18 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone, session
     if (fileObj?.status === 'uploaded' && fileObj.url) {
       // Backend delete request
       try {
-        await fetch(`${API_BASE_URL}/delete`, {
+        const response = await fetch(`${API_BASE_URL}/delete`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: fileObj.file.name }),
+          body: JSON.stringify({ filename: fileObj.file.name, session_uuid: getOrCreateSessionUUID() }),
         });
+        if (response.status === 400) {
+          const text = await response.text();
+          if (text.includes('invalid session')) {
+            window.location.reload(); // Reset session on invalid UUID
+            return;
+          }
+        }
       } catch (e) {
         // Optionally show error
       }

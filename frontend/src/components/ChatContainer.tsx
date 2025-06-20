@@ -5,6 +5,7 @@ import useChatStateMachine from '../hooks/useChatStateMachine';
 import '../styles.css';
 import { Transitions } from '../state/FiniteStateMachine';
 import { Message } from '../utils/chatUtils';
+import { resetSessionUUID } from '../utils/sessionUtils';
 
 const welcomeMessage = "👋 Hi there! I’m Maria, your AI guide at Safqore. Ready to discover how we can help you grow?";
 const initialBotMessage: Message = { text: welcomeMessage, isUser: false, isTyping: true, id: 0 };
@@ -17,6 +18,7 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
   const [messages, setMessages] = useState<Message[]>([initialBotMessage]);
   const [userInput, setUserInput] = useState<string>('');
   const [isInputDisabled, setIsInputDisabled] = useState<boolean>(true);
+  const [sessionError, setSessionError] = useState<string | null>(null);
   const { fsm, buttonClickHandler, typingCompleteHandler, processTextInputHandler, fileUploadHandler, isButtonGroupVisible } = useChatStateMachine({
     messages,
     setMessages,
@@ -32,6 +34,20 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
       setIsInputDisabled(true);
     }
   }, [messages, fsm]);
+
+  // Error handler for session reset
+  const handleSessionReset = () => {
+    resetSessionUUID();
+    setSessionError('Your session has been reset due to a technical issue. Please start again.');
+    setMessages([{
+      text: 'Your session has been reset due to a technical issue. Please start again.',
+      isUser: false,
+      isTyping: false,
+      id: Date.now(),
+    }]);
+    setUserInput('');
+    setIsInputDisabled(true);
+  };
 
   const inputTextChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
     setUserInput(event.target.value);
@@ -64,6 +80,9 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
 
   return (
     <div className="chat-container">
+      {sessionError && (
+        <div className="session-error-banner">{sessionError}</div>
+      )}
       <ChatHistory 
         messages={messages} 
         onTypingComplete={typingCompleteHandler} 
