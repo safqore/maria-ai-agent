@@ -1,22 +1,16 @@
 import { useEffect, useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import { getOrCreateSessionUUID } from '../utils/sessionUtils';
 
 /**
  * Custom React hook to manage a persistent session UUID.
- * - Checks localStorage for an existing UUID on mount.
- * - Generates and stores a new UUID if not present.
  * - Returns the UUID for use in API calls and uploads.
+ * - If the UUID is deleted from localStorage during a session, will always return a valid one.
  */
 export function useSessionUUID(): string {
   const [sessionUUID, setSessionUUID] = useState<string>('');
 
   useEffect(() => {
-    let uuid = localStorage.getItem('session_uuid');
-    if (!uuid) {
-      uuid = uuidv4();
-      localStorage.setItem('session_uuid', uuid);
-    }
-    setSessionUUID(uuid);
+    setSessionUUID(getOrCreateSessionUUID());
   }, []);
 
   return sessionUUID;

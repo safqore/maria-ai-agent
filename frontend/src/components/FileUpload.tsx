@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { API_BASE_URL } from '../utils/config';
+import { getOrCreateSessionUUID } from '../utils/sessionUtils';
 
 interface FileUploadProps {
   onFileUploaded: (file: File) => void;
@@ -61,7 +62,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone, session
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('session_uuid', sessionUUID); // Attach UUID to upload
+      // Always ensure a valid UUID is present before upload
+      const uuid = getOrCreateSessionUUID();
+      formData.append('session_uuid', uuid);
       const xhr = new XMLHttpRequest();
       xhr.open('POST', `${API_BASE_URL}/upload`);
       xhr.upload.onprogress = (e) => {
