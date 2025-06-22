@@ -4,7 +4,7 @@ Maria is an AI agent that autonomously creates and orchestrates other AI agents.
 
 ## Project Structure
 
-- **backend/**: Flask backend and orchestration logic
+- **backend/**: Modular Flask backend (see `backend/app/` for routes, utils, and db logic)
 - **frontend/**: React + TypeScript client
 - **requirements.txt**: Python dependencies
 - **package.json**: Node.js dependencies for frontend
@@ -43,12 +43,21 @@ AWS_REGION=<REPLACE WITH REGION>
 S3_BUCKET_NAME=<REPLACE WITH BUCKET>
 ```
 
-- To run the backend Flask app:
+- To run the backend Flask app (new entry point):
 
 ```bash
 cd backend
-python app.py
+python wsgi.py
 ```
+
+- The backend supports CORS for both `http://localhost:3000` and `http://127.0.0.1:3000` for frontend integration.
+
+- To run backend tests:
+
+```bash
+PYTHONPATH=backend pytest
+```
+- Tests are located in `backend/tests/` and use pytest with all external dependencies mocked.
 
 ### 3. Frontend Setup
 
@@ -92,7 +101,7 @@ REACT_APP_API_BASE_URL=https://your-backend-url.com
 
 ## Customizing & Extending
 
-- Modify backend logic in `backend/`
+- Modify backend logic in `backend/app/`
 - Update frontend React components in `frontend/src/components/`
 
 ## Documentation & Support
