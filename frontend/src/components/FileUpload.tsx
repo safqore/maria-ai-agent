@@ -20,17 +20,28 @@ const MAX_FILES = 3;
 const MAX_SIZE_MB = 5;
 const ACCEPTED_TYPE = 'application/pdf';
 
+/**
+ * FileUpload component handles PDF file uploads, enforces session UUID checks,
+ * and manages upload state, errors, and user actions (remove, retry, done).
+ * All user actions enforce UUID checks before proceeding.
+ */
 const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone, sessionUUID }) => {
   const [files, setFiles] = useState<UploadingFile[]>([]);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  /**
+   * Validates a file for type and size constraints.
+   */
   const validateFile = (file: File): string | undefined => {
     if (file.type !== ACCEPTED_TYPE) return 'Unsupported file type';
     if (file.size > MAX_SIZE_MB * 1024 * 1024) return 'File too large';
     return undefined;
   };
 
+  /**
+   * Handles file input changes. Enforces UUID check before processing.
+   */
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     // Enforce UUID check before any file action
     getOrCreateSessionUUID();
@@ -57,6 +68,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone, session
     }
   };
 
+  /**
+   * Uploads a file to the backend. Enforces UUID check before upload.
+   */
   const uploadFile = async (file: File) => {
     setFiles(prev => prev.map(f =>
       f.file === file ? { ...f, status: 'uploading', progress: 0, error: undefined } : f
@@ -105,6 +119,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone, session
     }
   };
 
+  /**
+   * Handles file removal. Enforces UUID check before removal.
+   */
   const handleRemove = async (file: File) => {
     // Enforce UUID check before any file remove action
     getOrCreateSessionUUID();
@@ -131,12 +148,18 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone, session
     setFiles(prev => prev.filter(f => f.file !== file));
   };
 
+  /**
+   * Handles retrying a failed upload. Enforces UUID check before retry.
+   */
   const handleRetry = (file: File) => {
     // Enforce UUID check before any retry action
     getOrCreateSessionUUID();
     uploadFile(file);
   };
 
+  /**
+   * Handles the "Done & Continue" action after uploads. Enforces UUID check before continuing.
+   */
   const handleClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
