@@ -1,161 +1,100 @@
 # User Session & File Association Strategy
 
-## Clarifications & Implementation Decisions (June 2025)
+## 1. Session Lifecycle Overview
+- **Session Start:**
+  - A session begins when the frontend generates a UUID (if one does not exist in localStorage) before any user interaction.
+  - The UUID is stored in both localStorage and React state for persistence across reloads.
+- **Session Completion:**
+  - A session is only considered complete after the user provides and verifies their email address.
+  - Incomplete sessions and their data (including uploaded files) are deleted immediately if abandoned.
+- **Session Reset:**
+  - If the UUID is missing or tampered with (e.g., deleted or changed in localStorage), the frontend immediately generates a new UUID, starts a new session, and shows: “Your session has been reset due to a technical issue. Please start again.”
+  - No attempt is made to recover or tie back previously uploaded files to a new UUID. Orphaned files are subject to backend cleanup policy.
 
-The following points clarify and document key implementation decisions for UUID/session management and related flows:
+## 2. UUID Management & Integrity
+- **Generation & Storage:**
+  - The frontend is responsible for UUID generation, except in the case of backend-detected collisions.
+  - The UUID is generated at app start if not present, and is used for all user actions and file uploads.
+  - The UUID persists across browser reloads via localStorage.
+- **Validation & Tampering Detection:**
+  - The frontend checks for a valid UUID before every user action (chat, button click, file upload, API call).
+  - If the UUID is missing or invalid, a new UUID is generated and a new session is started immediately, with the reset message shown to the user.
+  - The backend validates the UUID on all endpoints. If a tampered or invalid UUID is detected, the backend returns an error, prompting the frontend to reset the session and show the reset message.
+- **Backend Uniqueness & Migration:**
+  - On session persistence (when the user provides their name/email), the backend checks if the UUID is unique and matches the S3 folder for uploaded files.
+  - If a collision is detected (but not tampering), the backend generates a new unique UUID, migrates files, and returns the new UUID to the frontend, which updates localStorage and state.
 
-1. **Session Reset on UUID Loss/Tampering:**
-   - If the UUID is missing or tampered with (e.g., deleted or changed in localStorage), the frontend will immediately generate a new UUID and start a new session. No warning or confirmation is required before data loss. The user will see: “Your session has been reset due to a technical issue. Please start again.”
-   - There is no attempt to recover or tie back previously uploaded files to a new UUID. Orphaned files are subject to backend cleanup policy.
+## 3. File Handling & Namespacing
+- **S3 Storage:**
+  - All file uploads are immediately namespaced as `uploads/{uuid}/filename`.
+  - No support for legacy or flat uploads is required.
+- **Orphaned Files:**
+  - Files uploaded under a previous or invalid UUID become orphaned and are subject to backend cleanup policy.
+  - Incomplete sessions that have uploaded files to S3 have those files removed immediately as part of the deletion process.
 
-2. **Backend UUID Uniqueness & File Migration:**
-   - On session persistence, the backend checks if the UUID is unique. If not, and the UUID has not been tampered with, the backend will generate a new unique UUID and move all files on S3 to the new UUID folder, ensuring all data (name, files, email) is tied to the new UUID before persisting.
-   - If the UUID has been tampered with (detected by backend or frontend), the user receives the same reset message as above, and a new session is started.
+## 4. Frontend & Backend Integration
+- **Frontend:**
+  - Generates and stores a UUID at workflow start if not present.
+  - Sends the UUID with every file upload and API request.
+  - Handles session reset and messaging on UUID loss/tampering.
+- **Backend:**
+  - Requires and validates the UUID on all relevant endpoints.
+  - Namespaces file storage and user data by UUID.
+  - Provides an endpoint to generate/validate UUIDs, ensuring uniqueness before use.
 
-3. **S3 File Namespacing:**
-   - All file uploads are immediately namespaced as `uploads/{uuid}/filename`. There is no need to support legacy or flat uploads, as this is a greenfield implementation.
-
-4. **UUID Requirement for All Endpoints:**
-   - All backend endpoints that handle user data or actions require and validate the UUID.
-
-5. **Unit Test Coverage:**
-   - Basic tampering detection is sufficient for unit tests. No need to simulate rapid or advanced tampering scenarios.
-
-6. **Multi-Device/Tab Support:**
-   - No synchronization of UUIDs across devices or tabs is required. Each device/session is independent.
-
-7. **UUID Generation Responsibility:**
-   - The frontend is responsible for UUID generation, except in the case of backend-detected collisions, where the backend will generate a new UUID and migrate files as needed.
-
-8. **Consent Timing:**
-   - UUID/session logic can proceed before explicit user consent. If consent is later denied, all relevant records will be removed as per policy.
-
----
-
-## 1. User/Session Identifier
-
-- **Approach:**  
-  Each user interaction (from the point they provide their name, email, and upload files) is tied to a unique session or user identifier (UUID).
-- **Rationale:**  
-  This ensures all files and data are associated with the correct user, even in a multi-user environment.
-- **Clarification & Best Practices:**  
-  - The session/user ID should persist across browser reloads. Store the UUID in localStorage to uniquely identify the same user every time they return to the application from the same browser. The frontend should read the UUID from localStorage and include it in all API requests to the backend.
-  - **UUID Generation & Uniqueness Strategy:**
-    - The frontend generates a UUID at app start (before any user interaction) if one does not already exist in localStorage. This UUID is used to associate all user actions and file uploads from the outset, ensuring a consistent identifier for the session.
-    - If the UUID is deleted from localStorage during an active session (e.g., by a user using dev tools), the frontend will detect the absence of a UUID before any user action that requires it (such as file upload or API call), immediately generate and persist a new UUID, and proceed with the action. This ensures a UUID is always available, even if the user has tinkered with the client-side storage.
-    - The backend only checks for UUID uniqueness when the session is about to be persisted (i.e., when the user provides their name and the session is created in the database). If a collision is detected, the backend generates a new UUID, returns it to the frontend, and the frontend updates its localStorage and state accordingly.
-    - This approach ensures robust tracking from the first interaction, avoids unnecessary backend calls for users who never proceed past the initial screen, and guarantees UUID uniqueness for persisted sessions.
-  - **Handling abandoned sessions:**  
-    - Incomplete sessions and their data are deleted immediately. No housekeeping jobs or user prompts are needed.
-    - **Session Completion:** A session is only considered complete after the user has provided their email address and verified it by clicking a link sent to their email. Until this point, all sessions are considered partial/incomplete and are deleted immediately if abandoned.
-    - **S3 Storage Management:** Incomplete sessions that have uploaded files to S3 should have those files removed immediately as part of the deletion process.
-  - UUID generation occurs prior to any communication with the user, as it is the primary key for all session data. This process is handled silently and transparently to the user.
-
-## 1.1 UUID Session Integrity & Tampering Handling
-
-- The frontend generates a UUID and stores it in localStorage when a user action requires it (e.g., file upload, session persistence).
-- All uploads and API calls include this UUID.
-- If the UUID is missing from localStorage (e.g., user deleted it), a new UUID is generated and a new session is started. Any previous files uploaded under a different UUID become orphaned and are subject to backend cleanup policy.
-- If the UUID in localStorage is changed (tampered with) by the user, the backend will detect that the UUID does not match any known session or S3 folder for the current user’s workflow.
-- On session persistence (when the user provides their name/email), the backend checks that the UUID:
-  - Matches the S3 folder containing the user’s uploaded files (if any).
-  - Is not already associated with a completed or pending session.
-- If the UUID is invalid, missing, or does not match the S3 folder, the backend rejects the request and returns an error.
-- If the backend detects a tampered or invalid session, the frontend:
-  - Shows a user-friendly message: “Your session has been reset due to a technical issue. Please start again.”
-  - Clears the UUID from localStorage and starts a new session.
-- No attempt is made to recover or merge with previous uploads or sessions if the UUID is missing or invalid.
-- The system assumes that if a user deletes or tampers with the UUID, they are intentionally or unintentionally starting a new session. This approach is simple, robust, and user-proof: tampering always results in a fresh session, and no broken associations or confusing recovery flows.
-- The backend logs all tampering/invalid session events for audit and compliance, and cleans up orphaned files according to the incomplete session policy.
-
-## 1.2 Future Considerations & Edge Cases
-
-- If multi-device or multi-tab support is introduced, UUID management and synchronization may need to be revisited to ensure session continuity across contexts.
-- If user experience requires resuming incomplete sessions, a more sophisticated recovery mechanism (e.g., backend session lookup, user authentication) may be needed.
-- The backend’s orphaned file cleanup policy should be clearly defined and implemented to avoid storage bloat and privacy issues.
-- If the system ever needs to support merging or recovering sessions, clear rules and user flows must be established to avoid confusion and maintain data integrity.
-- All tampering, invalid session, and orphaned file events should be logged for audit and compliance purposes.
-- Regularly review and test the session management logic to ensure it remains robust as the application evolves.
-
-## 2. Frontend & Backend Integration
-
-- **Frontend:**  
-  - Generate a UUID at the start of the workflow if one does not already exist in localStorage.
-  - Store the UUID in React state and in localStorage for persistence.
-  - Send the UUID with every file upload and API request.
-- **Backend:**  
-  - Require the UUID in all relevant endpoints.
-  - Namespace file storage and user data by UUID.
-  - The frontend (React) will generate a UUID at the start of the workflow if one does not already exist in localStorage. To ensure uniqueness, the backend (Flask) will provide an endpoint to generate and/or validate UUIDs. The backend will check against all existing UUIDs in the database and continue generating new UUIDs until a unique one is found. Data migration or UUID conflict handling is not required, as a unique UUID will always be ensured before use.
-
-## 3. Data Persistence (Database)
-
-- **Preferred Option:**  
-  Use PostgreSQL to persist user sessions, file metadata, and user information.
-- **Persistence Strategy:**  
-  - Only persist sessions that are either pending email verification or complete (i.e., email has been verified).
-  - If a user leaves a session before providing their email address, immediately delete any uploaded files from S3 and do not persist the session in the database.
-  - When a user provides their email address, store the session as pending verification. Once the user clicks the unique verification link (which expires after use or after 30 minutes), update the session to complete. If the link expires before use, delete the user's files from S3 and remove their record from the users table. If a user tries to verify after the link has expired, inform them that the link has expired and they must start again.
-  - There is no need to track or sync multiple session statuses between frontend and backend; the workflow is simple enough to start fresh if a user abandons a session.
-  - No housekeeping jobs are required, as incomplete sessions and their data are deleted immediately.
-- **Data Fields to Store:**
-  - `uuid` (unique identifier for the session/user)
-  - `name` (user's name)
-  - `email` (user's email address)
-  - `timestamps` (created_at, updated_at, completed_at)
-  - `ip_address` (user's IP address)
-  - `consent_user_data` (explicit consent for storing personal data and using uploaded files to train the AI agent)
-  - **Note:** File URLs are not stored; all files are stored in S3 under a folder named after the UUID, tying all files to the user/session.
-- **Benefits:**  
-  - Enables querying for analytics, lead tracking, and licensing/subscription management.
-  - Scalable and robust for production use.
-- **Data Retention Policy:**
-  - Incomplete sessions and their data are deleted immediately.
-  - Sessions that are pending email verification or complete are retained indefinitely as user records.
-  - Users are not notified of incomplete session deletion.
+## 5. Data Persistence (Database)
+- **Database:**
+  - PostgreSQL is used to persist user sessions, file metadata, and user information.
+- **Persistence Strategy:**
+  - Only sessions pending email verification or complete (email verified) are persisted.
+  - If a user leaves before providing their email, uploaded files are deleted from S3 and the session is not persisted.
+  - When a user provides their email, the session is stored as pending verification. After verification, the session is marked complete. Expired or unverified sessions are deleted along with their files.
+- **Data Fields:**
+  - `uuid`, `name`, `email`, `timestamps` (created_at, updated_at, completed_at), `ip_address`, `consent_user_data`.
+  - File URLs are not stored; all files are in S3 under the UUID folder.
 - **Audit Logging:**
-  - An audit table will be maintained to record all significant user and system events (not just key actions) to provide a full chronology of activity for traceability and compliance.
+  - All significant user and system events are logged with timestamp, event type, user UUID, and relevant metadata for traceability and compliance.
 
-## 4. Workflow Summary
-
-1. Frontend generates and stores a UUID at workflow start.
-2. All uploads and API calls include this UUID.
-3. Backend namespaces files and persists user data in PostgreSQL using the UUID.
-4. All user actions and files are queryable and auditable by UUID.
-
-## 5. Security & Privacy
-
-- **Authentication & Authorization:**
-  - No authentication or authorization is required for users. A session starts when the user provides their name in the chatbot interface.
-- **Security Measures:**
-  - All data transmission should use standard encryption protocols (e.g., SSL/TLS).
+## 6. Security & Privacy
+- **Authentication:**
+  - No authentication/authorization is required; a session starts when the user provides their name.
+- **Security:**
+  - All data transmission uses SSL/TLS.
 - **GDPR Compliance:**
-  - Explicit user consent is collected for storing personal data and for using uploaded files to train the AI agent. Users can withdraw consent or delete their account at any time via the chatbot interface provided after verification. The timestamp of consent is logged in the database. Once confirmed, deletion is immediate and irreversible.
-  - On the user’s bot webpage, options will be available to withdraw consent, request data access, request a copy, or request correction. These requests will be emailed to a designated address and fulfilled as soon as possible.
-  - Data minimization: Only essential data is collected and stored.
-  - Data access: Users can request access to the data stored about them.
-  - Data portability: Users can request a copy of their data in a portable format.
-  - Data rectification: Users can request corrections to their stored data if inaccurate.
-  - Data retention: Data is only retained for as long as necessary for the stated purposes.
-  - **IP Address Disclosure:** Users are informed in the privacy notice that their IP address is collected for analytics purposes to understand geographic interest in the software. A link to the privacy notice will be presented in the chatbot UI, and users must explicitly agree to it in the chatbot interface to provide explicit consent.
+  - Explicit user consent is collected for storing personal data and using uploaded files to train the AI agent.
+  - Users can withdraw consent or delete their account at any time via the chatbot interface after verification. Deletion is immediate and irreversible.
+  - Users are informed that their IP address is collected for analytics. The privacy notice is accessible in the chatbot UI and must be agreed to explicitly.
+  - Data minimization, access, portability, rectification, and retention policies are enforced as described.
+
+## 7. Error Handling & User Messaging
+- **Session Reset:**
+  - On UUID loss/tampering, the frontend shows: “Your session has been reset due to a technical issue. Please start again.”
+- **Backend Errors:**
+  - If the backend detects a tampered/invalid session, the frontend resets the session and shows the reset message.
+- **General Errors:**
+  - On other errors, show: "The system has encountered an error, which has been notified to the administrator to investigate. Please try again later."
+  - An email with relevant logs (user UUID, error logs, timestamp, user actions, truncated to 200 chars, with a reference to the full log) is sent to a configurable admin address immediately.
+
+## 8. Testing & Coverage
+- **Unit Tests:**
+  - Basic tampering detection is sufficient; no need to simulate rapid/advanced tampering scenarios.
+- **Test Coverage:**
+  - Ensure all edge cases for session reset, UUID loss/tampering, and file orphaning are covered.
+
+## 9. Open Questions & Future Considerations
+- **Session Persistence:**
+  - Users cannot delete or reset their session manually; incomplete sessions start fresh on next visit.
+- **UUID Uniqueness:**
+  - The backend ensures UUIDs are never duplicated and always unique for every session.
+- **Multi-Device/Tab Support:**
+  - No synchronization of UUIDs across devices/tabs; each is independent.
+- **Session Recovery:**
+  - If session resumption or merging is needed in the future, new flows and rules must be defined.
+- **Orphaned File Cleanup:**
+  - Backend policy for orphaned file cleanup must be clearly defined and implemented.
+- **Schema Definition:**
+  - Define the exact schema for PostgreSQL (user session and audit tables).
 
 ---
 
-## Open Questions & Next Steps
-
-- Session persistence: If a user does not complete their session, they will start from the beginning on their next visit. Users cannot delete or reset their session manually.
-- UUID uniqueness: The UUID is a required, unique key for each session. The system must ensure that UUIDs are never duplicated and are always generated for every session. The backend will provide an endpoint to generate/validate UUIDs and will only use a UUID once uniqueness is confirmed. Data migration or conflict handling is not required.
-- Error handling: If an error occurs (e.g., on the chatbot frontend), display a user-friendly message such as: "The system has encountered an error, which has been notified to the administrator to investigate. Please try again later." An email with relevant logs (including user UUID, error logs, timestamp, and user actions leading to the error, limited to the first 200 characters of the log, with a reference to the full log) will be sent to a configurable admin address for review. Emails are sent immediately, with no batching.
-- Define the exact schema for PostgreSQL (fields, relationships), including only the user session and audit tables for now.
-
----
-
-## Implementation Notes & Best Practices
-
-- The chatbot UI must require users to explicitly agree to the privacy notice before proceeding. The privacy notice should be easily accessible via a link in the chatbot interface.
-- Audit logging should include a timestamp, event type, user UUID, and any relevant metadata for each event to ensure a complete and traceable record.
-- For error log references in admin notifications, ensure the full log is accessible to administrators (e.g., in a secure log file or database), in addition to the truncated message sent by email.
-
----
-
-This document will guide the implementation and ensure clarity for all contributors. Please review and provide feedback or further requirements.
+This document guides implementation and ensures clarity for all contributors. Please review and provide feedback or further requirements.
