@@ -18,9 +18,10 @@ def test_persist_session_unique_uuid(client):
         'name': 'Test User',
         'email': 'test@example.com'
     }
-    with patch('app.db.get_db_connection') as mock_conn:
-        mock_cursor = mock_conn.return_value.cursor.return_value
+    with patch('app.routes.session.get_db_connection') as mock_conn:
+        mock_cursor = MagicMock()
         mock_cursor.fetchone.return_value = [0]
+        mock_conn.return_value.cursor.return_value = mock_cursor
         response = client.post('/persist_session', json=data)
         assert response.status_code == 200
         assert response.json['session_uuid'] == test_uuid
@@ -33,10 +34,11 @@ def test_persist_session_collision(client):
         'name': 'Test User',
         'email': 'test@example.com'
     }
-    with patch('app.db.get_db_connection') as mock_conn, \
-         patch('app.utils.s3_utils.migrate_s3_files') as mock_migrate:
-        mock_cursor = mock_conn.return_value.cursor.return_value
+    with patch('app.routes.session.get_db_connection') as mock_conn, \
+         patch('app.routes.session.migrate_s3_files') as mock_migrate:
+        mock_cursor = MagicMock()
         mock_cursor.fetchone.return_value = [1]
+        mock_conn.return_value.cursor.return_value = mock_cursor
         response = client.post('/persist_session', json=data)
         assert response.status_code == 200
         assert 'new_uuid' in response.json
@@ -49,9 +51,7 @@ def test_persist_session_invalid_uuid(client):
         'name': 'Test User',
         'email': 'test@example.com'
     }
-    app = create_app()
-    with app.test_client() as client:
-        response = client.post('/persist_session', json=data)
-        assert response.status_code == 400
-        assert response.json['code'] == 'invalid session'
-        assert response.json['error'] == 'Invalid or missing session UUID'
+    response = client.post('/persist_session', json=data)
+    assert response.status_code == 400
+    assert response.json['code'] == 'invalid session'
+    assert response.json['error'] == 'Invalid or missing session UUID'

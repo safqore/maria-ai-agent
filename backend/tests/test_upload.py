@@ -4,6 +4,7 @@ import pytest
 from app import create_app
 from unittest.mock import patch
 
+@pytest.fixture
 def client():
     app = create_app()
     app.config['TESTING'] = True
@@ -15,7 +16,7 @@ def test_upload_file_valid_uuid(client):
         'file': (io.BytesIO(b"test pdf content"), 'test.pdf'),
         'session_uuid': '123e4567-e89b-12d3-a456-426614174000'
     }
-    with patch('app.utils.s3_utils.s3_client.upload_fileobj') as mock_upload:
+    with patch('app.routes.upload.s3_client.upload_fileobj') as mock_upload:
         response = client.post('/upload', data=data, content_type='multipart/form-data')
         assert response.status_code == 200
         assert 'url' in response.json
