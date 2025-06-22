@@ -5,7 +5,7 @@ import useChatStateMachine from '../hooks/useChatStateMachine';
 import '../styles.css';
 import { Transitions } from '../state/FiniteStateMachine';
 import { Message } from '../utils/chatUtils';
-import { resetSessionUUID } from '../utils/sessionUtils';
+import { resetSessionUUID, getOrCreateSessionUUID } from '../utils/sessionUtils';
 
 const welcomeMessage = "👋 Hi there! I’m Maria, your AI guide at Safqore. Ready to discover how we can help you grow?";
 const initialBotMessage: Message = { text: welcomeMessage, isUser: false, isTyping: true, id: 0 };
@@ -54,6 +54,8 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
   };
 
   const sendButtonHandler = (event: KeyboardEvent<HTMLInputElement> | MouseEvent<HTMLButtonElement>) => {
+    // Enforce UUID check before any action
+    getOrCreateSessionUUID();
     if ((event.type === 'click' || (event as KeyboardEvent).key === 'Enter') && !isInputDisabled) {
       processTextInputHandler(userInput);
       setUserInput('');
@@ -87,6 +89,8 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
         messages={messages} 
         onTypingComplete={typingCompleteHandler} 
         onButtonClick={(value) => {
+          // Enforce UUID check before any button action
+          getOrCreateSessionUUID();
           buttonClickHandler(value);
         }}
         onFileUploaded={fileUploadHandler} 

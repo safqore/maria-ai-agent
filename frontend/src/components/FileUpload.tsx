@@ -32,6 +32,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone, session
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Enforce UUID check before any file action
+    getOrCreateSessionUUID();
     setGlobalError(null);
     if (event.target.files) {
       const selectedFiles = Array.from(event.target.files);
@@ -104,6 +106,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone, session
   };
 
   const handleRemove = async (file: File) => {
+    // Enforce UUID check before any file remove action
+    getOrCreateSessionUUID();
     const fileObj = files.find(f => f.file === file);
     if (fileObj?.status === 'uploaded' && fileObj.url) {
       // Backend delete request
@@ -128,6 +132,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone, session
   };
 
   const handleRetry = (file: File) => {
+    // Enforce UUID check before any retry action
+    getOrCreateSessionUUID();
     uploadFile(file);
   };
 
@@ -184,7 +190,11 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone, session
         <button
           className="chat-button"
           style={{ marginTop: 8 }}
-          onClick={onDone}
+          onClick={() => {
+            // Enforce UUID check before continuing
+            getOrCreateSessionUUID();
+            onDone();
+          }}
         >
           Done & Continue
         </button>
