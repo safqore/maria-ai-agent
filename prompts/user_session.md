@@ -97,4 +97,31 @@
 
 ---
 
+## Implementation Decisions (as of 2025-06-23)
+
+### UUID Validation/Generation Endpoint
+1. The validation and generation endpoints will be separate, following the single responsibility principle:
+   - `/api/session/validate-uuid` (POST): Validates a provided UUID.
+   - `/api/session/generate-uuid` (POST): Generates a new unique UUID.
+2. All UUID-related endpoints will use the following JSON response structure:
+   ```json
+   {
+     "status": "success" | "collision" | "invalid" | "error",
+     "uuid": "string or null",
+     "message": "Optional human-readable message",
+     "details": "Optional additional info (e.g., reason for error, migrated files, etc.)"
+   }
+   ```
+3. All validation and generation attempts will be logged as audit events with timestamp, event type, user UUID, and relevant metadata.
+4. On UUID collision, the backend will retry up to 3 times to generate a unique UUID before returning an error. This is a defensive measure; the probability of collision is extremely low.
+5. The endpoints will not require authentication, but CORS will be configured to only allow requests from the frontend domain. Rate limiting will be implemented to mitigate abuse and DDoS risks. Suspicious activity will be logged for monitoring.
+
+### Security Implementation
+- CORS will restrict backend endpoints to only accept requests from the frontend domain.
+- Rate limiting (e.g., via Flask-Limiter) will be used to prevent abuse and DDoS attacks.
+- All input will be strictly validated, and endpoints will have reasonable timeouts.
+- Audit logs and error logs will be monitored for suspicious activity.
+
+---
+
 This document guides implementation and ensures clarity for all contributors. Please review and provide feedback or further requirements.
