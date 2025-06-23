@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { generateUUID, validateUUID, UUIDResponse } from './uuidApi';
 
 /**
  * Checks if a string is a valid UUID v4.
@@ -12,35 +12,65 @@ function isValidUUID(uuid: string | null): boolean {
 }
 
 /**
- * Returns a valid session UUID from localStorage, or generates a new one if missing/invalid.
- * If a new UUID is generated, the app reloads to fully reset the session (as per requirements).
- * Call this before any user action or API call that requires a session.
- * @returns The valid session UUID (string).
+ * Returns a valid session UUID from localStorage, or generates a new one via backend if missing/invalid.
+ * Validates the UUID with the backend. Handles all backend statuses and reloads the app if session is reset.
+ * @returns Promise resolving to the valid session UUID (string).
+ * @throws Error if unable to obtain a valid session UUID from backend.
  */
-export function getOrCreateSessionUUID(): string {
+export async function getOrCreateSessionUUID(): Promise<string> {
   let uuid = localStorage.getItem('session_uuid');
   if (!isValidUUID(uuid)) {
-    uuid = uuidv4();
-    localStorage.setItem('session_uuid', uuid);
-    window.location.reload();
-    // The reload will interrupt further execution, but for type safety:
-    return uuid;
+    // No valid UUID, generate via backend
+    const genResp: UUIDResponse = await generateUUID();
+    if (genResp.status === 'success' && genResp.uuid) {
+      localStorage.setItem('session_uuid', genResp.uuid);
+      window.location.reload();
+      return genResp.uuid;
+    } else {
+      throw new Error(genResp.message || 'Failed to generate session UUID');
+    }
   }
-  // uuid is guaranteed to be a valid string here
-  return uuid as string;
+  // Validate with backend
+  const valResp: UUIDResponse = await validateUUID(uuid as string);
+  if (valResp.status === 'success' && valResp.uuid === uuid) {
+    return uuid as string;
+  } else if (valResp.status === 'collision' && valResp.uuid) {
+    // Backend suggests a new UUID due to collision
+    localStorage.setItem('session_uuid', valResp.uuid);
+    window.location.reload();
+    return valResp.uuid;
+  } else if (valResp.status === 'invalid' || valResp.status === 'error') {
+    // Tampered or invalid, reset session
+    localStorage.removeItem('session_uuid');
+    const genResp: UUIDResponse = await generateUUID();
+    if (genResp.status === 'success' && genResp.uuid) {
+      localStorage.setItem('session_uuid', genResp.uuid);
+      window.location.reload();
+      return genResp.uuid;
+    } else {
+      throw new Error(genResp.message || 'Failed to reset session UUID');
+    }
+  }
+  // Defensive fallback
+  throw new Error(valResp.message || 'Unknown error validating session UUID');
 }
 
 /**
- * Resets the session UUID, clearing any existing value and generating a new one, then reloads the app.
+ * Resets the session UUID by requesting a new one from the backend, then reloads the app.
  * Use this when the backend signals a tampered/invalid session, or for a manual reset.
- * @returns The new session UUID (string).
+ * @returns Promise resolving to the new session UUID (string).
+ * @throws Error if unable to obtain a new session UUID from backend.
  */
-export function resetSessionUUID(): string {
+export async function resetSessionUUID(): Promise<string> {
   localStorage.removeItem('session_uuid');
-  const newUUID = uuidv4();
-  localStorage.setItem('session_uuid', newUUID);
-  window.location.reload();
-  return newUUID;
+  const genResp: UUIDResponse = await generateUUID();
+  if (genResp.status === 'success' && genResp.uuid) {
+    localStorage.setItem('session_uuid', genResp.uuid);
+    window.location.reload();
+    return genResp.uuid;
+  } else {
+    throw new Error(genResp.message || 'Failed to reset session UUID');
+  }
 }
 
 /**

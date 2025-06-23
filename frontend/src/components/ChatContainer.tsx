@@ -5,7 +5,7 @@ import useChatStateMachine from '../hooks/useChatStateMachine';
 import '../styles.css';
 import { Transitions } from '../state/FiniteStateMachine';
 import { Message } from '../utils/chatUtils';
-import { resetSessionUUID, getOrCreateSessionUUID } from '../utils/sessionUtils';
+import { resetSessionUUID } from '../utils/sessionUtils';
 
 // Initial welcome message for the chat UI
 const welcomeMessage = "👋 Hi there! I’m Maria, your AI guide at Safqore. Ready to discover how we can help you grow?";
@@ -42,23 +42,6 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
   }, [messages, fsm]);
 
   /**
-   * Handler for session reset (not used directly, but available for future extensibility).
-   * Triggers a full session reset and displays the reset message.
-   */
-  const handleSessionReset = () => {
-    resetSessionUUID();
-    setSessionError('Your session has been reset due to a technical issue. Please start again.');
-    setMessages([{
-      text: 'Your session has been reset due to a technical issue. Please start again.',
-      isUser: false,
-      isTyping: false,
-      id: Date.now(),
-    }]);
-    setUserInput('');
-    setIsInputDisabled(true);
-  };
-
-  /**
    * Handles user input text changes.
    */
   const inputTextChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
@@ -66,11 +49,9 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
   };
 
   /**
-   * Handles sending chat messages. Enforces UUID check before processing input.
+   * Handles sending chat messages. Assumes sessionUUID is valid.
    */
   const sendButtonHandler = (event: KeyboardEvent<HTMLInputElement> | MouseEvent<HTMLButtonElement>) => {
-    // Enforce UUID check before any action
-    getOrCreateSessionUUID();
     if ((event.type === 'click' || (event as KeyboardEvent).key === 'Enter') && !isInputDisabled) {
       processTextInputHandler(userInput);
       setUserInput('');
@@ -107,8 +88,6 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
         messages={messages} 
         onTypingComplete={typingCompleteHandler} 
         onButtonClick={(value) => {
-          // Enforce UUID check before any button action
-          getOrCreateSessionUUID();
           buttonClickHandler(value);
         }}
         onFileUploaded={fileUploadHandler} 

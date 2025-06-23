@@ -79,7 +79,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone, session
       const formData = new FormData();
       formData.append('file', file);
       // Always ensure a valid UUID is present before upload
-      const uuid = getOrCreateSessionUUID();
+      const uuid = await getOrCreateSessionUUID();
       formData.append('session_uuid', uuid);
       const xhr = new XMLHttpRequest();
       xhr.open('POST', `${API_BASE_URL}/upload`);
@@ -124,15 +124,16 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone, session
    */
   const handleRemove = async (file: File) => {
     // Enforce UUID check before any file remove action
-    getOrCreateSessionUUID();
+    await getOrCreateSessionUUID();
     const fileObj = files.find(f => f.file === file);
     if (fileObj?.status === 'uploaded' && fileObj.url) {
       // Backend delete request
       try {
+        const uuid = await getOrCreateSessionUUID();
         const response = await fetch(`${API_BASE_URL}/delete`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: fileObj.file.name, session_uuid: getOrCreateSessionUUID() }),
+          body: JSON.stringify({ filename: fileObj.file.name, session_uuid: uuid }),
         });
         if (response.status === 400) {
           const text = await response.text();
@@ -151,16 +152,16 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone, session
   /**
    * Handles retrying a failed upload. Enforces UUID check before retry.
    */
-  const handleRetry = (file: File) => {
+  const handleRetry = async (file: File) => {
     // Enforce UUID check before any retry action
-    getOrCreateSessionUUID();
+    await getOrCreateSessionUUID();
     uploadFile(file);
   };
 
   /**
    * Handles the "Done & Continue" action after uploads. Enforces UUID check before continuing.
    */
-  const handleClick = () => {
+  const handleClick = async () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
       fileInputRef.current.click();
@@ -213,9 +214,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone, session
         <button
           className="chat-button"
           style={{ marginTop: 8 }}
-          onClick={() => {
+          onClick={async () => {
             // Enforce UUID check before continuing
-            getOrCreateSessionUUID();
+            await getOrCreateSessionUUID();
             onDone();
           }}
         >

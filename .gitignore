@@ -59,6 +59,7 @@ coverage.xml
 # Flask specific
 instance/
 .flaskenv
+backend/logs/*
 
 # IDE / Text editor specific
 .idea/
