@@ -111,3 +111,113 @@ REACT_APP_API_BASE_URL=https://your-backend-url.com
 ---
 
 For detailed requirements and user stories, see `requirements/EPIC Requirements.md` and `requirements/Story Requirements.md`.
+
+---
+
+## Backend API Endpoints: UUID Validation & Generation
+
+### POST /generate-uuid
+- Generates a new unique UUID (retries up to 3 times on collision).
+- Response:
+  - status: 'success' | 'error'
+  - uuid: string or null
+  - message: string
+  - details: object
+
+### POST /validate-uuid
+- Validates a provided UUID for format and uniqueness.
+- Response:
+  - status: 'success' | 'collision' | 'invalid'
+  - uuid: string or null
+  - message: string
+  - details: object
+
+### Rate Limiting
+- Configurable via `SESSION_RATE_LIMIT` environment variable (default: 10/minute per IP).
+- Change the value in `.env` to adjust without code changes.
+
+### Audit Logging
+- All validation and generation attempts are logged with timestamp, event type, user UUID, and details.
+
+### Security
+- CORS restricts access to frontend domain.
+- Rate limiting prevents abuse and DDoS attacks.
+
+---
+
+## Local PostgreSQL Setup Guide
+
+Follow these steps to set up a local PostgreSQL database and connect the application:
+
+### 1. Install PostgreSQL
+
+On Ubuntu/Debian:
+```bash
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+```
+
+Start and enable the PostgreSQL service:
+```bash
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+```
+
+### 2. Set the `postgres` User Password
+Switch to the `postgres` user and set a password (if not already set):
+```bash
+sudo -i -u postgres
+psql
+\password postgres
+# Enter a secure password (e.g., 123456 for local dev)
+\q
+exit
+```
+
+### 3. Create Application Database and User
+Connect to PostgreSQL as the `postgres` user:
+```bash
+psql -U postgres -h localhost
+# Enter the password you set above
+```
+Then run:
+```sql
+CREATE DATABASE maria_db;
+CREATE USER maria_user WITH PASSWORD 'your_secure_password';
+GRANT ALL PRIVILEGES ON DATABASE maria_db TO maria_user;
+GRANT ALL ON SCHEMA public TO maria_user;
+```
+Replace `'your_secure_password'` with a strong password.
+
+### 4. Configure Environment Variables
+Edit the `.env` file in the project root:
+```
+POSTGRES_DB=maria_db
+POSTGRES_USER=maria_user
+POSTGRES_PASSWORD=your_secure_password
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+```
+
+### 5. Run Database Migrations
+Run the migration script to create required tables:
+```bash
+psql -U maria_user -h localhost -d maria_db -f backend/migrations/001_create_user_sessions.sql
+# Enter the password for maria_user
+```
+
+### 6. Troubleshooting
+- If you do not see the database in DBeaver, ensure "Show all databases" is enabled and refresh the connection.
+- If you get permission errors, ensure you have granted privileges on both the database and the `public` schema.
+- To list all databases:
+  ```bash
+  psql -U postgres -h localhost -l
+  ```
+- To grant connect privilege:
+  ```sql
+  GRANT CONNECT ON DATABASE maria_db TO maria_user;
+  ```
+
+---
+
+For full requirements and rationale, see `prompts/user_session.md`.

@@ -29,6 +29,12 @@
 - Include references to any related issues or tasks.
 - Provide testing instructions if applicable.
 
+## Documentation Instructions
+- All project documentation must be consolidated in the root `README.md` file.
+- Do not create or update additional README files in subdirectories (e.g., backend/README-api-session.md).
+- When updating documentation, always refer to and update the main `README.md`.
+- Remove or migrate any new documentation from other locations to the main `README.md` as part of your changes.
+
 ## Project-Specific Notes
 - **Frontend**: The frontend is built using React with TypeScript. It includes components for chat functionality, state management using a finite state machine, and file upload capabilities.
 - **Backend**: The backend uses Flask.
