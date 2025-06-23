@@ -1,0 +1,153 @@
+{"timestamp": "2025-06-23T05:22:40.134682Z", "event_type": "uuid_validation_failed", "user_uuid": "not-a-uuid", "details": {"reason": "invalid format"}}
+{"timestamp": "2025-06-23T05:22:51.623183Z", "event_type": "uuid_validation_failed", "user_uuid": "not-a-uuid", "details": {"reason": "invalid format"}}
+{"timestamp": "2025-06-23T05:25:25.036133Z", "event_type": "uuid_generation_success", "user_uuid": "ec68948b-e9b2-4c18-b0a8-8d6ad031c477", "details": {}}
+{"timestamp": "2025-06-23T05:25:25.054063Z", "event_type": "uuid_validation_failed", "user_uuid": "not-a-uuid", "details": {"reason": "invalid format"}}
+{"timestamp": "2025-06-23T05:25:25.075571Z", "event_type": "uuid_generation_success", "user_uuid": "5a7d4c8e-7c92-477b-a7f9-e51c9f3361fe", "details": {}}
+{"timestamp": "2025-06-23T05:25:25.078106Z", "event_type": "uuid_validation_success", "user_uuid": "5a7d4c8e-7c92-477b-a7f9-e51c9f3361fe", "details": {}}
+{"timestamp": "2025-06-23T05:25:25.100019Z", "event_type": "uuid_generation_success", "user_uuid": "63f771f2-78eb-4515-a9b8-025af1b951a9", "details": {}}
+{"timestamp": "2025-06-23T05:25:25.104710Z", "event_type": "uuid_generation_success", "user_uuid": "2c6ed979-cbf7-47ea-b02e-20bcae588bc8", "details": {}}
+{"timestamp": "2025-06-23T05:25:25.107506Z", "event_type": "uuid_generation_success", "user_uuid": "4008a74c-c80a-4b5c-9381-16036cf82e86", "details": {}}
+{"timestamp": "2025-06-23T05:25:25.109418Z", "event_type": "uuid_generation_success", "user_uuid": "4016970d-6a3b-4f0b-9334-1f41334b1248", "details": {}}
+{"timestamp": "2025-06-23T05:25:25.115766Z", "event_type": "uuid_generation_success", "user_uuid": "8c7701f3-964f-42fb-a065-159e428112de", "details": {}}
+{"timestamp": "2025-06-23T05:25:25.118734Z", "event_type": "uuid_generation_success", "user_uuid": "adc0ca0e-742b-43ff-8e72-767b612a4174", "details": {}}
+{"timestamp": "2025-06-23T05:25:25.131584Z", "event_type": "uuid_generation_success", "user_uuid": "467d7735-67eb-4bf9-aeb9-85bc8f7634aa", "details": {}}
+{"timestamp": "2025-06-23T05:25:25.133285Z", "event_type": "uuid_generation_success", "user_uuid": "3cd642b5-e47b-4efe-b325-b139160f3c53", "details": {}}
+{"timestamp": "2025-06-23T05:25:25.135353Z", "event_type": "uuid_generation_success", "user_uuid": "870c99be-d835-43ac-88d7-d75a0c0cbdf9", "details": {}}
+{"timestamp": "2025-06-23T05:25:25.151439Z", "event_type": "uuid_generation_success", "user_uuid": "28e4d172-b123-4e03-bb18-6feba421a511", "details": {}}
+{"timestamp": "2025-06-23T05:25:25.158465Z", "event_type": "uuid_generation_success", "user_uuid": "25648b36-841d-445d-910a-157cd4e4668a", "details": {}}
+{"timestamp": "2025-06-23T05:25:32.117519Z", "event_type": "uuid_generation_success", "user_uuid": "32c55acb-86a9-4760-8efa-3389cc16f178", "details": {}}
+{"timestamp": "2025-06-23T05:25:32.131880Z", "event_type": "uuid_validation_failed", "user_uuid": "not-a-uuid", "details": {"reason": "invalid format"}}
+{"timestamp": "2025-06-23T05:25:32.157584Z", "event_type": "uuid_generation_success", "user_uuid": "3fc57450-bdb6-481e-a0ed-ee0bfc05553d", "details": {}}
+{"timestamp": "2025-06-23T05:25:32.161259Z", "event_type": "uuid_validation_success", "user_uuid": "3fc57450-bdb6-481e-a0ed-ee0bfc05553d", "details": {}}
+{"timestamp": "2025-06-23T05:25:32.180897Z", "event_type": "uuid_generation_success", "user_uuid": "5dd49f8b-3eed-476b-a5c1-e55c64c44768", "details": {}}
+{"timestamp": "2025-06-23T05:25:32.192035Z", "event_type": "uuid_generation_success", "user_uuid": "435366f2-57c5-47cf-8d31-c97e8fc2188e", "details": {}}
+{"timestamp": "2025-06-23T05:25:32.199912Z", "event_type": "uuid_generation_success", "user_uuid": "ad3e75d0-44e1-4a7f-b78a-1e0ea4983d37", "details": {}}
+{"timestamp": "2025-06-23T05:25:32.202372Z", "event_type": "uuid_generation_success", "user_uuid": "1f806743-e6f5-468b-a8ef-92305ee95cde", "details": {}}
+{"timestamp": "2025-06-23T05:25:32.207305Z", "event_type": "uuid_generation_success", "user_uuid": "5c9632f7-69a4-462b-ac8b-b7e40817b304", "details": {}}
+{"timestamp": "2025-06-23T05:25:32.209567Z", "event_type": "uuid_generation_success", "user_uuid": "43290611-c145-42ab-8aa6-3176b95e36ce", "details": {}}
+{"timestamp": "2025-06-23T05:25:32.212692Z", "event_type": "uuid_generation_success", "user_uuid": "899ad3db-e173-4f22-9f46-09e3fa1fd419", "details": {}}
+{"timestamp": "2025-06-23T05:25:32.217332Z", "event_type": "uuid_generation_success", "user_uuid": "09f041cc-76c8-4545-aabe-6a260d6f45be", "details": {}}
+{"timestamp": "2025-06-23T05:25:32.220085Z", "event_type": "uuid_generation_success", "user_uuid": "716c4a84-13a1-42d8-9cb9-000dff09c9cb", "details": {}}
+{"timestamp": "2025-06-23T05:25:32.223066Z", "event_type": "uuid_generation_success", "user_uuid": "3413a289-1415-449e-a3d1-431415fdca82", "details": {}}
+{"timestamp": "2025-06-23T05:25:32.225943Z", "event_type": "uuid_generation_success", "user_uuid": "8cad6f1a-7d10-4611-b0fd-2163dcc2513e", "details": {}}
+{"timestamp": "2025-06-23T05:26:58.287731Z", "event_type": "uuid_generation_success", "user_uuid": "0f270852-ac23-4086-bad2-8f6e2640cb32", "details": {}}
+{"timestamp": "2025-06-23T05:26:58.301867Z", "event_type": "uuid_validation_failed", "user_uuid": "not-a-uuid", "details": {"reason": "invalid format"}}
+{"timestamp": "2025-06-23T05:26:58.327586Z", "event_type": "uuid_generation_success", "user_uuid": "97bf8a39-933b-4fc6-bf0b-ecb8513343ab", "details": {}}
+{"timestamp": "2025-06-23T05:26:58.333798Z", "event_type": "uuid_validation_success", "user_uuid": "97bf8a39-933b-4fc6-bf0b-ecb8513343ab", "details": {}}
+{"timestamp": "2025-06-23T05:27:09.793696Z", "event_type": "uuid_generation_success", "user_uuid": "e7afa25f-94bc-40c7-b47c-39aa6769c479", "details": {}}
+{"timestamp": "2025-06-23T05:27:09.810865Z", "event_type": "uuid_validation_failed", "user_uuid": "not-a-uuid", "details": {"reason": "invalid format"}}
+{"timestamp": "2025-06-23T05:27:09.830691Z", "event_type": "uuid_generation_success", "user_uuid": "2eba2263-f507-4bc9-9e1b-d00310aecdc7", "details": {}}
+{"timestamp": "2025-06-23T05:27:09.833936Z", "event_type": "uuid_validation_success", "user_uuid": "2eba2263-f507-4bc9-9e1b-d00310aecdc7", "details": {}}
+{"timestamp": "2025-06-23T05:29:32.143671Z", "event_type": "uuid_generation_success", "user_uuid": "c6c5b61d-7de7-4e0d-97cc-2a2dec332c7d", "details": {}}
+{"timestamp": "2025-06-23T05:29:32.187172Z", "event_type": "uuid_validation_failed", "user_uuid": "not-a-uuid", "details": {"reason": "invalid format"}}
+{"timestamp": "2025-06-23T05:29:32.221090Z", "event_type": "uuid_generation_success", "user_uuid": "4f882765-9fc2-4ee4-ba06-8d3a59ba7e26", "details": {}}
+{"timestamp": "2025-06-23T05:29:32.224122Z", "event_type": "uuid_validation_success", "user_uuid": "4f882765-9fc2-4ee4-ba06-8d3a59ba7e26", "details": {}}
+{"timestamp": "2025-06-23T05:29:32.257413Z", "event_type": "uuid_generation_success", "user_uuid": "a65f9e05-3396-431c-be97-58868e5781d7", "details": {}}
+{"timestamp": "2025-06-23T05:29:32.278990Z", "event_type": "uuid_generation_success", "user_uuid": "9277b0bf-3879-4bc4-aea2-08ab917c926a", "details": {}}
+{"timestamp": "2025-06-23T05:29:32.281613Z", "event_type": "uuid_generation_success", "user_uuid": "6cdeace4-7d2b-40e1-a38c-4bd4bc12f587", "details": {}}
+{"timestamp": "2025-06-23T05:29:32.284075Z", "event_type": "uuid_generation_success", "user_uuid": "ab386db6-a97b-4d55-8f0c-ac709dca8a12", "details": {}}
+{"timestamp": "2025-06-23T05:29:32.286451Z", "event_type": "uuid_generation_success", "user_uuid": "33a2b2db-ce5f-4ad9-a38b-4450954f1275", "details": {}}
+{"timestamp": "2025-06-23T05:29:32.288279Z", "event_type": "uuid_generation_success", "user_uuid": "a53ee3ad-e4ae-4297-901b-688c5b016217", "details": {}}
+{"timestamp": "2025-06-23T05:29:32.290696Z", "event_type": "uuid_generation_success", "user_uuid": "2038de1e-0669-4299-9a03-91b274ff664c", "details": {}}
+{"timestamp": "2025-06-23T05:29:32.299686Z", "event_type": "uuid_generation_success", "user_uuid": "d79f04c3-e54f-415b-a986-3a031bf5234a", "details": {}}
+{"timestamp": "2025-06-23T05:29:32.307920Z", "event_type": "uuid_generation_success", "user_uuid": "5fd814ae-9848-404f-8c9c-cda482f20b47", "details": {}}
+{"timestamp": "2025-06-23T05:29:32.315111Z", "event_type": "uuid_generation_success", "user_uuid": "e230e47a-3482-4d0e-bb59-3f2e8c5853a2", "details": {}}
+{"timestamp": "2025-06-23T05:29:32.320950Z", "event_type": "uuid_generation_success", "user_uuid": "64b8c909-acba-4afb-92b7-13b55ead0f80", "details": {}}
+{"timestamp": "2025-06-23T05:29:40.707549Z", "event_type": "uuid_generation_success", "user_uuid": "0b870971-a8e4-46e5-a50c-2265447f285c", "details": {}}
+{"timestamp": "2025-06-23T05:29:40.736852Z", "event_type": "uuid_validation_failed", "user_uuid": "not-a-uuid", "details": {"reason": "invalid format"}}
+{"timestamp": "2025-06-23T05:29:40.773098Z", "event_type": "uuid_generation_success", "user_uuid": "3ab3c00f-e385-45ae-b1ca-dc55198453a6", "details": {}}
+{"timestamp": "2025-06-23T05:29:40.776356Z", "event_type": "uuid_validation_success", "user_uuid": "3ab3c00f-e385-45ae-b1ca-dc55198453a6", "details": {}}
+{"timestamp": "2025-06-23T05:29:40.814065Z", "event_type": "uuid_generation_success", "user_uuid": "0d1aea23-6e27-4550-b070-7b1153f7296b", "details": {}}
+{"timestamp": "2025-06-23T05:29:40.822703Z", "event_type": "uuid_generation_success", "user_uuid": "226a0846-1836-4120-8401-e5f8566f0f31", "details": {}}
+{"timestamp": "2025-06-23T05:29:40.836470Z", "event_type": "uuid_generation_success", "user_uuid": "3c716267-7a65-4d91-b81c-73c298e18058", "details": {}}
+{"timestamp": "2025-06-23T05:29:40.847991Z", "event_type": "uuid_generation_success", "user_uuid": "a5ee9797-aed9-4988-88d2-be002e24d713", "details": {}}
+{"timestamp": "2025-06-23T05:29:40.862137Z", "event_type": "uuid_generation_success", "user_uuid": "7d0322c3-5f3a-48c2-a79a-18fc63b97677", "details": {}}
+{"timestamp": "2025-06-23T05:29:40.881150Z", "event_type": "uuid_generation_success", "user_uuid": "ecd97f16-7a1a-4532-bb3f-0bbb62c06d0b", "details": {}}
+{"timestamp": "2025-06-23T05:29:40.883630Z", "event_type": "uuid_generation_success", "user_uuid": "d6a7b30a-4002-427c-a764-128534d32ba0", "details": {}}
+{"timestamp": "2025-06-23T05:29:40.887338Z", "event_type": "uuid_generation_success", "user_uuid": "3ee430df-b964-4355-b9fc-9eabe02ea274", "details": {}}
+{"timestamp": "2025-06-23T05:29:40.890004Z", "event_type": "uuid_generation_success", "user_uuid": "bb3670a0-ed7e-49a9-9c12-4a3b929493eb", "details": {}}
+{"timestamp": "2025-06-23T05:29:40.892742Z", "event_type": "uuid_generation_success", "user_uuid": "26ba54a9-b1f8-4fa8-9f1c-eaa367e7fed4", "details": {}}
+{"timestamp": "2025-06-23T05:29:40.909844Z", "event_type": "uuid_generation_success", "user_uuid": "f0c46c9a-87c1-472c-b048-99efa4bdfa95", "details": {}}
+{"timestamp": "2025-06-23T05:32:27.170542Z", "event_type": "uuid_generation_success", "user_uuid": "8895ab41-d641-4a6d-96c1-272e15dd320f", "details": {}}
+{"timestamp": "2025-06-23T05:32:27.310392Z", "event_type": "uuid_validation_failed", "user_uuid": "not-a-uuid", "details": {"reason": "invalid format"}}
+{"timestamp": "2025-06-23T05:32:27.343329Z", "event_type": "uuid_generation_success", "user_uuid": "372535e6-b85e-42ae-a5de-58c2b0e50f82", "details": {}}
+{"timestamp": "2025-06-23T05:32:27.389757Z", "event_type": "uuid_generation_success", "user_uuid": "9e3eb78d-439c-4e0a-b152-0738bd824152", "details": {}}
+{"timestamp": "2025-06-23T05:32:27.394166Z", "event_type": "uuid_generation_success", "user_uuid": "fe8f5c2c-aafe-4aa9-9f9a-b21627a7c30f", "details": {}}
+{"timestamp": "2025-06-23T05:32:27.397036Z", "event_type": "uuid_generation_success", "user_uuid": "0b2fc5e7-fe2e-4522-b59d-9e43df6ea4d2", "details": {}}
+{"timestamp": "2025-06-23T05:32:27.399569Z", "event_type": "uuid_generation_success", "user_uuid": "d89651ca-7753-4657-a90b-19a0c80bb5f5", "details": {}}
+{"timestamp": "2025-06-23T05:32:27.402991Z", "event_type": "uuid_generation_success", "user_uuid": "c0de0226-2b3b-45f7-a201-f7c2de31d0f1", "details": {}}
+{"timestamp": "2025-06-23T05:32:27.409719Z", "event_type": "uuid_generation_success", "user_uuid": "b8a46802-3313-4d4f-81e6-4478faefb99f", "details": {}}
+{"timestamp": "2025-06-23T05:32:27.412220Z", "event_type": "uuid_generation_success", "user_uuid": "655bd42f-a908-406c-a41a-962deb2a4289", "details": {}}
+{"timestamp": "2025-06-23T05:32:27.414786Z", "event_type": "uuid_generation_success", "user_uuid": "f3ef6416-3542-4811-9d82-7d8de7726486", "details": {}}
+{"timestamp": "2025-06-23T05:32:27.424879Z", "event_type": "uuid_generation_success", "user_uuid": "070322eb-01c4-4a0a-8034-820354bd3d91", "details": {}}
+{"timestamp": "2025-06-23T05:32:27.430681Z", "event_type": "uuid_generation_success", "user_uuid": "602a1d0e-6d0c-4abb-bb28-ea00cdce1efa", "details": {}}
+{"timestamp": "2025-06-23T05:32:27.433156Z", "event_type": "uuid_generation_success", "user_uuid": "2347cb8d-97a5-405b-9336-62ea3cd6d1f2", "details": {}}
+{"timestamp": "2025-06-23T05:34:52.784827Z", "event_type": "uuid_generation_success", "user_uuid": "430bad6c-f60d-4727-89bb-74524c6c7dc0", "details": {}}
+{"timestamp": "2025-06-23T05:34:52.918399Z", "event_type": "uuid_validation_failed", "user_uuid": "not-a-uuid", "details": {"reason": "invalid format"}}
+{"timestamp": "2025-06-23T05:34:52.942498Z", "event_type": "uuid_generation_success", "user_uuid": "072a5ce2-0c6e-498b-b04d-130ee847b82a", "details": {}}
+{"timestamp": "2025-06-23T05:34:52.989651Z", "event_type": "uuid_generation_success", "user_uuid": "7862d8bd-ede4-45da-be52-99dbf0234672", "details": {}}
+{"timestamp": "2025-06-23T05:34:52.994389Z", "event_type": "uuid_generation_success", "user_uuid": "ed47ce9e-f17d-4078-8621-548946d887ce", "details": {}}
+{"timestamp": "2025-06-23T05:34:52.997989Z", "event_type": "uuid_generation_success", "user_uuid": "b29b2e81-f634-466b-af03-1e27a25c7e2b", "details": {}}
+{"timestamp": "2025-06-23T05:34:53.002399Z", "event_type": "uuid_generation_success", "user_uuid": "548dc3f0-ffd0-41cf-af95-d00fc55093d3", "details": {}}
+{"timestamp": "2025-06-23T05:34:53.006943Z", "event_type": "uuid_generation_success", "user_uuid": "3ef8e9ed-2c92-4610-a35a-ad01f37569d1", "details": {}}
+{"timestamp": "2025-06-23T05:34:53.015204Z", "event_type": "uuid_generation_success", "user_uuid": "74636633-3d79-40ee-ac17-b92ead9a1225", "details": {}}
+{"timestamp": "2025-06-23T05:34:53.017782Z", "event_type": "uuid_generation_success", "user_uuid": "56255985-275d-429a-ac82-59e860dcb871", "details": {}}
+{"timestamp": "2025-06-23T05:34:53.019477Z", "event_type": "uuid_generation_success", "user_uuid": "c147afe9-3e6f-4626-a283-4a6db7022a28", "details": {}}
+{"timestamp": "2025-06-23T05:34:53.021320Z", "event_type": "uuid_generation_success", "user_uuid": "d0ad07a8-299e-41d8-ba60-817f90c100d9", "details": {}}
+{"timestamp": "2025-06-23T05:34:53.022913Z", "event_type": "uuid_generation_success", "user_uuid": "0563c470-132c-4f9c-bcbb-e2cd85e4c50f", "details": {}}
+{"timestamp": "2025-06-23T05:34:53.027202Z", "event_type": "uuid_generation_success", "user_uuid": "6f95c2f6-5b30-48b5-8120-c410b126d10a", "details": {}}
+{"timestamp": "2025-06-23T05:35:00.100689Z", "event_type": "uuid_generation_success", "user_uuid": "b026a085-f9cc-4fa4-b1b3-be3344ee64e2", "details": {}}
+{"timestamp": "2025-06-23T05:35:00.248856Z", "event_type": "uuid_validation_failed", "user_uuid": "not-a-uuid", "details": {"reason": "invalid format"}}
+{"timestamp": "2025-06-23T05:35:00.299558Z", "event_type": "uuid_generation_success", "user_uuid": "997e4c93-ad79-4c8c-a61c-5cae52d1185b", "details": {}}
+{"timestamp": "2025-06-23T05:35:00.358049Z", "event_type": "uuid_generation_success", "user_uuid": "3a2c6eb5-4f98-4c7e-bd9d-6787e049d5f4", "details": {}}
+{"timestamp": "2025-06-23T05:35:00.362855Z", "event_type": "uuid_generation_success", "user_uuid": "7487c213-f367-456f-a4b7-f9f9ad36291e", "details": {}}
+{"timestamp": "2025-06-23T05:35:00.365522Z", "event_type": "uuid_generation_success", "user_uuid": "4bfebc04-a2f8-485d-82b0-e9c70ef98c67", "details": {}}
+{"timestamp": "2025-06-23T05:35:00.368029Z", "event_type": "uuid_generation_success", "user_uuid": "518fe2a7-3fe2-454e-b77e-0c3dfa39a580", "details": {}}
+{"timestamp": "2025-06-23T05:35:00.370822Z", "event_type": "uuid_generation_success", "user_uuid": "15224092-9886-434f-9b8d-14e2f0dd6af2", "details": {}}
+{"timestamp": "2025-06-23T05:35:00.373197Z", "event_type": "uuid_generation_success", "user_uuid": "f1cccd00-ff1c-4325-b3dc-2dc6fc608bc7", "details": {}}
+{"timestamp": "2025-06-23T05:35:00.378498Z", "event_type": "uuid_generation_success", "user_uuid": "218197d7-c36d-4182-a6a1-da1d8c9db11b", "details": {}}
+{"timestamp": "2025-06-23T05:35:00.381235Z", "event_type": "uuid_generation_success", "user_uuid": "c7688ded-6221-49a5-9c1f-32d26968d391", "details": {}}
+{"timestamp": "2025-06-23T05:35:00.385835Z", "event_type": "uuid_generation_success", "user_uuid": "77d45d15-5c11-4189-92cd-91018416fa68", "details": {}}
+{"timestamp": "2025-06-23T05:35:00.389443Z", "event_type": "uuid_generation_success", "user_uuid": "5073280a-415e-47c7-b02b-4884f6d6a7f1", "details": {}}
+{"timestamp": "2025-06-23T05:35:00.392117Z", "event_type": "uuid_generation_success", "user_uuid": "4724f2c0-f54f-4cfa-af58-52b3fceb9014", "details": {}}
+{"timestamp": "2025-06-23T05:36:59.739096Z", "event_type": "uuid_generation_success", "user_uuid": "e31afbd0-343f-4d3d-b52d-b0ec8855559e", "details": {}}
+{"timestamp": "2025-06-23T05:37:00.104204Z", "event_type": "uuid_validation_failed", "user_uuid": "not-a-uuid", "details": {"reason": "invalid format"}}
+{"timestamp": "2025-06-23T05:37:00.178242Z", "event_type": "uuid_generation_success", "user_uuid": "7d46ed71-462f-4483-b851-363426d98527", "details": {}}
+{"timestamp": "2025-06-23T05:37:00.275978Z", "event_type": "uuid_generation_success", "user_uuid": "49089a59-c350-48cc-bd90-71a9efb25153", "details": {}}
+{"timestamp": "2025-06-23T05:37:00.280084Z", "event_type": "uuid_generation_success", "user_uuid": "fbc05114-9b50-40b1-815c-00119ebfe763", "details": {}}
+{"timestamp": "2025-06-23T05:37:00.284256Z", "event_type": "uuid_generation_success", "user_uuid": "68f12ce8-95a3-4ece-99f9-b30ba33f291e", "details": {}}
+{"timestamp": "2025-06-23T05:37:00.285811Z", "event_type": "uuid_generation_success", "user_uuid": "d985050f-065b-47f0-a909-ebe42a4b9d52", "details": {}}
+{"timestamp": "2025-06-23T05:37:00.287316Z", "event_type": "uuid_generation_success", "user_uuid": "90587f57-03dd-4f4d-b408-767cb207a50d", "details": {}}
+{"timestamp": "2025-06-23T05:37:00.288884Z", "event_type": "uuid_generation_success", "user_uuid": "585ea18e-498e-44ce-b062-42f77f2a9fb5", "details": {}}
+{"timestamp": "2025-06-23T05:37:00.291592Z", "event_type": "uuid_generation_success", "user_uuid": "c4ffa3f8-d015-40c5-a796-c516c5a11d79", "details": {}}
+{"timestamp": "2025-06-23T05:37:00.293349Z", "event_type": "uuid_generation_success", "user_uuid": "ed3a46e9-69b6-4b19-819c-ecdf5333e923", "details": {}}
+{"timestamp": "2025-06-23T05:37:00.294928Z", "event_type": "uuid_generation_success", "user_uuid": "e75b5c9d-619a-428b-98ec-c44540d03ca3", "details": {}}
+{"timestamp": "2025-06-23T05:37:00.320599Z", "event_type": "uuid_generation_success", "user_uuid": "ffe32604-7ae3-4693-aa06-5da791cc94ba", "details": {}}
+{"timestamp": "2025-06-23T05:37:00.324787Z", "event_type": "uuid_generation_success", "user_uuid": "cb321c42-8556-455b-a008-d4c1cf6471f5", "details": {}}
+{"timestamp": "2025-06-23T05:37:11.990380Z", "event_type": "uuid_generation_success", "user_uuid": "7a48aa7b-e6c3-4869-91af-f88b88392a8e", "details": {}}
+{"timestamp": "2025-06-23T05:37:12.130947Z", "event_type": "uuid_validation_failed", "user_uuid": "not-a-uuid", "details": {"reason": "invalid format"}}
+{"timestamp": "2025-06-23T05:37:12.158603Z", "event_type": "uuid_generation_success", "user_uuid": "5017635c-68b9-43c5-8c18-3b21629383a1", "details": {}}
+{"timestamp": "2025-06-23T05:37:12.188299Z", "event_type": "uuid_generation_success", "user_uuid": "9b3f0dcb-07f0-49d8-a8f6-7078b358d043", "details": {}}
+{"timestamp": "2025-06-23T05:37:12.191653Z", "event_type": "uuid_generation_success", "user_uuid": "37f09ce6-d6e6-4772-965c-142fced2cc3b", "details": {}}
+{"timestamp": "2025-06-23T05:37:12.194278Z", "event_type": "uuid_generation_success", "user_uuid": "8f91fa35-a0b2-4b8a-8c14-5f81a8cf8fe3", "details": {}}
+{"timestamp": "2025-06-23T05:37:12.208090Z", "event_type": "uuid_generation_success", "user_uuid": "818b8462-9bd8-4696-8420-dccf5ab3f21c", "details": {}}
+{"timestamp": "2025-06-23T05:37:12.211473Z", "event_type": "uuid_generation_success", "user_uuid": "0390fd3d-f344-42f0-a9f8-bcc2074e3cbe", "details": {}}
+{"timestamp": "2025-06-23T05:37:12.214434Z", "event_type": "uuid_generation_success", "user_uuid": "3158cb55-8a43-4a1d-9314-6d420ed074ac", "details": {}}
+{"timestamp": "2025-06-23T05:37:12.218780Z", "event_type": "uuid_generation_success", "user_uuid": "93aa3b1c-281c-4267-aefd-31d49a1f0ce8", "details": {}}
+{"timestamp": "2025-06-23T05:37:12.221351Z", "event_type": "uuid_generation_success", "user_uuid": "cdb55fc5-4b35-40e7-9a03-8b07270ccb3f", "details": {}}
+{"timestamp": "2025-06-23T05:37:12.232773Z", "event_type": "uuid_generation_success", "user_uuid": "03184a55-7836-41a8-bb47-e62b3862401e", "details": {}}
+{"timestamp": "2025-06-23T05:37:12.235589Z", "event_type": "uuid_generation_success", "user_uuid": "5736b03b-3463-4546-a06d-403bfb6d84f3", "details": {}}
+{"timestamp": "2025-06-23T05:37:12.238323Z", "event_type": "uuid_generation_success", "user_uuid": "5cc1091b-407b-4afe-93d7-eb8db59e90ed", "details": {}}
+{"timestamp": "2025-06-23T05:39:28.750815Z", "event_type": "uuid_generation_success", "user_uuid": "ac94bbca-8ad7-447d-8610-8ade9057599c", "details": {}}
+{"timestamp": "2025-06-23T05:39:28.975889Z", "event_type": "uuid_validation_failed", "user_uuid": "not-a-uuid", "details": {"reason": "invalid format"}}
+{"timestamp": "2025-06-23T05:39:28.998961Z", "event_type": "uuid_generation_success", "user_uuid": "ffe2c0b8-e0d7-439d-af93-7d910756155a", "details": {}}
+{"timestamp": "2025-06-23T05:39:37.072086Z", "event_type": "uuid_generation_success", "user_uuid": "95fc8afa-81cf-4cd9-88a7-615f69bf9d1b", "details": {}}
+{"timestamp": "2025-06-23T05:39:37.390697Z", "event_type": "uuid_validation_failed", "user_uuid": "not-a-uuid", "details": {"reason": "invalid format"}}
+{"timestamp": "2025-06-23T05:39:37.447361Z", "event_type": "uuid_generation_success", "user_uuid": "b2a9d373-b6fe-4ee3-a422-9dbb4d76469c", "details": {}}
+{"timestamp": "2025-06-23T05:41:25.949792Z", "event_type": "uuid_generation_success", "user_uuid": "1480ca26-40a3-463b-80aa-ed45373e5851", "details": {}}
+{"timestamp": "2025-06-23T05:41:26.101192Z", "event_type": "uuid_validation_failed", "user_uuid": "not-a-uuid", "details": {"reason": "invalid format"}}
+{"timestamp": "2025-06-23T05:41:26.150102Z", "event_type": "uuid_generation_success", "user_uuid": "cb19b261-4751-4a53-a58c-2a19ef78e308", "details": {}}
+{"timestamp": "2025-06-23T05:42:58.858006Z", "event_type": "uuid_generation_success", "user_uuid": "97feba05-21cb-48d4-ae79-bbe19cb5e538", "details": {}}
+{"timestamp": "2025-06-23T05:42:58.874272Z", "event_type": "uuid_validation_failed", "user_uuid": "not-a-uuid", "details": {"reason": "invalid format"}}
+{"timestamp": "2025-06-23T05:42:58.892864Z", "event_type": "uuid_generation_success", "user_uuid": "76acb7d5-6ba0-473d-9a10-5f978862075c", "details": {}}
+{"timestamp": "2025-06-23T05:42:58.896110Z", "event_type": "uuid_validation_success", "user_uuid": "76acb7d5-6ba0-473d-9a10-5f978862075c", "details": {}}
