@@ -2,6 +2,18 @@ import React from 'react';
 import { render, fireEvent, waitFor, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import FileUpload from './FileUpload';
+import * as uuidApi from '../utils/uuidApi';
+
+// Mock uuidApi to prevent real fetch calls
+type UUIDResponse = {
+  status: 'success' | 'collision' | 'invalid' | 'error';
+  uuid: string | null;
+  message: string;
+  details?: Record<string, unknown>;
+};
+jest.mock('../utils/uuidApi');
+const mockedGenerateUUID = uuidApi.generateUUID as jest.Mock;
+const mockedValidateUUID = uuidApi.validateUUID as jest.Mock;
 
 // Improved Mock XMLHttpRequest for test isolation
 class MockXHR {
@@ -34,6 +46,8 @@ describe('FileUpload Component', () => {
   beforeEach(() => {
     originalXHR = global.XMLHttpRequest;
     global.XMLHttpRequest = MockXHR as any;
+    mockedGenerateUUID.mockResolvedValue({ status: 'success', uuid: 'test-uuid', message: 'ok' });
+    mockedValidateUUID.mockResolvedValue({ status: 'success', uuid: 'test-uuid', message: 'ok' });
   });
   afterEach(() => {
     global.XMLHttpRequest = originalXHR;

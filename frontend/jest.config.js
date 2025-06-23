@@ -1,7 +1,10 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['@testing-library/jest-dom'], // Updated for modern jest-dom usage
+  setupFilesAfterEnv: [
+    '@testing-library/jest-dom',
+    '<rootDir>/src/setupTests.ts'
+  ], // Add setupTests for global mocks
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',
