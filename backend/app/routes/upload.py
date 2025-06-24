@@ -7,87 +7,64 @@ This module provides routes for:
 - Validating file types and sizes
 """
 
-import os
-import uuid
-
-import boto3
-from botocore.exceptions import BotoCoreError, NoCredentialsError
+from app.errors import api_route
+from app.schemas.upload_schemas import UploadSchema
+from app.services.upload_service import UploadService
 from flask import Blueprint, jsonify, request
-from werkzeug.utils import secure_filename
-
-ALLOWED_EXTENSIONS = {"pdf"}
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
-
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-AWS_REGION = os.getenv("AWS_REGION")
-S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
-
-s3_client = boto3.client(
-    "s3",
-    aws_access_key_id=AWS_ACCESS_KEY_ID,
-    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-    region_name=AWS_REGION,
-)
+from flask_cors import cross_origin
+from marshmallow import ValidationError
 
 upload_bp = Blueprint("upload", __name__)
 
 
 @upload_bp.route("/upload", methods=["POST", "OPTIONS"])
+@cross_origin()
+@api_route
 def upload_file():
-    if request.method == "OPTIONS":
-        return ("", 200)
-    session_uuid = request.form.get("session_uuid")
-    if not session_uuid or not is_valid_uuid(session_uuid):
-        return (
-            jsonify(
-                {"error": "Invalid or missing session UUID", "code": "invalid session"}
-            ),
-            400,
-        )
-    if "file" not in request.files:
-        return jsonify({"error": "No file part in the request"}), 400
-    file = request.files["file"]
-    if file.filename == "":
-        return jsonify({"error": "No file selected"}), 400
-    filename = secure_filename(file.filename)
-    if not allowed_file(filename):
-        return (
-            jsonify({"error": "Unsupported file type. Only PDF files are allowed."}),
-            400,
-        )
-    file.seek(0, os.SEEK_END)
-    file_length = file.tell()
-    file.seek(0)
-    if file_length > MAX_FILE_SIZE:
-        return jsonify({"error": "File too large. Maximum size is 5 MB."}), 400
-    try:
-        s3_key = f"uploads/{session_uuid}/{filename}"
-        s3_client.upload_fileobj(
-            file, S3_BUCKET_NAME, s3_key, ExtraArgs={"ContentType": "application/pdf"}
-        )
-        file_url = f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{s3_key}"
-        return jsonify({"filename": filename, "url": file_url}), 200
-    except (BotoCoreError, NoCredentialsError) as e:
-        return jsonify({"error": f"Failed to upload {filename}: {str(e)}"}), 500
-
-
-def allowed_file(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-def is_valid_uuid(val):
     """
-    Validate if a string is a valid UUID.
+    Upload a file associated with a user session.
 
-    Args:
-        val: The value to validate, will be converted to string
+    This endpoint validates the file and session UUID, then uploads
+    the file to Amazon S3.
+
+    Request form data:
+    - session_uuid: The session UUID
+    - file: The file to upload
 
     Returns:
-        bool: True if the value is a valid UUID, False otherwise
+        JSON response with:
+        - filename: The name of the uploaded file
+        - url: The URL of the uploaded file
+
+        HTTP status codes:
+        - 200: Successfully uploaded file
+        - 400: Invalid request data
+        - 500: Failed to upload file
     """
+    if request.method == "OPTIONS":
+        return ("", 200)
+
+    # Validate session UUID
+    session_uuid = request.form.get("session_uuid")
+
+    # Validate request data using schema
     try:
-        uuid.UUID(str(val))
-        return True
-    except ValueError:
-        return False
+        schema = UploadSchema()
+        schema.load({"session_uuid": session_uuid})
+    except ValidationError as err:
+        return jsonify({"error": "Invalid request data", "details": err.messages}), 400
+
+    # Validate session UUID using service
+    error_response, status_code = UploadService.validate_session_uuid(session_uuid)
+    if error_response:
+        return jsonify(error_response), status_code
+
+    # Validate file
+    file = request.files.get("file")
+    error_response, status_code = UploadService.validate_file(file)
+    if error_response:
+        return jsonify(error_response), status_code
+
+    # Upload file to S3
+    response_data, status_code = UploadService.upload_to_s3(file, session_uuid)
+    return jsonify(response_data), status_code

@@ -7,31 +7,40 @@ interface TypingEffectProps {
 
 const TypingEffect: React.FC<TypingEffectProps> = ({ message, onTypingComplete }) => {
   const messageRef = useRef<HTMLDivElement>(null);
-  let index = 0;
-  let intervalId: NodeJS.Timeout | null = null;
+  const indexRef = useRef(0);
+  const intervalIdRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const messageDiv = messageRef.current;
     if (!messageDiv || !message) return;
 
-    intervalId = setInterval(() => {
-      if (index < message.length) {
-        const char = message[index];
+    // Reset index when message changes
+    indexRef.current = 0;
+
+    intervalIdRef.current = setInterval(() => {
+      if (indexRef.current < message.length) {
+        const char = message[indexRef.current];
         if (char === '\n') {
           messageDiv.appendChild(document.createElement('br'));
         } else {
           messageDiv.appendChild(document.createTextNode(char));
         }
-        index++;
+        indexRef.current++;
         // Scroll into view after each character
         messageDiv.scrollIntoView({ behavior: 'smooth' });
       } else {
-        clearInterval(intervalId!);
+        if (intervalIdRef.current) {
+          clearInterval(intervalIdRef.current);
+        }
         onTypingComplete();
       }
     }, 30);
 
-    return () => clearInterval(intervalId!);
+    return () => {
+      if (intervalIdRef.current) {
+        clearInterval(intervalIdRef.current);
+      }
+    };
   }, [message, onTypingComplete]);
 
   return <div ref={messageRef} />;

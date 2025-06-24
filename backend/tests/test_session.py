@@ -17,7 +17,7 @@ def client():
         yield client
 
 
-@patch("app.routes.session.get_db_connection")
+@patch("app.services.session_service.get_db_connection")
 def test_generate_uuid_success(mock_db, client):
     # Mock DB cursor for uniqueness check
     mock_conn = MagicMock()
@@ -38,7 +38,7 @@ def test_generate_uuid_success(mock_db, client):
     assert data["message"] == "Generated unique UUID"
 
 
-@patch("app.routes.session.get_db_connection")
+@patch("app.services.session_service.get_db_connection")
 def test_validate_uuid_invalid(mock_db, client):
     response = client.post("/validate-uuid", json={"uuid": "not-a-uuid"})
     data = response.get_json()
@@ -47,7 +47,7 @@ def test_validate_uuid_invalid(mock_db, client):
     assert data["uuid"] is None
 
 
-@patch("app.routes.session.get_db_connection")
+@patch("app.services.session_service.get_db_connection")
 def test_validate_uuid_success(mock_db, client):
     # Mock DB cursor for uniqueness check
     mock_conn = MagicMock()
@@ -78,7 +78,7 @@ def test_validate_uuid_success(mock_db, client):
     assert data["uuid"] == uuid_val
 
 
-@patch("app.routes.session.get_db_connection")
+@patch("app.services.session_service.get_db_connection")
 def test_rate_limit(mock_db, client):
     # Defensive: skip if limiter storage is not initialized
     try:

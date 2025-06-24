@@ -9,11 +9,14 @@ This module provides routes for:
 
 import os
 
+from app.errors import api_route
+from app.schemas.session_schemas import SessionPersistSchema, UUIDSchema
 from app.services.session_service import SessionService
 from flask import Blueprint, jsonify, request
 from flask_cors import cross_origin
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from marshmallow import ValidationError
 
 # Create the session blueprint
 session_bp = Blueprint("session", __name__)
@@ -28,6 +31,7 @@ limiter = Limiter(key_func=get_remote_address, default_limits=[SESSION_RATE_LIMI
 @session_bp.route("/validate-uuid", methods=["POST"])
 @cross_origin()
 @limiter.limit(SESSION_RATE_LIMIT)
+@api_route
 def validate_uuid():
     """
     Validate a session UUID.
@@ -51,7 +55,25 @@ def validate_uuid():
         - 409: UUID already exists in the database
     """
     data = request.get_json()
-    session_uuid = data.get("uuid")
+
+    # Validate request data
+    try:
+        schema = UUIDSchema()
+        validated_data = schema.load(data)
+    except ValidationError as err:
+        return (
+            jsonify(
+                {
+                    "status": "invalid",
+                    "uuid": None,
+                    "message": "Invalid UUID format",
+                    "details": err.messages,
+                }
+            ),
+            400,
+        )
+
+    session_uuid = validated_data["uuid"]
     response_data, status_code = SessionService.validate_uuid(session_uuid)
     return jsonify(response_data), status_code
 
@@ -59,6 +81,7 @@ def validate_uuid():
 @session_bp.route("/generate-uuid", methods=["POST"])
 @cross_origin()
 @limiter.limit(SESSION_RATE_LIMIT)
+@api_route
 def generate_uuid():
     """
     Generate a unique UUID.
@@ -81,6 +104,7 @@ def generate_uuid():
 
 
 @session_bp.route("/persist_session", methods=["POST"])
+@api_route
 def persist_session():
     """
     Persist a user session with name, email, and session_uuid.
@@ -103,9 +127,18 @@ def persist_session():
         - 400: Invalid UUID format
     """
     data = request.get_json()
-    session_uuid = data.get("session_uuid")
-    name = data.get("name")
-    email = data.get("email")
+
+    # Validate request data
+    try:
+        schema = SessionPersistSchema()
+        validated_data = schema.load(data)
+    except ValidationError as err:
+        return jsonify({"error": "Invalid request data", "details": err.messages}), 400
+
+    session_uuid = validated_data["session_uuid"]
+    name = validated_data.get("name", "")
+    email = validated_data.get("email", "")
+
     response_data, status_code = SessionService.persist_session(
         session_uuid, name, email
     )

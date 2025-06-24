@@ -6,6 +6,7 @@ python-multipart
 flask_cors
 psycopg2-binary
 Flask-Limiter
+marshmallow
 
 # Dev tools
 black

@@ -1,0 +1,145 @@
+"""
+Error handling module for Maria AI Agent.
+
+This module provides:
+- Custom exception classes
+- Error handler registration for Flask app
+- API route decorator for consistent error handling
+"""
+
+import traceback
+from functools import wraps
+from typing import Any, Callable, Dict, Tuple, TypeVar, cast
+
+from flask import Response, current_app, jsonify
+
+# Type variable for function return type
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+class APIError(Exception):
+    """Base exception for API errors with status code and payload."""
+
+    def __init__(
+        self, message: str, status_code: int = 400, details: Dict[str, Any] = None
+    ):
+        super().__init__(message)
+        self.message = message
+        self.status_code = status_code
+        self.details = details or {}
+
+
+class InvalidRequestError(APIError):
+    """Exception for invalid request data."""
+
+    def __init__(
+        self, message: str = "Invalid request data", details: Dict[str, Any] = None
+    ):
+        super().__init__(message=message, status_code=400, details=details)
+
+
+class InvalidSessionError(APIError):
+    """Exception for invalid session UUID."""
+
+    def __init__(
+        self, message: str = "Invalid session UUID", details: Dict[str, Any] = None
+    ):
+        super().__init__(message=message, status_code=400, details=details)
+
+
+class ResourceNotFoundError(APIError):
+    """Exception for resource not found."""
+
+    def __init__(
+        self, message: str = "Resource not found", details: Dict[str, Any] = None
+    ):
+        super().__init__(message=message, status_code=404, details=details)
+
+
+class UnauthorizedError(APIError):
+    """Exception for unauthorized access."""
+
+    def __init__(
+        self, message: str = "Unauthorized access", details: Dict[str, Any] = None
+    ):
+        super().__init__(message=message, status_code=401, details=details)
+
+
+class ServerError(APIError):
+    """Exception for server errors."""
+
+    def __init__(
+        self, message: str = "Internal server error", details: Dict[str, Any] = None
+    ):
+        super().__init__(message=message, status_code=500, details=details)
+
+
+def handle_api_error(error: APIError) -> Tuple[Response, int]:
+    """
+    Handle API errors by converting them to appropriate responses.
+
+    Args:
+        error: The API error to handle
+
+    Returns:
+        tuple: (response, status_code)
+    """
+    response = {"error": error.message, "status": "error", "details": error.details}
+    return jsonify(response), error.status_code
+
+
+def handle_general_error(error: Exception) -> Tuple[Response, int]:
+    """
+    Handle general errors by converting them to 500 error responses.
+
+    Args:
+        error: The error to handle
+
+    Returns:
+        tuple: (response, status_code)
+    """
+    current_app.logger.error(f"Unhandled exception: {str(error)}")
+    current_app.logger.error(traceback.format_exc())
+
+    response = {
+        "error": "Internal server error",
+        "status": "error",
+        "details": (
+            {"message": str(error)} if current_app.config.get("DEBUG", False) else {}
+        ),
+    }
+    return jsonify(response), 500
+
+
+def register_error_handlers(app):
+    """
+    Register error handlers for the Flask app.
+
+    Args:
+        app: The Flask application
+    """
+    app.register_error_handler(APIError, handle_api_error)
+    app.register_error_handler(Exception, handle_general_error)
+
+
+def api_route(func: F) -> F:
+    """
+    Decorator for API routes that catches and converts exceptions to proper responses.
+
+    Args:
+        func: The route function to wrap
+
+    Returns:
+        The wrapped function
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except APIError as e:
+            return handle_api_error(e)
+        except Exception as e:
+            return handle_general_error(e)
+
+    return cast(F, wrapper)

@@ -44,6 +44,11 @@ def create_app():
     limiter.default_limits = [session_rate_limit]
     limiter.init_app(app)
 
+    # Register error handlers
+    from app.errors import register_error_handlers
+
+    register_error_handlers(app)
+
     # Register blueprints
     from app.routes.session import session_bp
     from app.routes.upload import upload_bp
