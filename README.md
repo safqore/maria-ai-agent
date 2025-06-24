@@ -220,4 +220,51 @@ psql -U maria_user -h localhost -d maria_db -f backend/migrations/001_create_use
 
 ---
 
+## Orphaned File Cleanup Utility
+
+The backend includes a utility script to clean up orphaned files and folders in the S3 `uploads/` bucket. This script:
+
+- Deletes folders under `uploads/{uuid}/` that are older than 30 minutes and have no matching session in the `user_sessions` table.
+- Deletes legacy files directly under `uploads/` (not in a UUID folder) if they are older than 30 minutes.
+- Supports a dry-run mode for safe testing (default: enabled).
+- Logs all actions for audit and recovery.
+
+### Configuration
+
+Set the following environment variables in your `.env` file:
+
+```
+ORPHANED_CLEANUP_DRY_RUN=true   # Set to 'false' to actually delete files
+ORPHANED_CLEANUP_AGE_MINUTES=30 # Age threshold in minutes
+S3_BUCKET_NAME=safqores-maria   # S3 bucket name
+```
+
+### Running the Script
+
+From the project root:
+
+```bash
+python backend/app/utils/orphaned_file_cleanup.py
+```
+
+- In dry-run mode, the script will only log what would be deleted.
+- To perform actual deletions, set `ORPHANED_CLEANUP_DRY_RUN=false` in your `.env` file.
+
+### Scheduling Cleanup
+
+To automate cleanup every 30 minutes, add a cron job or use a task scheduler (e.g., APScheduler, Celery beat). Example cron entry:
+
+```
+*/30 * * * * cd /path/to/maria-ai-agent && /path/to/venv/bin/python backend/app/utils/orphaned_file_cleanup.py >> /path/to/cleanup.log 2>&1
+```
+
+### Safety & Troubleshooting
+
+- Always test in dry-run mode before enabling actual deletions.
+- Review logs for any errors or unexpected deletions.
+- The script double-checks UUIDs against the database before deleting folders.
+- Legacy files in the base of `uploads/` are also cleaned up if old.
+
+---
+
 For full requirements and rationale, see `prompts/user_session.md`.
