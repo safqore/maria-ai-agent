@@ -122,6 +122,17 @@
 - All input will be strictly validated, and endpoints will have reasonable timeouts.
 - Audit logs and error logs will be monitored for suspicious activity.
 
+## Orphaned File Cleanup (Clarified Implementation, 2025-06-24)
+
+- Orphaned files are defined as files in S3 under `uploads/{uuid}/` where the UUID is not present in the `user_sessions` table and the folder is older than 30 minutes.
+- The S3 bucket name is `safqores-maria` and the upload path is `uploads/{uuid}/filename` (see frontend FileUpload.tsx for reference).
+- The cleanup process will run every 30 minutes as a scheduled automation (not manual/admin-triggered).
+- Only files/folders older than 30 minutes will be considered for deletion, to avoid deleting files for sessions where uploads are still in progress.
+- Before deletion, the process will double-check the UUID against a fresh query of the `user_sessions` table to ensure the session is still not present. This double-check is required for safety and is non-optional.
+- A dry-run mode will be available for testing, logging what would be deleted without actually deleting.
+- All deletions and errors will be logged for audit and recovery. Admins will only be notified on errors or unusual deletions (not on every successful run).
+- There is no need to implement a lock, flag, or track upload activity timestamps at this stage. The 30-minute age threshold and double-checking UUIDs are considered sufficient safeguards against accidental deletion of valid files.
+
 ---
 
 This document guides implementation and ensures clarity for all contributors. Please review and provide feedback or further requirements.
