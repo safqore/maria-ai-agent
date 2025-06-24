@@ -37,12 +37,12 @@ I'll structure the implementation plan to start with the simplest changes first,
    - Backend: Black, flake8, and isort
    - Add pre-commit hooks
    - Create script commands in package.json and Makefile
-   
+
 2. **Improve documentation**
    - Add JSDoc comments to frontend functions
    - Add Python docstrings to backend functions
    - Update README.md with setup and usage instructions
-   
+
 3. **Prepare testing infrastructure**
    - Set up test plans for critical functionality
    - Ensure existing tests run correctly

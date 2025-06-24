@@ -1,10 +1,13 @@
 // Jest global setup for Maria AI Agent frontend
 // Mocks window.location.reload to prevent jsdom errors in all tests
 
+// Import @testing-library/jest-dom to enable custom matchers
+import '@testing-library/jest-dom';
+
 if (typeof window !== 'undefined' && window.location) {
   try {
-    // @ts-ignore
-    window.location.reload = jest.fn();
+    // Use type assertion to avoid TypeScript errors on read-only property
+    (window.location as any).reload = jest.fn();
   } catch (e) {
     // If not configurable, ignore
   }
@@ -16,8 +19,7 @@ console.error = (...args) => {
   if (
     args.some(
       arg =>
-        typeof arg === 'string' &&
-        arg.includes('Not implemented: navigation (except hash changes)')
+        typeof arg === 'string' && arg.includes('Not implemented: navigation (except hash changes)')
     )
   ) {
     return;

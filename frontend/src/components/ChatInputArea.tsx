@@ -3,11 +3,18 @@ import React, { ChangeEvent, KeyboardEvent, MouseEvent } from 'react';
 interface ChatInputAreaProps {
   userInput: string;
   inputTextChangeHandler: (event: ChangeEvent<HTMLInputElement>) => void;
-  sendButtonHandler: (event: KeyboardEvent<HTMLInputElement> | MouseEvent<HTMLButtonElement>) => void;
+  sendButtonHandler: (
+    event: KeyboardEvent<HTMLInputElement> | MouseEvent<HTMLButtonElement>
+  ) => void;
   disabled: boolean;
 }
 
-const ChatInputArea: React.FC<ChatInputAreaProps> = ({ userInput, inputTextChangeHandler, sendButtonHandler, disabled }) => {
+const ChatInputArea: React.FC<ChatInputAreaProps> = ({
+  userInput,
+  inputTextChangeHandler,
+  sendButtonHandler,
+  disabled,
+}) => {
   return (
     <div className="chat-input-area">
       <input
@@ -24,6 +31,6 @@ const ChatInputArea: React.FC<ChatInputAreaProps> = ({ userInput, inputTextChang
       </button>
     </div>
   );
-}
+};
 
 export default ChatInputArea;

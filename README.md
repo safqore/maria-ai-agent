@@ -43,11 +43,79 @@ AWS_REGION=<REPLACE WITH REGION>
 S3_BUCKET_NAME=<REPLACE WITH BUCKET>
 ```
 
-- To run the backend Flask app (new entry point):
+- To run the backend Flask app:
 
 ```bash
+# Using the wsgi entry point
 cd backend
 python wsgi.py
+
+# Or using the Makefile
+make run-backend
+```
+
+### 3. Frontend Setup
+
+Install dependencies and start the development server:
+
+```bash
+cd frontend
+npm install
+npm start
+
+# Or using the Makefile from project root
+make run-frontend
+```
+
+The frontend will be available at http://localhost:3000.
+
+### 4. Development Tools
+
+This project uses several tools to maintain code quality:
+
+#### Code Formatting and Linting
+
+- **Backend**: Black, isort, flake8
+- **Frontend**: ESLint, Prettier
+
+You can run formatters and linters using:
+
+```bash
+# Format code
+make format
+
+# Run linters
+make lint
+```
+
+#### Testing
+
+- **Backend**: pytest for unit and integration tests
+- **Frontend**: Jest for component and hook tests
+
+Run tests with:
+
+```bash
+# Run backend tests
+cd backend && pytest
+
+# Run frontend tests
+cd frontend && npm test
+
+# Or run all tests using the Makefile
+make test
+```
+
+#### Pre-commit Hooks
+
+The project uses pre-commit hooks to ensure code quality. Install them with:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+This will run formatting and linting checks automatically before each commit.
 ```
 
 - The backend supports CORS for both `http://localhost:3000` and `http://127.0.0.1:3000` for frontend integration.

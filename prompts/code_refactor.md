@@ -20,7 +20,7 @@ This document outlines a comprehensive refactoring plan for the Maria AI Agent p
 ```
 src/
   ├── features/               # Feature-based organization
-  │   ├── chat/              
+  │   ├── chat/
   │   │   ├── components/     # Chat-specific components
   │   │   ├── hooks/          # Chat-specific hooks
   │   │   └── utils/          # Chat-specific utilities
@@ -61,7 +61,7 @@ type ChatState = {
   isInputDisabled: boolean;
 };
 
-type ChatAction = 
+type ChatAction =
   | { type: 'ADD_MESSAGE'; payload: Message }
   | { type: 'TRANSITION_STATE'; payload: States }
   | { type: 'SET_INPUT_DISABLED'; payload: boolean };
@@ -136,18 +136,18 @@ export const SessionApi = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error ${response.status}`);
       }
-      
+
       return response.json();
     } catch (error) {
       console.error('Error generating UUID:', error);
       throw error;
     }
   },
-  
+
   validateUUID: async (uuid: string): Promise<UUIDResponse> => {
     try {
       const response = await fetch(`${API_BASE_URL}/validate-uuid`, {
@@ -155,11 +155,11 @@ export const SessionApi = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uuid }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error ${response.status}`);
       }
-      
+
       return response.json();
     } catch (error) {
       console.error('Error validating UUID:', error);
@@ -180,11 +180,11 @@ export const ChatApi = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message, session_uuid: sessionUUID }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error ${response.status}`);
       }
-      
+
       return response.json();
     } catch (error) {
       console.error('Error sending message:', error);
@@ -202,16 +202,16 @@ export const FileApi = {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('session_uuid', sessionUUID);
-      
+
       const response = await fetch(`${API_BASE_URL}/upload-file`, {
         method: 'POST',
         body: formData,
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error ${response.status}`);
       }
-      
+
       return response.json();
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -256,11 +256,11 @@ export function useSessionUUID(): UseSessionUUIDResult {
     setLoading(true);
     try {
       const storedUUID = localStorage.getItem('session_uuid');
-      
+
       if (!storedUUID || !isValidUUID(storedUUID)) {
         // No stored UUID or invalid format - generate a new one
         const response = await SessionApi.generateUUID();
-        
+
         if (response.status === 'success' && response.uuid) {
           localStorage.setItem('session_uuid', response.uuid);
           setSessionUUID(response.uuid);
@@ -270,7 +270,7 @@ export function useSessionUUID(): UseSessionUUIDResult {
       } else {
         // Validate existing UUID
         const validationResponse = await SessionApi.validateUUID(storedUUID);
-        
+
         if (validationResponse.status === 'success') {
           setSessionUUID(storedUUID);
         } else if (validationResponse.status === 'collision' && validationResponse.uuid) {
@@ -292,7 +292,7 @@ export function useSessionUUID(): UseSessionUUIDResult {
     try {
       localStorage.removeItem('session_uuid');
       const response = await SessionApi.generateUUID();
-      
+
       if (response.status === 'success' && response.uuid) {
         localStorage.setItem('session_uuid', response.uuid);
         setSessionUUID(response.uuid);
@@ -340,9 +340,9 @@ interface FileUploadButtonProps {
   disabled?: boolean;
 }
 
-export const FileUploadButton: React.FC<FileUploadButtonProps> = ({ 
-  onSelectFiles, 
-  disabled = false 
+export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
+  onSelectFiles,
+  disabled = false
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -355,9 +355,9 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
 
   return (
     <>
-      <button 
-        className="chat-button" 
-        onClick={handleClick} 
+      <button
+        className="chat-button"
+        onClick={handleClick}
         aria-label="Upload Files"
         disabled={disabled}
       >
@@ -394,7 +394,7 @@ interface FileStatusListProps {
 
 export const FileStatusList: React.FC<FileStatusListProps> = ({ files }) => {
   if (files.length === 0) return null;
-  
+
   return (
     <div className="file-status-list">
       <h3>Uploads</h3>
@@ -404,8 +404,8 @@ export const FileStatusList: React.FC<FileStatusListProps> = ({ files }) => {
             <span className="file-name">{file.name}</span>
             {file.status === 'uploading' && (
               <div className="progress-bar">
-                <div 
-                  className="progress-fill" 
+                <div
+                  className="progress-fill"
                   style={{ width: `${file.progress || 0}%` }}
                 ></div>
               </div>
@@ -445,67 +445,67 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   onUploadComplete
 }) => {
   const [fileStatuses, setFileStatuses] = useState<FileStatus[]>([]);
-  
+
   const handleSelectFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    
+
     // Create initial file statuses
     const newFileStatuses = Array.from(files).map(file => ({
       id: uuidv4(),
       name: file.name,
       status: 'pending' as const
     }));
-    
+
     setFileStatuses(prev => [...prev, ...newFileStatuses]);
-    
+
     let successCount = 0;
-    
+
     // Upload each file
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const fileId = newFileStatuses[i].id;
-      
+
       // Set status to uploading
-      setFileStatuses(prev => 
+      setFileStatuses(prev =>
         prev.map(fs => fs.id === fileId ? { ...fs, status: 'uploading', progress: 0 } : fs)
       );
-      
+
       try {
         // Upload file
         await FileApi.uploadFile(file, sessionUUID);
-        
+
         // Set status to success
-        setFileStatuses(prev => 
+        setFileStatuses(prev =>
           prev.map(fs => fs.id === fileId ? { ...fs, status: 'success', progress: 100 } : fs)
         );
-        
+
         successCount++;
       } catch (error) {
         // Set status to error
-        setFileStatuses(prev => 
-          prev.map(fs => 
-            fs.id === fileId 
-              ? { 
-                  ...fs, 
-                  status: 'error', 
-                  error: error instanceof Error ? error.message : 'Upload failed' 
-                } 
+        setFileStatuses(prev =>
+          prev.map(fs =>
+            fs.id === fileId
+              ? {
+                  ...fs,
+                  status: 'error',
+                  error: error instanceof Error ? error.message : 'Upload failed'
+                }
               : fs
           )
         );
       }
     }
-    
+
     if (onUploadComplete) {
       onUploadComplete(successCount);
     }
   };
-  
+
   return (
     <div className="file-upload-container">
-      <FileUploadButton 
-        onSelectFiles={handleSelectFiles} 
-        disabled={disabled} 
+      <FileUploadButton
+        onSelectFiles={handleSelectFiles}
+        disabled={disabled}
       />
       <FileStatusList files={fileStatuses} />
     </div>
@@ -639,10 +639,10 @@ class SessionService:
     @staticmethod
     def validate_uuid(session_uuid: str) -> Tuple[Dict, int]:
         """Validate a UUID for format and uniqueness.
-        
+
         Args:
             session_uuid: The UUID string to validate
-            
+
         Returns:
             Tuple containing response dict and HTTP status code
         """
@@ -654,16 +654,16 @@ class SessionService:
                 'message': 'Invalid or missing UUID',
                 'details': {'reason': 'invalid format'}
             }, 400
-        
+
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute('SELECT COUNT(*) FROM user_sessions WHERE uuid = %s', (session_uuid,))
         count = cur.fetchone()[0]
         cur.close()
         conn.close()
-        
+
         if count > 0:
-            log_audit_event('uuid_validation_collision', user_uuid=session_uuid, 
+            log_audit_event('uuid_validation_collision', user_uuid=session_uuid,
                            details={'reason': 'UUID already exists'})
             return {
                 'status': 'collision',
@@ -671,7 +671,7 @@ class SessionService:
                 'message': 'UUID already exists',
                 'details': {'reason': 'UUID already exists'}
             }, 409
-            
+
         log_audit_event('uuid_validation_success', user_uuid=session_uuid)
         return {
             'status': 'success',
@@ -679,18 +679,18 @@ class SessionService:
             'message': 'UUID is valid and unique',
             'details': {}
         }, 200
-    
+
     @staticmethod
     def generate_uuid() -> Tuple[Dict, int]:
         """Generate a unique UUID, ensuring it doesn't exist in the database.
-        
+
         Returns:
             Tuple containing response dict and HTTP status code
         """
         attempts = 0
         max_attempts = 3
         new_uuid = None
-        
+
         while attempts < max_attempts:
             candidate = str(uuid.uuid4())
             conn = get_db_connection()
@@ -699,12 +699,12 @@ class SessionService:
             count = cur.fetchone()[0]
             cur.close()
             conn.close()
-            
+
             if count == 0:
                 new_uuid = candidate
                 break
             attempts += 1
-            
+
         if new_uuid:
             log_audit_event('uuid_generation_success', user_uuid=new_uuid)
             return {
@@ -714,7 +714,7 @@ class SessionService:
                 'details': {}
             }, 200
         else:
-            log_audit_event('uuid_generation_failed', 
+            log_audit_event('uuid_generation_failed',
                            details={'reason': 'Could not generate unique UUID after 3 attempts'})
             return {
                 'status': 'error',
@@ -722,49 +722,49 @@ class SessionService:
                 'message': 'Could not generate unique UUID',
                 'details': {'reason': 'Could not generate unique UUID after 3 attempts'}
             }, 500
-    
+
     @staticmethod
     def persist_session(session_uuid: str, name: str, email: str) -> Tuple[Dict, int]:
         """Persist user session data, handling UUID collisions.
-        
+
         Args:
             session_uuid: The UUID to associate with the session
             name: User's name
             email: User's email
-            
+
         Returns:
             Tuple containing response dict and HTTP status code
         """
         if not SessionService._is_valid_uuid(session_uuid):
             return {'error': 'Invalid or missing session UUID', 'code': 'invalid_session'}, 400
-            
+
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute('SELECT COUNT(*) FROM user_sessions WHERE uuid = %s', (session_uuid,))
         count = cur.fetchone()[0]
-        
+
         if count > 0:
             new_uuid = str(uuid.uuid4())
             migrate_s3_files(session_uuid, new_uuid)
             cur.close()
             conn.close()
             return {'new_uuid': new_uuid, 'message': 'UUID collision, new UUID assigned'}, 200
-            
-        cur.execute('INSERT INTO user_sessions (uuid, name, email) VALUES (%s, %s, %s)', 
+
+        cur.execute('INSERT INTO user_sessions (uuid, name, email) VALUES (%s, %s, %s)',
                    (session_uuid, name, email))
         conn.commit()
         cur.close()
         conn.close()
-        
+
         return {'message': 'Session persisted', 'session_uuid': session_uuid}, 200
-            
+
     @staticmethod
     def _is_valid_uuid(val: str) -> bool:
         """Check if a string is a valid UUID.
-        
+
         Args:
             val: The string to check
-            
+
         Returns:
             True if the string is a valid UUID, False otherwise
         """
@@ -803,7 +803,7 @@ Base = declarative_base()
 
 def get_db():
     """Get database session.
-    
+
     Yields:
         SQLAlchemy session
     """
@@ -822,7 +822,7 @@ from app.db import Base
 
 class UserSession(Base):
     __tablename__ = 'user_sessions'
-    
+
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid_lib.uuid4)
     name = Column(String, nullable=False)
     email = Column(String, nullable=False)
@@ -831,24 +831,24 @@ class UserSession(Base):
     completed_at = Column(DateTime, nullable=True)
     ip_address = Column(String, nullable=True)
     consent_user_data = Column(Boolean, default=False)
-    
+
     @classmethod
     def check_uuid_exists(cls, session, uuid):
         """Check if a UUID already exists in the database.
-        
+
         Args:
             session: SQLAlchemy session
             uuid: UUID to check
-            
+
         Returns:
             True if UUID exists, False otherwise
         """
         return session.query(cls).filter(cls.uuid == uuid).count() > 0
-    
+
     @classmethod
     def create(cls, session, uuid, name, email, ip_address=None, consent=False):
         """Create a new user session.
-        
+
         Args:
             session: SQLAlchemy session
             uuid: Session UUID
@@ -856,7 +856,7 @@ class UserSession(Base):
             email: User's email
             ip_address: User's IP address (optional)
             consent: Whether user consented to data usage (optional)
-            
+
         Returns:
             Created UserSession instance
         """
@@ -893,7 +893,7 @@ from functools import wraps
 
 class APIError(Exception):
     """Base exception for API errors with status code and payload."""
-    
+
     def __init__(self, message, status_code=400, payload=None, code=None):
         self.message = message
         self.status_code = status_code
@@ -903,17 +903,17 @@ class APIError(Exception):
 
 class InvalidSessionError(APIError):
     """Exception for invalid session UUID."""
-    
+
     def __init__(self, message="Invalid or missing session UUID"):
         super().__init__(message, status_code=400, code='invalid_session')
 
 def handle_api_errors(app):
     """Register error handlers for the Flask app.
-    
+
     Args:
         app: Flask application instance
     """
-    
+
     @app.errorhandler(APIError)
     def handle_api_error(error):
         response = {
@@ -924,7 +924,7 @@ def handle_api_errors(app):
         if error.payload:
             response['details'] = error.payload
         return jsonify(response), error.status_code
-    
+
     @app.errorhandler(Exception)
     def handle_unexpected_error(error):
         # Log the full error with stack trace
@@ -936,10 +936,10 @@ def handle_api_errors(app):
 
 def api_route(func):
     """Decorator for API routes that catches and converts exceptions to proper responses.
-    
+
     Args:
         func: Route handler function
-        
+
     Returns:
         Wrapped function that handles exceptions
     """
@@ -1010,7 +1010,7 @@ def validate_uuid():
         data = schema.load(request.get_json())
     except ValidationError as err:
         return jsonify({'status': 'invalid', 'uuid': None, 'message': str(err.messages)}), 400
-    
+
     result, status_code = SessionService.validate_uuid(data['uuid'])
     return jsonify(result), status_code
 
@@ -1030,7 +1030,7 @@ def persist_session():
         data = schema.load(request.get_json())
     except ValidationError as err:
         return jsonify({'error': str(err.messages), 'code': 'validation_error'}), 400
-        
+
     result, status_code = SessionService.persist_session(
         data['session_uuid'], data['name'], data['email']
     )
@@ -1072,7 +1072,7 @@ limiter = Limiter(key_func=get_remote_address, default_limits=[SESSION_RATE_LIMI
 
 class UUIDValidationAPI(MethodView):
     decorators = [limiter.limit(SESSION_RATE_LIMIT), api_route]
-    
+
     def post(self):
         """Validate a UUID for format and uniqueness."""
         try:
@@ -1080,13 +1080,13 @@ class UUIDValidationAPI(MethodView):
             data = schema.load(request.get_json())
         except ValidationError as err:
             return jsonify({'status': 'invalid', 'uuid': None, 'message': str(err.messages)}), 400
-        
+
         result, status_code = SessionService.validate_uuid(data['uuid'])
         return jsonify(result), status_code
 
 class UUIDGenerationAPI(MethodView):
     decorators = [limiter.limit(SESSION_RATE_LIMIT), api_route]
-    
+
     def post(self):
         """Generate a unique UUID."""
         result, status_code = SessionService.generate_uuid()
@@ -1094,7 +1094,7 @@ class UUIDGenerationAPI(MethodView):
 
 class SessionPersistAPI(MethodView):
     decorators = [api_route]
-    
+
     def post(self):
         """Persist user session data."""
         try:
@@ -1102,7 +1102,7 @@ class SessionPersistAPI(MethodView):
             data = schema.load(request.get_json())
         except ValidationError as err:
             return jsonify({'error': str(err.messages), 'code': 'validation_error'}), 400
-            
+
         result, status_code = SessionService.persist_session(
             data['session_uuid'], data['name'], data['email']
         )
@@ -1138,7 +1138,7 @@ session_bp.add_url_rule('/persist-session', view_func=SessionPersistAPI.as_view(
 /**
  * Custom hook for managing session UUID.
  * Handles retrieving from localStorage, validating, and generating a new UUID if needed.
- * 
+ *
  * @returns {UseSessionUUIDResult} The session UUID, loading state, error state, and reset function
  */
 export function useSessionUUID(): UseSessionUUIDResult {
@@ -1151,10 +1151,10 @@ export function useSessionUUID(): UseSessionUUIDResult {
 ```python
 def get_db_connection():
     """Get a connection to the database.
-    
+
     Returns:
         A connection object to the PostgreSQL database
-    
+
     Raises:
         psycopg2.OperationalError: If the connection cannot be established
     """
@@ -1270,11 +1270,11 @@ def test_validate_uuid_valid(mock_db_connection):
     mock_conn, mock_cursor = mock_db_connection
     mock_cursor.fetchone.return_value = (0,)  # No existing UUID
     valid_uuid = "12345678-1234-4567-abcd-123456789abc"
-    
+
     # Act
     with patch('app.services.session_service.log_audit_event') as mock_audit:
         result, status_code = SessionService.validate_uuid(valid_uuid)
-    
+
     # Assert
     assert status_code == 200
     assert result['status'] == 'success'
@@ -1285,16 +1285,16 @@ def test_validate_uuid_valid(mock_db_connection):
 def test_validate_uuid_invalid():
     # Arrange
     invalid_uuid = "not-a-uuid"
-    
+
     # Act
     with patch('app.services.session_service.log_audit_event') as mock_audit:
         result, status_code = SessionService.validate_uuid(invalid_uuid)
-    
+
     # Assert
     assert status_code == 400
     assert result['status'] == 'invalid'
     assert result['uuid'] is None
-    mock_audit.assert_called_once_with('uuid_validation_failed', user_uuid=invalid_uuid, 
+    mock_audit.assert_called_once_with('uuid_validation_failed', user_uuid=invalid_uuid,
                                       details={'reason': 'invalid format'})
 ```
 
@@ -1385,16 +1385,16 @@ limiter = Limiter(
 
 def create_app():
     app = Flask(__name__)
-    
+
     # Initialize rate limiter
     limiter.init_app(app)
-    
+
     # Register error handlers
     handle_api_errors(app)
-    
+
     # Register blueprints
     app.register_blueprint(session_bp, url_prefix='/api')
-    
+
     return app
 ```
 
@@ -1426,7 +1426,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = React.memo(({ message }) 
   const formattedTimestamp = useMemo(() => {
     return formatMessageTimestamp(message.timestamp);
   }, [message.timestamp]);
-  
+
   return (
     <div className={`chat-message ${message.sender === 'bot' ? 'bot' : 'user'}`}>
       <div className="message-content">{message.content}</div>

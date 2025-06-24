@@ -11,7 +11,11 @@ interface ButtonGroupProps {
   isButtonGroupVisible: boolean;
 }
 
-const ButtonGroup: React.FC<ButtonGroupProps> = ({ buttons, onButtonClick, isButtonGroupVisible }) => {
+const ButtonGroup: React.FC<ButtonGroupProps> = ({
+  buttons,
+  onButtonClick,
+  isButtonGroupVisible,
+}) => {
   if (!isButtonGroupVisible) {
     return null;
   }

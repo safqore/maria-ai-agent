@@ -4,7 +4,7 @@
 
 **Title:** As a user, I want to upload multiple PDF files to create a personalized AI agent.
 
-**Description:**  
+**Description:**
 The file upload feature allows users to select and upload up to 3 PDF files, each with a maximum size of 5 MB. Uploaded files are displayed in a list showing their names and sizes. Users can access the upload functionality via a button and receive feedback if the upload fails. A progress bar indicates the upload status, and files are marked as uploaded once the process is complete. Users can also remove files from the list if needed. The feature should be intuitive, efficient, and visually consistent with the application's design, particularly the chat interface.
 
 ---

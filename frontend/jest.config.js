@@ -1,15 +1,13 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  setupFilesAfterEnv: [
-    '@testing-library/jest-dom',
-    '<rootDir>/src/setupTests.ts'
-  ], // Add setupTests for global mocks
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
-  testMatch: [
-    "**/?(*.)+(spec|test).[tj]s?(x)"
-  ],
+  testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
+  moduleNameMapper: {
+    '\\.(css|less|scss|sass)$': '<rootDir>/src/__mocks__/styleMock.js',
+  },
 };

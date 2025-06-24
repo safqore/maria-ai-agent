@@ -5,23 +5,31 @@ import FileUpload from './FileUpload';
 import * as uuidApi from '../utils/uuidApi';
 
 // Mock uuidApi to prevent real fetch calls
-type UUIDResponse = {
-  status: 'success' | 'collision' | 'invalid' | 'error';
-  uuid: string | null;
-  message: string;
-  details?: Record<string, unknown>;
-};
 jest.mock('../utils/uuidApi');
 const mockedGenerateUUID = uuidApi.generateUUID as jest.Mock;
 const mockedValidateUUID = uuidApi.validateUUID as jest.Mock;
 
 // Improved Mock XMLHttpRequest for test isolation
+// Define a proper type for the progress event
+interface ProgressEvent {
+  lengthComputable: boolean;
+  loaded: number;
+  total: number;
+}
+
+// Define a static type extension
+interface MockXHRStatic {
+  nextStatus?: number;
+}
+
 class MockXHR {
-  upload = { onprogress: null as null | ((e: any) => void) };
+  upload = { onprogress: null as null | ((e: ProgressEvent) => void) };
   onload: null | (() => void) = null;
   onerror: null | (() => void) = null;
   status: number;
   response: string;
+  static nextStatus?: number;
+
   open = jest.fn();
   send = jest.fn(function (this: MockXHR) {
     // Simulate progress event if needed
@@ -33,19 +41,20 @@ class MockXHR {
       if (this.status !== 200 && this.onerror) this.onerror();
     }, 10);
   });
+
   constructor(status?: number, response?: string) {
     // Use static nextStatus if set, then reset it
-    this.status = (MockXHR as any).nextStatus ?? 200;
-    (MockXHR as any).nextStatus = undefined;
+    this.status = MockXHR.nextStatus ?? 200;
+    MockXHR.nextStatus = undefined;
     this.response = response ?? JSON.stringify({ files: [{ url: 'https://s3.com/file.pdf' }] });
   }
 }
 
 describe('FileUpload Component', () => {
-  let originalXHR: any;
+  let originalXHR: typeof global.XMLHttpRequest;
   beforeEach(() => {
     originalXHR = global.XMLHttpRequest;
-    global.XMLHttpRequest = MockXHR as any;
+    global.XMLHttpRequest = MockXHR as unknown as typeof global.XMLHttpRequest;
     mockedGenerateUUID.mockResolvedValue({ status: 'success', uuid: 'test-uuid', message: 'ok' });
     mockedValidateUUID.mockResolvedValue({ status: 'success', uuid: 'test-uuid', message: 'ok' });
   });
@@ -55,7 +64,9 @@ describe('FileUpload Component', () => {
   });
 
   const setup = (onFileUploaded = jest.fn(), onDone = jest.fn(), sessionUUID = 'test-uuid') => {
-    render(<FileUpload onFileUploaded={onFileUploaded} onDone={onDone} sessionUUID={sessionUUID} />);
+    render(
+      <FileUpload onFileUploaded={onFileUploaded} onDone={onDone} sessionUUID={sessionUUID} />
+    );
   };
 
   it('should only allow PDF files', async () => {
@@ -69,7 +80,9 @@ describe('FileUpload Component', () => {
   it('should not allow more than 3 files', async () => {
     setup();
     const fileInput = screen.getByTestId('file-input');
-    const files = [1, 2, 3, 4].map(i => new File(['dummy'], `file${i}.pdf`, { type: 'application/pdf' }));
+    const files = [1, 2, 3, 4].map(
+      i => new File(['dummy'], `file${i}.pdf`, { type: 'application/pdf' })
+    );
     fireEvent.change(fileInput, { target: { files } });
     expect(await screen.findByText(/only upload up to 3 files/i)).toBeInTheDocument();
   });
@@ -77,7 +90,9 @@ describe('FileUpload Component', () => {
   it('should not allow files larger than 5MB', async () => {
     setup();
     const fileInput = screen.getByTestId('file-input');
-    const largeFile = new File([new ArrayBuffer(6 * 1024 * 1024)], 'large.pdf', { type: 'application/pdf' });
+    const largeFile = new File([new ArrayBuffer(6 * 1024 * 1024)], 'large.pdf', {
+      type: 'application/pdf',
+    });
     fireEvent.change(fileInput, { target: { files: [largeFile] } });
     expect(await screen.findByText(/file too large/i)).toBeInTheDocument();
   });

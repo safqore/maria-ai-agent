@@ -6,3 +6,10 @@ python-multipart
 flask_cors
 psycopg2-binary
 Flask-Limiter
+
+# Dev tools
+black
+isort
+flake8
+mypy
+pre-commit

@@ -18,7 +18,7 @@ function isValidUUID(uuid: string | null): boolean {
  * @throws Error if unable to obtain a valid session UUID from backend.
  */
 export async function getOrCreateSessionUUID(): Promise<string> {
-  let uuid = localStorage.getItem('session_uuid');
+  const uuid = localStorage.getItem('session_uuid');
   if (!isValidUUID(uuid)) {
     // No valid UUID, generate via backend
     const genResp: UUIDResponse = await generateUUID();

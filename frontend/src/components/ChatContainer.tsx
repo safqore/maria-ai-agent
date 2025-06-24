@@ -5,10 +5,11 @@ import useChatStateMachine from '../hooks/useChatStateMachine';
 import '../styles.css';
 import { Transitions } from '../state/FiniteStateMachine';
 import { Message } from '../utils/chatUtils';
-import { resetSessionUUID } from '../utils/sessionUtils';
+// resetSessionUUID is removed as it's unused
 
 // Initial welcome message for the chat UI
-const welcomeMessage = "👋 Hi there! I’m Maria, your AI guide at Safqore. Ready to discover how we can help you grow?";
+const welcomeMessage =
+  '👋 Hi there! I’m Maria, your AI guide at Safqore. Ready to discover how we can help you grow?';
 const initialBotMessage: Message = { text: welcomeMessage, isUser: false, isTyping: true, id: 0 };
 
 interface ChatContainerProps {
@@ -23,12 +24,21 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
   const [messages, setMessages] = useState<Message[]>([initialBotMessage]);
   const [userInput, setUserInput] = useState<string>('');
   const [isInputDisabled, setIsInputDisabled] = useState<boolean>(true);
-  const [sessionError, setSessionError] = useState<string | null>(null);
-  const { fsm, buttonClickHandler, typingCompleteHandler, processTextInputHandler, fileUploadHandler, isButtonGroupVisible } = useChatStateMachine({
+  const [sessionError] = useState<string | null>(null); // State kept but setter not used
+  const {
+    fsm,
+    buttonClickHandler,
+    typingCompleteHandler,
+    processTextInputHandler,
+    fileUploadHandler,
+    isButtonGroupVisible,
+  } = useChatStateMachine({
     messages,
     setMessages,
     setIsInputDisabled,
-    setIsButtonGroupVisible: () => {} // No need to set visibility directly here
+    setIsButtonGroupVisible: () => {
+      // This is intentionally left empty as visibility is managed by the state machine
+    },
   });
 
   // Enable/disable input based on chat state
@@ -51,12 +61,14 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
   /**
    * Handles sending chat messages. Assumes sessionUUID is valid.
    */
-  const sendButtonHandler = (event: KeyboardEvent<HTMLInputElement> | MouseEvent<HTMLButtonElement>) => {
+  const sendButtonHandler = (
+    event: KeyboardEvent<HTMLInputElement> | MouseEvent<HTMLButtonElement>
+  ) => {
     if ((event.type === 'click' || (event as KeyboardEvent).key === 'Enter') && !isInputDisabled) {
       processTextInputHandler(userInput);
       setUserInput('');
     }
-  }
+  };
 
   /**
    * Handler for when file upload is completed. Advances the chat state.
@@ -68,11 +80,11 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
     setMessages(prevMessages => [
       ...prevMessages,
       {
-        text: "Great! Now, please enter your email address so I can send you updates and results.",
+        text: 'Great! Now, please enter your email address so I can send you updates and results.',
         isUser: false,
         isTyping: true,
-        id: prevMessages.length
-      }
+        id: prevMessages.length,
+      },
     ]);
     setIsInputDisabled(false);
   };
@@ -81,18 +93,16 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
 
   return (
     <div className="chat-container">
-      {sessionError && (
-        <div className="session-error-banner">{sessionError}</div>
-      )}
-      <ChatHistory 
-        messages={messages} 
-        onTypingComplete={typingCompleteHandler} 
-        onButtonClick={(value) => {
+      {sessionError && <div className="session-error-banner">{sessionError}</div>}
+      <ChatHistory
+        messages={messages}
+        onTypingComplete={typingCompleteHandler}
+        onButtonClick={value => {
           buttonClickHandler(value);
         }}
-        onFileUploaded={fileUploadHandler} 
+        onFileUploaded={fileUploadHandler}
         onFileUploadDone={onFileUploadDone}
-        currentState={fsm.getState()} 
+        currentState={fsm.getState()}
         isButtonGroupVisible={isButtonGroupVisible}
         sessionUUID={sessionUUID}
       />
