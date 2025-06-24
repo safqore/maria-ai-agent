@@ -1,6 +1,7 @@
 import React from 'react';
-import ChatContainer from './components/ChatContainer';
+import { ChatContainer } from './components/chat';
 import { useSessionUUID } from './hooks/useSessionUUID';
+import { ErrorBoundary } from './components/shared/ErrorBoundary';
 
 /**
  * Main application component for the Maria AI Agent frontend.
@@ -32,8 +33,17 @@ function App(): JSX.Element {
 
   return (
     <div className="App">
-      {/* Pass sessionUUID as a prop to ChatContainer for downstream use */}
-      <ChatContainer sessionUUID={sessionUUID} />
+      <ErrorBoundary
+        fallback={
+          <div className="error-fallback">
+            <h2>Something went wrong</h2>
+            <p>Please refresh the page to try again.</p>
+          </div>
+        }
+      >
+        {/* Pass sessionUUID as a prop to ChatContainer for downstream use */}
+        <ChatContainer sessionUUID={sessionUUID} />
+      </ErrorBoundary>
     </div>
   );
 }

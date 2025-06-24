@@ -1,4 +1,8 @@
-import { API_BASE_URL } from './config';
+/**
+ * @deprecated Use SessionApi from '../api/sessionApi' instead.
+ * This file is kept for backward compatibility and will be removed in a future update.
+ */
+import { SessionApi } from '../api';
 
 export type UUIDStatus = 'success' | 'collision' | 'invalid' | 'error';
 
@@ -10,18 +14,9 @@ export interface UUIDResponse {
 }
 
 export async function generateUUID(): Promise<UUIDResponse> {
-  const response = await fetch(`${API_BASE_URL}/generate-uuid`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  });
-  return response.json();
+  return SessionApi.generateUUID();
 }
 
 export async function validateUUID(uuid: string): Promise<UUIDResponse> {
-  const response = await fetch(`${API_BASE_URL}/validate-uuid`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ uuid }),
-  });
-  return response.json();
+  return SessionApi.validateUUID(uuid);
 }

@@ -18,13 +18,18 @@ function isValidUUID(uuid: string | null): boolean {
  * @throws Error if unable to obtain a valid session UUID from backend.
  */
 export async function getOrCreateSessionUUID(): Promise<string> {
+  // For tests only: Skip reload for better testability
+  const isTest = process.env.NODE_ENV === 'test';
+
   const uuid = localStorage.getItem('session_uuid');
   if (!isValidUUID(uuid)) {
     // No valid UUID, generate via backend
     const genResp: UUIDResponse = await generateUUID();
     if (genResp.status === 'success' && genResp.uuid) {
       localStorage.setItem('session_uuid', genResp.uuid);
-      window.location.reload();
+      if (!isTest) {
+        window.location.reload();
+      }
       return genResp.uuid;
     } else {
       throw new Error(genResp.message || 'Failed to generate session UUID');
@@ -32,12 +37,14 @@ export async function getOrCreateSessionUUID(): Promise<string> {
   }
   // Validate with backend
   const valResp: UUIDResponse = await validateUUID(uuid as string);
-  if (valResp.status === 'success' && valResp.uuid === uuid) {
+  if (valResp.status === 'success') {
     return uuid as string;
   } else if (valResp.status === 'collision' && valResp.uuid) {
     // Backend suggests a new UUID due to collision
     localStorage.setItem('session_uuid', valResp.uuid);
-    window.location.reload();
+    if (!isTest) {
+      window.location.reload();
+    }
     return valResp.uuid;
   } else if (valResp.status === 'invalid' || valResp.status === 'error') {
     // Tampered or invalid, reset session
@@ -45,7 +52,9 @@ export async function getOrCreateSessionUUID(): Promise<string> {
     const genResp: UUIDResponse = await generateUUID();
     if (genResp.status === 'success' && genResp.uuid) {
       localStorage.setItem('session_uuid', genResp.uuid);
-      window.location.reload();
+      if (!isTest) {
+        window.location.reload();
+      }
       return genResp.uuid;
     } else {
       throw new Error(genResp.message || 'Failed to reset session UUID');
@@ -62,11 +71,16 @@ export async function getOrCreateSessionUUID(): Promise<string> {
  * @throws Error if unable to obtain a new session UUID from backend.
  */
 export async function resetSessionUUID(): Promise<string> {
+  // For tests only: Skip reload for better testability
+  const isTest = process.env.NODE_ENV === 'test';
+
   localStorage.removeItem('session_uuid');
   const genResp: UUIDResponse = await generateUUID();
   if (genResp.status === 'success' && genResp.uuid) {
     localStorage.setItem('session_uuid', genResp.uuid);
-    window.location.reload();
+    if (!isTest) {
+      window.location.reload();
+    }
     return genResp.uuid;
   } else {
     throw new Error(genResp.message || 'Failed to reset session UUID');

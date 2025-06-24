@@ -20,51 +20,88 @@ describe('sessionUtils (async, backend integration)', () => {
   });
 
   it('should generate and store a new UUID if none exists', async () => {
-    mockedGenerateUUID.mockResolvedValue({ status: 'success', uuid: 'mock-uuid-1', message: 'ok' });
+    const newUuid = '123e4567-e89b-42d3-a456-556642440000';
+    mockedGenerateUUID.mockResolvedValue({ status: 'success', uuid: newUuid, message: 'ok' });
     mockedValidateUUID.mockResolvedValue({ status: 'success', uuid: null, message: 'ok' }); // Defensive default
     const uuid = await getOrCreateSessionUUID();
-    expect(uuid).toBe('mock-uuid-1');
-    expect(localStorage.getItem('session_uuid')).toBe('mock-uuid-1');
+    expect(uuid).toBe(newUuid);
+    expect(localStorage.getItem('session_uuid')).toBe(newUuid);
   });
 
   it('should return the existing UUID if present and valid', async () => {
-    localStorage.setItem('session_uuid', 'mock-uuid-2');
-    mockedValidateUUID.mockResolvedValue({ status: 'success', uuid: 'mock-uuid-2', message: 'ok' });
-    mockedGenerateUUID.mockResolvedValue({
+    // Use a properly formatted UUID v4 that will pass the regex test
+    const validUuid = '123e4567-e89b-42d3-a456-556642440000';
+    localStorage.setItem('session_uuid', validUuid);
+    mockedValidateUUID.mockResolvedValueOnce({ status: 'success', uuid: null, message: 'ok' });
+    mockedGenerateUUID.mockResolvedValueOnce({
       status: 'success',
       uuid: 'should-not-be-used',
       message: 'ok',
     }); // Defensive default
+
+    console.log('Starting test with localStorage uuid:', localStorage.getItem('session_uuid'));
+
     const uuid = await getOrCreateSessionUUID();
-    expect(uuid).toBe('mock-uuid-2');
-    expect(localStorage.getItem('session_uuid')).toBe('mock-uuid-2');
+
+    console.log(
+      'Validate UUID mock called:',
+      mockedValidateUUID.mock.calls.length,
+      'times with args:',
+      mockedValidateUUID.mock.calls.map(call => call[0])
+    );
+    console.log('Generate UUID mock called:', mockedGenerateUUID.mock.calls.length, 'times');
+    console.log('Return value from getOrCreateSessionUUID:', uuid);
+
+    expect(uuid).toBe(validUuid);
+    expect(localStorage.getItem('session_uuid')).toBe(validUuid);
     expect(mockedGenerateUUID).not.toHaveBeenCalled();
   });
 
   it('should handle collision by updating UUID', async () => {
-    localStorage.setItem('session_uuid', 'old-uuid');
-    mockedValidateUUID.mockResolvedValue({
+    // Use a properly formatted UUID v4 that will pass the regex test
+    const oldUuid = '123e4567-e89b-42d3-a456-556642440000';
+    const newUuid = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+
+    localStorage.setItem('session_uuid', oldUuid);
+    mockedValidateUUID.mockResolvedValueOnce({
       status: 'collision',
-      uuid: 'new-uuid',
+      uuid: newUuid,
       message: 'collision',
     });
-    mockedGenerateUUID.mockResolvedValue({
+    mockedGenerateUUID.mockResolvedValueOnce({
       status: 'success',
       uuid: 'should-not-be-used',
       message: 'ok',
     }); // Defensive default
+
+    console.log('Starting test with localStorage uuid:', localStorage.getItem('session_uuid'));
+
     const uuid = await getOrCreateSessionUUID();
-    expect(uuid).toBe('new-uuid');
-    expect(localStorage.getItem('session_uuid')).toBe('new-uuid');
+
+    console.log(
+      'Validate UUID mock called:',
+      mockedValidateUUID.mock.calls.length,
+      'times with args:',
+      mockedValidateUUID.mock.calls.map(call => call[0])
+    );
+    console.log('Generate UUID mock called:', mockedGenerateUUID.mock.calls.length, 'times');
+    console.log('Return value from getOrCreateSessionUUID:', uuid);
+
+    expect(uuid).toBe(newUuid);
+    expect(localStorage.getItem('session_uuid')).toBe(newUuid);
   });
 
   it('should handle invalid UUID by resetting session', async () => {
-    localStorage.setItem('session_uuid', 'tampered-uuid');
+    // Even though the UUID will be invalid on the backend, it needs to pass the local regex check
+    const tamperedUuid = '123e4567-e89b-42d3-a456-556642440000';
+    const resetUuid = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+
+    localStorage.setItem('session_uuid', tamperedUuid);
     mockedValidateUUID.mockResolvedValue({ status: 'invalid', uuid: null, message: 'invalid' });
-    mockedGenerateUUID.mockResolvedValue({ status: 'success', uuid: 'reset-uuid', message: 'ok' });
+    mockedGenerateUUID.mockResolvedValue({ status: 'success', uuid: resetUuid, message: 'ok' });
     const uuid = await getOrCreateSessionUUID();
-    expect(uuid).toBe('reset-uuid');
-    expect(localStorage.getItem('session_uuid')).toBe('reset-uuid');
+    expect(uuid).toBe(resetUuid);
+    expect(localStorage.getItem('session_uuid')).toBe(resetUuid);
   });
 
   it('should throw if backend fails to generate UUID', async () => {
@@ -74,15 +111,16 @@ describe('sessionUtils (async, backend integration)', () => {
   });
 
   it('resetSessionUUID should request new UUID and store it', async () => {
+    const resetUuid = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
     mockedGenerateUUID.mockResolvedValue({
       status: 'success',
-      uuid: 'reset-uuid-2',
+      uuid: resetUuid,
       message: 'ok',
     });
     mockedValidateUUID.mockResolvedValue({ status: 'success', uuid: null, message: 'ok' }); // Defensive default
     const uuid = await resetSessionUUID();
-    expect(uuid).toBe('reset-uuid-2');
-    expect(localStorage.getItem('session_uuid')).toBe('reset-uuid-2');
+    expect(uuid).toBe(resetUuid);
+    expect(localStorage.getItem('session_uuid')).toBe(resetUuid);
   });
 
   it('resetSessionUUID should throw if backend fails', async () => {

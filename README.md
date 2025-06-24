@@ -213,6 +213,69 @@ For detailed requirements and user stories, see `requirements/EPIC Requirements.
 
 ---
 
+## Frontend Architecture
+
+The frontend is built with React and TypeScript, structured for maintainability and scalability.
+
+### Directory Structure
+
+```
+frontend/
+├── src/
+│   ├── api/                 # API service layer
+│   │   ├── config.ts        # API configuration and error handling
+│   │   ├── sessionApi.ts    # Session management API
+│   │   ├── fileApi.ts       # File upload API
+│   │   └── chatApi.ts       # Chat interaction API
+│   ├── components/          # React components
+│   │   ├── chat/            # Chat-related components
+│   │   ├── fileUpload/      # File upload components
+│   │   └── shared/          # Shared components
+│   ├── contexts/            # React contexts for state management
+│   │   ├── ChatContext.tsx  # Chat state management
+│   │   └── FileUploadContext.tsx # File upload state management
+│   ├── hooks/               # Custom React hooks
+│   │   ├── api/             # API-related hooks
+│   │   └── adapters/        # Legacy code adapters
+│   ├── state/               # State management
+│   ├── types/               # TypeScript type definitions
+│   └── utils/               # Utility functions
+```
+
+### Key Features
+
+#### 1. Centralized API Service Layer
+
+- Separate modules for different API features (session, chat, file)
+- Consistent error handling with ApiError class
+- TypeScript interfaces for API requests and responses
+
+#### 2. Component Architecture
+
+- Components split by feature and responsibility
+- Shared components for reusability
+- Error boundaries for fault tolerance
+
+#### 3. State Management
+
+- Context-based state management with useReducer
+- Custom hooks for isolating logic
+- TypeScript for type safety
+
+#### 4. Error Handling
+
+- ErrorBoundary component for catching and displaying errors
+- Consistent API error handling
+- User-friendly error messages and recovery options
+
+#### 5. Testing
+
+- Jest for unit and integration tests
+- Component tests with React Testing Library
+- Mock services for isolated testing
+
+---
+
 ## Local PostgreSQL Setup Guide
 
 Follow these steps to set up a local PostgreSQL database and connect the application:
