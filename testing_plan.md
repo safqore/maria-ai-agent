@@ -1,6 +1,38 @@
 # Testing Plan for Maria AI Agent Refactoring
 
-This document outlines the testing approach for the refactoring of the Maria AI Agent project.
+This document ou## Testing Scripts
+
+### Backend Testing
+
+```bash
+cd backend
+pytest -v
+```
+
+Or use the Makefile command:
+
+```bash
+make test-backend
+```
+
+### Frontend Testing
+
+```bash
+cd frontend
+npm test
+```
+
+Or use the Makefile command:
+
+```bash
+make test-frontend
+```
+
+### Running All Tests
+
+```bash
+make test-all
+```ing approach for the refactoring of the Maria AI Agent project.
 
 ## Testing Approach
 
@@ -76,6 +108,31 @@ pytest -v
 cd frontend
 npm test
 ```
+
+## Test Infrastructure Improvements
+
+### Completed
+
+1. **Backend Test Organization**
+   - Added conftest.py for shared fixtures
+   - Standardized import organization
+   - Fixed pytest warnings
+
+2. **Frontend Test Configuration**
+   - Fixed Jest configuration
+   - Added style mocks for CSS imports
+   - Updated component tests to use modern testing practices
+
+### Planned for Next Phases
+
+1. **Improved Test Coverage**
+   - Add tests for new service layer classes
+   - Add tests for error handling
+   - Add tests for request validation
+
+2. **Test Automation**
+   - Add GitHub Actions workflows for CI/CD
+   - Add pre-push hooks for running tests
 
 ## Acceptance Criteria
 
