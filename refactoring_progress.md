@@ -175,11 +175,20 @@ We have successfully completed three phases of the refactoring plan:
 - Implemented consistent error handling with ErrorBoundary components
 - Improved state management with React Context and useReducer
 
-The codebase is now more maintainable, has better separation of concerns, and follows modern best practices for both React and Flask development. All tests are passing, and the application builds successfully without errors.
+The codebase is now more maintainable, has better separation of concerns, and follows modern best practices for both React and Flask development. All tests are passing, and the application builds successfully without errors. However, a regression has been identified where chat buttons are no longer displaying in the chat window. This functionality worked correctly before the Phase 3 refactoring and needs to be fixed before proceeding with Phase 4.
 
-### Next Steps: Backend Improvements (Higher Risk)
+### Next Steps: Regression Fixes and Backend Improvements (Higher Risk)
 
-The next phase will focus on implementing higher-risk backend improvements:
+Before proceeding with backend improvements, we need to address the following regression:
+
+1. **Fix Chat Button Display Issue**
+   - Investigate why buttons are not displaying in the chat window after Phase 3 refactoring
+   - Check ChatContext implementation and state management
+   - Verify button rendering in ChatMessages and related components
+   - Compare with pre-refactoring implementation to identify differences
+   - Add tests to verify button display functionality
+
+After addressing the regression, the next phase will focus on implementing higher-risk backend improvements:
 
 1. **Implement SQLAlchemy ORM**
    - Set up SQLAlchemy configuration

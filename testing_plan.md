@@ -160,6 +160,15 @@ npm test
    - Add GitHub Actions workflows for CI/CD
    - Add pre-push hooks for running tests
 
+## Regressions to Address
+
+1. **Chat Button Display Issue**
+   - Add test cases to verify buttons are properly displayed in the chat window
+   - Create specific tests to validate button action handlers
+   - Create visual regression tests to compare button appearance before and after refactoring
+   - Verify that the state machine integration with the new context system works correctly
+   - Add integration tests for the full button workflow (display → click → state transition)
+
 ## Acceptance Criteria
 
 The refactoring will be considered successful if:
