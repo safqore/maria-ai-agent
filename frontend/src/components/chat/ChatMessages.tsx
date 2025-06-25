@@ -23,11 +23,11 @@ interface ChatMessagesProps {
  * This component handles the rendering of individual messages,
  * including typing animations and auto-scrolling to the latest message.
  */
-const ChatMessages: React.FC<ChatMessagesProps> = ({ 
-  messages, 
-  onTypingComplete, 
+const ChatMessages: React.FC<ChatMessagesProps> = ({
+  messages,
+  onTypingComplete,
   onButtonClick,
-  isButtonGroupVisible = true
+  isButtonGroupVisible = true,
 }) => {
   // Ref for auto-scrolling to the end of messages
   const endOfMessagesRef = useRef<HTMLDivElement>(null);

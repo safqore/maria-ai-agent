@@ -9,7 +9,8 @@ import { Message } from '../utils/chatUtils';
 import '../styles.css';
 
 // Initial welcome message for the chat UI
-const welcomeMessage = "👋 Hi there! I'm Maria, your AI guide at Safqore. Ready to discover how we can help you grow?";
+const welcomeMessage =
+  "👋 Hi there! I'm Maria, your AI guide at Safqore. Ready to discover how we can help you grow?";
 const initialBotMessage: Message = { text: welcomeMessage, isUser: false, isTyping: true, id: 0 };
 
 interface ChatContainerProps {
@@ -26,18 +27,18 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
   const [isInputDisabled, setIsInputDisabled] = useState<boolean>(true);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [isButtonGroupVisible, setIsButtonGroupVisible] = useState<boolean>(true);
-  
-  const { 
-    fsm, 
-    buttonClickHandler, 
-    typingCompleteHandler, 
-    processTextInputHandler, 
-    fileUploadHandler
+
+  const {
+    fsm,
+    buttonClickHandler,
+    typingCompleteHandler,
+    processTextInputHandler,
+    fileUploadHandler,
   } = useChatStateMachine({
     messages,
     setMessages,
     setIsInputDisabled,
-    setIsButtonGroupVisible
+    setIsButtonGroupVisible,
   });
 
   // Enable/disable input based on chat state
@@ -60,8 +61,14 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
   /**
    * Handles sending chat messages.
    */
-  const handleSendMessage = (event: KeyboardEvent<HTMLInputElement> | MouseEvent<HTMLButtonElement>) => {
-    if ((event.type === 'click' || (event as KeyboardEvent).key === 'Enter') && !isInputDisabled && userInput.trim()) {
+  const handleSendMessage = (
+    event: KeyboardEvent<HTMLInputElement> | MouseEvent<HTMLButtonElement>
+  ) => {
+    if (
+      (event.type === 'click' || (event as KeyboardEvent).key === 'Enter') &&
+      !isInputDisabled &&
+      userInput.trim()
+    ) {
       processTextInputHandler(userInput);
       setUserInput('');
     }
@@ -73,16 +80,16 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
   const handleFileUploadDone = () => {
     // Transition state machine to next state after file upload
     fsm.transition(Transitions.DOCS_UPLOADED);
-    
+
     // Add bot message to prompt for email
     setMessages(prevMessages => [
       ...prevMessages,
       {
-        text: "Great! Now, please enter your email address so I can send you updates and results.",
+        text: 'Great! Now, please enter your email address so I can send you updates and results.',
         isUser: false,
         isTyping: true,
-        id: prevMessages.length
-      }
+        id: prevMessages.length,
+      },
     ]);
     setIsInputDisabled(false);
   };
@@ -108,18 +115,26 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
         <div className="chat-history" id="chat-history">
           {/* Display messages */}
           {messages.map((message, index) => (
-            <div key={index} className={`message ${message.isUser ? 'user-message' : 'bot-message'}`}>
+            <div
+              key={index}
+              className={`message ${message.isUser ? 'user-message' : 'bot-message'}`}
+            >
               {message.isTyping ? (
-                <TypingEffect message={message.text} onTypingComplete={() => typingCompleteHandler(message.id)} />
+                <TypingEffect
+                  message={message.text}
+                  onTypingComplete={() => typingCompleteHandler(message.id)}
+                />
               ) : (
                 <>
                   {message.text && (
-                    <div dangerouslySetInnerHTML={{ __html: message.text.replace(/\n/g, '<br>') }} />
+                    <div
+                      dangerouslySetInnerHTML={{ __html: message.text.replace(/\n/g, '<br>') }}
+                    />
                   )}
                   {message.buttons && (
                     <ButtonGroup
                       buttons={message.buttons}
-                      onButtonClick={(value) => buttonClickHandler(value)}
+                      onButtonClick={value => buttonClickHandler(value)}
                       isButtonGroupVisible={isButtonGroupVisible}
                     />
                   )}
@@ -132,25 +147,25 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
           {fsm.getState() === States.USR_INIT_OPTIONS && (
             <ButtonGroup
               buttons={[
-                { text: "Yes", value: "YES_CLICKED" },
-                { text: "No", value: "NO_CLICKED" }
+                { text: 'Yes', value: 'YES_CLICKED' },
+                { text: 'No', value: 'NO_CLICKED' },
               ]}
-              onButtonClick={(value) => buttonClickHandler(value)}
+              onButtonClick={value => buttonClickHandler(value)}
               isButtonGroupVisible={isButtonGroupVisible}
             />
           )}
-          
+
           {fsm.getState() === States.ENGAGE_USR_AGAIN && (
             <ButtonGroup
               buttons={[
-                { text: "Let's Go", value: "LETS_GO_CLICKED" },
-                { text: "Maybe next time", value: "MAYBE_NEXT_TIME_CLICKED" }
+                { text: "Let's Go", value: 'LETS_GO_CLICKED' },
+                { text: 'Maybe next time', value: 'MAYBE_NEXT_TIME_CLICKED' },
               ]}
-              onButtonClick={(value) => buttonClickHandler(value)}
+              onButtonClick={value => buttonClickHandler(value)}
               isButtonGroupVisible={isButtonGroupVisible}
             />
           )}
-          
+
           {/* File upload component */}
           {fsm.getState() === States.UPLOAD_DOCS && (
             <FileUpload
@@ -159,7 +174,7 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
               sessionUUID={sessionUUID}
             />
           )}
-          
+
           <div ref={endOfMessagesRef} />
         </div>
 

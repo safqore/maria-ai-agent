@@ -37,7 +37,7 @@ const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID }) 
     setButtonGroupVisible,
     // setError is available but not currently used in this component
   } = useChat();
-  
+
   // Initialize chat when first message is loaded
   React.useEffect(() => {
     if (messages.length > 0 && messages[0].isTyping === false) {
@@ -155,7 +155,7 @@ const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID }) 
   React.useEffect(() => {
     const currentState = fsm.getState();
     console.log('Current state:', currentState);
-    
+
     if (currentState === States.USR_INIT_OPTIONS || currentState === States.ENGAGE_USR_AGAIN) {
       setButtonGroupVisible(true);
     } else {
@@ -168,10 +168,10 @@ const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID }) 
       {chatError && <div className="chat-error-message">{chatError}</div>}
 
       <div className="chat-history" id="chat-history">
-        <ChatMessages 
-          messages={messages} 
-          onTypingComplete={handleTypingComplete} 
-          onButtonClick={handleButtonClick} 
+        <ChatMessages
+          messages={messages}
+          onTypingComplete={handleTypingComplete}
+          onButtonClick={handleButtonClick}
         />
 
         {fsm.getState() === States.UPLOAD_DOCS && (

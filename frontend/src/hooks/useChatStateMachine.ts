@@ -20,7 +20,7 @@ const useChatStateMachine = ({
   const [fsm] = useState<StateMachine>(createStateMachine());
   // userName state is declared for future use but not currently used
   const [, setUserName] = useState<string>('');
-  
+
   // Initialize state machine when welcome message completes typing
   useEffect(() => {
     if (messages.length > 0 && !messages[0].isTyping && messages[0].id === 0) {
@@ -38,7 +38,7 @@ const useChatStateMachine = ({
     setMessages(prevMessages =>
       prevMessages.map(msg => (msg.id === messageId ? { ...msg, isTyping: false } : msg))
     );
-    
+
     // When welcome message completes
     if (messageId === 0) {
       fsm.transition(Transitions.WELCOME_MSG_COMPLETE);
@@ -60,7 +60,7 @@ const useChatStateMachine = ({
     if (fsm.getState() === States.UPLOAD_DOCS_MSG && messageId === messages.length - 1) {
       fsm.transition(Transitions.UPLOAD_DOCS_MSG_COMPLETE);
     }
-    
+
     // Always ensure buttons are visible in relevant states
     if (fsm.getState() === States.USR_INIT_OPTIONS || fsm.getState() === States.ENGAGE_USR_AGAIN) {
       setIsButtonGroupVisible(true);

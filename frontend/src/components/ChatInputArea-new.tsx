@@ -3,15 +3,17 @@ import React, { ChangeEvent, KeyboardEvent, MouseEvent } from 'react';
 interface ChatInputAreaProps {
   userInput: string;
   inputTextChangeHandler: (event: ChangeEvent<HTMLInputElement>) => void;
-  sendButtonHandler: (event: KeyboardEvent<HTMLInputElement> | MouseEvent<HTMLButtonElement>) => void;
+  sendButtonHandler: (
+    event: KeyboardEvent<HTMLInputElement> | MouseEvent<HTMLButtonElement>
+  ) => void;
   disabled: boolean;
 }
 
-const ChatInputArea: React.FC<ChatInputAreaProps> = ({ 
+const ChatInputArea: React.FC<ChatInputAreaProps> = ({
   userInput,
   inputTextChangeHandler,
   sendButtonHandler,
-  disabled 
+  disabled,
 }) => {
   return (
     <div className="chat-input-area">
@@ -24,15 +26,11 @@ const ChatInputArea: React.FC<ChatInputAreaProps> = ({
         placeholder="Type your message..."
         disabled={disabled}
       />
-      <button 
-        id="send-button" 
-        onClick={sendButtonHandler} 
-        disabled={disabled || !userInput.trim()}
-      >
+      <button id="send-button" onClick={sendButtonHandler} disabled={disabled || !userInput.trim()}>
         Send
       </button>
     </div>
   );
-}
+};
 
 export default ChatInputArea;
