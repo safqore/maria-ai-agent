@@ -1,5 +1,5 @@
 import React, { useState, useEffect, ChangeEvent, KeyboardEvent, MouseEvent } from 'react';
-import ChatHistory from './ChatHistory';
+import ChatHistory from './chat/ChatHistory';
 import ChatInputArea from './ChatInputArea';
 import useChatStateMachine from '../hooks/useChatStateMachine';
 import '../styles.css';
@@ -93,7 +93,6 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
     <div className="chat-container">
       {sessionError && <div className="session-error-banner">{sessionError}</div>}
       <ChatHistory
-        messages={messages}
         onTypingComplete={typingCompleteHandler}
         onButtonClick={value => {
           buttonClickHandler(value);
@@ -101,7 +100,6 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
         onFileUploaded={fileUploadHandler}
         onFileUploadDone={onFileUploadDone}
         currentState={fsm.getState()}
-        isButtonGroupVisible={isButtonGroupVisible}
         sessionUUID={sessionUUID}
       />
       <ChatInputArea

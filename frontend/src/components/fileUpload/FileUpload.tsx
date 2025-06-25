@@ -27,7 +27,7 @@ interface FileUploadProps {
  * Component that handles file uploads, including selection,
  * validation, progress tracking, and status display
  */
-export const FileUpload: React.FC<FileUploadProps> = ({ sessionUUID, onFileUploaded, onDone }) => {
+const FileUpload: React.FC<FileUploadProps> = ({ sessionUUID, onFileUploaded, onDone }) => {
   const [files, setFiles] = useState<FileStatus[]>([]);
   const [globalError, setGlobalError] = useState<string | null>(null);
 
