@@ -24,22 +24,24 @@ interface ChatContainerProps {
  */
 function ChatContainer({ sessionUUID }: ChatContainerProps) {
   // Use contexts instead of local state where possible
-  const { 
+  const {
     state: { messages, error: sessionError, isInputDisabled: contextInputDisabled },
     addUserMessage,
     addBotMessage,
     setMessageTypingComplete,
-    setInputDisabled: setContextInputDisabled
+    setInputDisabled: setContextInputDisabled,
   } = useChat();
-  
-  const { state: { files } } = useFileUpload();
+
+  const {
+    state: { files },
+  } = useFileUpload();
   const fileUploadInProgress = files.some(file => file.isUploading);
-  
+
   // Local state that doesn't belong in contexts
   const [userInput, setUserInput] = useState<string>('');
   const [isInputDisabled, setIsInputDisabled] = useState<boolean>(true);
   const [isButtonGroupVisible, setIsButtonGroupVisible] = useState<boolean>(false);
-  
+
   // Initialize with welcome message if messages is empty
   useEffect(() => {
     if (messages.length === 0) {
@@ -55,7 +57,7 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
     fileUploadHandler,
   } = useChatStateMachine({
     messages,
-    setMessages: (messagesOrFn) => {
+    setMessages: messagesOrFn => {
       if (typeof messagesOrFn === 'function') {
         const newMessages = messagesOrFn(messages);
         // Add each message as needed
@@ -88,9 +90,7 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
    * Handles user input submission via Enter key or Send button
    * @param event - Keyboard or mouse event triggering the submission
    */
-  const handleSubmit = (
-    event: KeyboardEvent<HTMLInputElement> | MouseEvent<HTMLButtonElement>
-  ) => {
+  const handleSubmit = (event: KeyboardEvent<HTMLInputElement> | MouseEvent<HTMLButtonElement>) => {
     // Prevent default for keyboard events
     if ('key' in event && event.key === 'Enter') {
       event.preventDefault();
@@ -143,10 +143,12 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
   const handleFileUploadDone = () => {
     // Transition state machine to next state after file upload
     fsm.transition(Transitions.DOCS_UPLOADED);
-    
+
     // Add bot message through context
-    addBotMessage('Great! Now, please enter your email address so I can send you updates and results.');
-    
+    addBotMessage(
+      'Great! Now, please enter your email address so I can send you updates and results.'
+    );
+
     // Enable input for email entry
     setIsInputDisabled(false);
     setContextInputDisabled(false);
@@ -160,17 +162,17 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
           <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(sessionError) }} />
         </div>
       )}
-      
+
       {/* Chat history */}
-      <ChatHistory 
-        onTypingComplete={handleTypingComplete} 
-        onButtonClick={handleButtonClick} 
+      <ChatHistory
+        onTypingComplete={handleTypingComplete}
+        onButtonClick={handleButtonClick}
         currentState={fsm.getState()}
         onFileUploaded={handleFileUpload}
         onFileUploadDone={handleFileUploadDone}
         sessionUUID={sessionUUID}
       />
-      
+
       {/* Input area */}
       <ChatInputArea
         userInput={userInput}
