@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChatContainer } from './components/chat';
+import ChatContainer from './components/ChatContainer-new';
 import { useSessionUUID } from './hooks/useSessionUUID';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
 

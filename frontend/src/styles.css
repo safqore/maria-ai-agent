@@ -69,14 +69,20 @@ body {
   padding: 0px;
 }
 
-.chat-input-area {
-  padding: 20px;
-  display: flex; /* show the input box */
-  /* gap: 10px; remove the gap */
+.chat-controls {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
   border-top: 1px solid #ddd;
 }
 
-#user-input {
+.chat-input-area {
+  display: flex;
+  padding: 10px;
+  gap: 10px;
+}
+
+#user-input, .chat-input {
   flex-grow: 1;
   padding: 10px;
   border: 1px solid #ddd;
@@ -86,6 +92,7 @@ body {
 }
 
 #send-button,
+.send-button,
 .chat-button {
   padding: 8px 12px;
   background-color: #007bff;
@@ -107,6 +114,13 @@ body {
   flex-direction: row;
   gap: 2px;
   margin: 5px 0;
+}
+
+.state-buttons {
+  display: flex;
+  justify-content: flex-start;
+  margin: 10px 0;
+  padding: 5px;
 }
 
 @media (max-width: 768px) {

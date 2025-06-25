@@ -5,6 +5,7 @@ import { FileUploadProvider } from '../../contexts/FileUploadContext';
 import ChatMessages from './ChatMessages';
 import ChatControls from './ChatControls';
 import ChatActions from './ChatActions';
+import ButtonGroup from '../ButtonGroup';
 import useChatStateMachine from '../../hooks/useChatStateMachine';
 import { States, Transitions } from '../../state/FiniteStateMachine';
 import { Button } from '../../types/buttonTypes';
@@ -33,8 +34,17 @@ const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID }) 
     addBotMessage,
     setInputDisabled,
     removeMessageButtons,
+    setButtonGroupVisible,
     // setError is available but not currently used in this component
   } = useChat();
+  
+  // Initialize chat when first message is loaded
+  React.useEffect(() => {
+    if (messages.length > 0 && messages[0].isTyping === false) {
+      setInputDisabled(false);
+      setButtonGroupVisible(true);
+    }
+  }, [messages, setInputDisabled, setButtonGroupVisible]);
 
   // Local state for user input
   const [userInput, setUserInput] = useState<string>('');
@@ -74,8 +84,14 @@ const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID }) 
         setInputDisabled(value);
       }
     },
-    setIsButtonGroupVisible: () => {
-      // This is intentionally left empty - handled by ChatContext
+    setIsButtonGroupVisible: (value: boolean | ((prevState: boolean) => boolean)) => {
+      if (typeof value === 'function') {
+        // If value is a function, we need to use the current value
+        const newValue = value(isButtonGroupVisible);
+        setButtonGroupVisible(newValue);
+      } else {
+        setButtonGroupVisible(value);
+      }
     },
   });
 
@@ -135,12 +151,28 @@ const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID }) 
     setInputDisabled(false);
   };
 
+  // Display state-based buttons based on the current state
+  React.useEffect(() => {
+    const currentState = fsm.getState();
+    console.log('Current state:', currentState);
+    
+    if (currentState === States.USR_INIT_OPTIONS || currentState === States.ENGAGE_USR_AGAIN) {
+      setButtonGroupVisible(true);
+    } else {
+      setButtonGroupVisible(false);
+    }
+  }, [fsm, setButtonGroupVisible]);
+
   return (
     <div className="chat-container">
       {chatError && <div className="chat-error-message">{chatError}</div>}
 
       <div className="chat-history" id="chat-history">
-        <ChatMessages messages={messages} onTypingComplete={handleTypingComplete} />
+        <ChatMessages 
+          messages={messages} 
+          onTypingComplete={handleTypingComplete} 
+          onButtonClick={handleButtonClick} 
+        />
 
         {fsm.getState() === States.UPLOAD_DOCS && (
           <ChatActions

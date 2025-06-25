@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createStateMachine, States, Transitions, StateMachine } from '../state/FiniteStateMachine';
 import { Message } from '../utils/chatUtils';
 
@@ -15,16 +15,36 @@ const useChatStateMachine = ({
   setIsInputDisabled,
   setIsButtonGroupVisible,
 }: ChatStateMachineOptions) => {
+  console.log('useChatStateMachine initialized');
   // fsm is used but its setter is not needed in current implementation
   const [fsm] = useState<StateMachine>(createStateMachine());
   // userName state is declared for future use but not currently used
   const [, setUserName] = useState<string>('');
+  
+  // Initialize state machine when welcome message completes typing
+  useEffect(() => {
+    if (messages.length > 0 && !messages[0].isTyping && messages[0].id === 0) {
+      console.log('Welcome message complete, transitioning to USR_INIT_OPTIONS');
+      // Transition to initial options state when welcome message is done typing
+      fsm.transition(Transitions.WELCOME_MSG_COMPLETE);
+      // Make sure buttons are visible
+      setIsButtonGroupVisible(true);
+      // Enable input
+      setIsInputDisabled(false);
+    }
+  }, [messages, fsm, setIsButtonGroupVisible, setIsInputDisabled]);
 
   const typingCompleteHandler = (messageId: number) => {
     setMessages(prevMessages =>
       prevMessages.map(msg => (msg.id === messageId ? { ...msg, isTyping: false } : msg))
     );
-    if (messageId !== 0) {
+    
+    // When welcome message completes
+    if (messageId === 0) {
+      fsm.transition(Transitions.WELCOME_MSG_COMPLETE);
+      setIsInputDisabled(false);
+      setIsButtonGroupVisible(true);
+    } else {
       setIsInputDisabled(false);
     }
 
@@ -40,9 +60,15 @@ const useChatStateMachine = ({
     if (fsm.getState() === States.UPLOAD_DOCS_MSG && messageId === messages.length - 1) {
       fsm.transition(Transitions.UPLOAD_DOCS_MSG_COMPLETE);
     }
+    
+    // Always ensure buttons are visible in relevant states
+    if (fsm.getState() === States.USR_INIT_OPTIONS || fsm.getState() === States.ENGAGE_USR_AGAIN) {
+      setIsButtonGroupVisible(true);
+    }
   };
 
   const buttonClickHandler = (response: string) => {
+    console.log('Button clicked:', response);
     const displayValue = fsm.getResponseDisplayValue(response) || response;
     const userMessage: Message = {
       text: displayValue,
@@ -52,7 +78,10 @@ const useChatStateMachine = ({
     };
     setMessages([...messages, userMessage]);
 
-    setMessages(prevMessages => prevMessages.filter(msg => (msg.buttons ? false : true)));
+    // Hide the button group after clicking any button
+    setIsButtonGroupVisible(false);
+
+    // We don't have message buttons anymore, so no need to filter
 
     if (
       (fsm.canTransition(Transitions.YES_CLICKED) && response === 'YES_CLICKED') ||
@@ -147,13 +176,13 @@ const useChatStateMachine = ({
     ]);
   };
 
+  // Don't need to return isButtonGroupVisible as it's now managed by the parent component
   return {
     fsm,
     buttonClickHandler,
     typingCompleteHandler,
     processTextInputHandler,
     fileUploadHandler,
-    isButtonGroupVisible: true,
   };
 };
 

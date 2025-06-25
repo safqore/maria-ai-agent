@@ -39,17 +39,20 @@ const ChatControls: React.FC<ChatControlsProps> = ({
 }) => {
   return (
     <div className="chat-controls">
-      {buttons && buttons.length > 0 && onButtonClick && (
-        <ButtonGroup
-          buttons={buttons}
-          onButtonClick={onButtonClick}
-          isButtonGroupVisible={isButtonGroupVisible}
-        />
+      {buttons && buttons.length > 0 && onButtonClick && isButtonGroupVisible && (
+        <div className="state-buttons">
+          <ButtonGroup
+            buttons={buttons}
+            onButtonClick={onButtonClick}
+            isButtonGroupVisible={true}
+          />
+        </div>
       )}
 
-      <div className="chat-input-container">
+      <div className="chat-input-area">
         <input
           type="text"
+          id="user-input"
           value={userInput}
           onChange={onInputChange}
           onKeyDown={onSendMessage}
@@ -58,6 +61,7 @@ const ChatControls: React.FC<ChatControlsProps> = ({
           className="chat-input"
         />
         <button
+          id="send-button"
           onClick={onSendMessage}
           disabled={isInputDisabled || !userInput.trim()}
           className="send-button"

@@ -135,22 +135,159 @@ This document tracks the progress of the Maria AI Agent refactoring project.
    - ✅ Fixed type issues in context implementations
    - ✅ Improved action typing with proper payload types
 
-## Phase 3 Complete - Ready for Next Phase
+## Phase 3: Frontend Improvements - In Progress
 
-✅ All Phase 3 objectives have been completed
-✅ All tests pass
-✅ Application builds successfully with no ESLint errors
-❌ Regression: Chat buttons are not displaying in the chat window
-  - This functionality was working before Phase 3 refactoring
-  - Root cause may be related to changes in the state management or component structure
-  - This issue should be addressed as a priority before proceeding further with Phase 4
+🔄 Phase 3 objectives are currently in progress
+✅ Application functionality has been fully restored after previous regression issues
+⚠️ Initial refactoring attempt caused significant regressions that have now been fixed
 
-✅ Frontend code is now more maintainable with better separation of concerns
-✅ Error handling is consistent across the application
-✅ Documentation has been updated to reflect the new architecture
-✅ TypeScript typing has been improved throughout the codebase
-✅ Component structure follows modern React best practices
-✅ API layer provides a clean separation between UI and backend communication
+### Current Status (June 25, 2025)
+
+We have successfully restored the application's functionality to a working state. The chat system now works as intended with:
+- Welcome message displays correctly
+- Buttons appear and function as expected when clicked
+- Text input and sending works properly
+- File upload functionality is intact
+
+### Revised Phase 3 Strategy
+
+After encountering significant regressions in the chat functionality during the initial refactoring attempt, we've decided to adopt a more incremental approach:
+
+1. ✅ **API Service Layer** - Complete
+   - Created API directory with configurations and type-safe implementations
+   - Implemented centralized error handling for API calls
+   
+2. ✅ **Custom Hooks** - Complete 
+   - Improved error handling in hooks
+   - Added proper TypeScript interfaces
+   
+3. 🔄 **Component Refactoring** - Reset and Restarting
+   - We'll take an incremental approach, refactoring one component at a time
+   - Each component will be thoroughly tested before moving to the next
+   - Components will be broken down in this order:
+     1. FileUpload (already completed)
+     2. ButtonGroup (simple, no state)
+     3. ChatInputArea (simple, minimal state)
+     4. TypingEffect (intermediate complexity)
+     5. ChatMessages (complex, reads from context)
+     6. ChatHistory (complex, coordinates multiple components)
+     7. ChatContainer (last, after all subcomponents are stable)
+
+4. 🔄 **State Management** - Needs Revision
+   - Chat context has been created but needs redesign
+   - Need to ensure proper integration with the finite state machine
+   - Will implement adapters between new context and existing state machine
+
+### Lessons Learned
+
+- Component refactoring should be done incrementally with thorough testing at each step
+- State management changes are higher risk than anticipated and require careful coordination
+- The chat flow state machine is central to application functionality and requires special attention
+- UI components should be refactored from the bottom up (smaller components first, then container components)
+
+Our new approach will put functionality first, with each refactoring step verified against working behavior before proceeding.
+
+### Phase 3 Component Refactoring Plan
+
+To ensure a systematic approach to refactoring without breaking functionality, we'll follow this detailed plan:
+
+#### Step 1: Simple Components (No State)
+1. **ButtonGroup Component**
+   - Refactor to use TypeScript interfaces
+   - Add proper JSDoc documentation
+   - Create tests for button rendering and click handling
+   - Verify it works with the existing chat flow
+
+2. **ChatInputArea Component**
+   - Create a well-typed, reusable input component
+   - Add accessibility attributes
+   - Create tests for input field behavior
+   - Verify integration with parent components
+
+#### Step 2: Intermediate Components (Local State)
+3. **FileUpload Component** ✅ (already completed)
+   - Enhanced with proper error handling and progress tracking
+   - Split into smaller sub-components for better separation of concerns
+   - Added comprehensive tests
+
+4. **TypingEffect Component**
+   - Refactor to use React hooks properly
+   - Add animation configuration options
+   - Create tests for typing animation
+
+#### Step 3: Complex Components (Context Consumers)
+5. **ChatMessages Component**
+   - Refactor to use the ChatContext
+   - Improve typing for message rendering
+   - Create tests for message display and scrolling
+   - Ensure button rendering works correctly
+
+#### Step 4: Container Components
+6. **ChatHistory Component**
+   - Refactor to use the ChatContext
+   - Implement proper scroll management
+   - Create tests for history rendering
+   - Ensure all child components integrate properly
+
+7. **ChatContainer Component**
+   - Last component to refactor
+   - Will coordinate between contexts and state machine
+   - Should maintain all current functionality
+   - Will require the most comprehensive testing
+
+#### Step 5: Context and Global State
+8. **ChatContext Refinement**
+   - Ensure proper state management for all chat features
+   - Create adapters for the state machine integration
+   - Add comprehensive tests for all state transitions
+
+9. **FileUploadContext Integration**
+   - Ensure proper coordination with ChatContext
+   - Verify file upload flow works correctly
+   - Add tests for context interaction
+
+#### Testing Strategy
+For each component:
+1. Write unit tests before refactoring
+2. Maintain test coverage during refactoring
+3. Perform manual regression testing
+4. Create integration tests for component interactions
+
+#### Success Criteria
+- All tests pass
+- Application builds without warnings
+- UI behavior matches original functionality
+- Code follows established patterns and TypeScript best practices
+
+## Risk Mitigation Strategy
+
+To prevent future regressions during refactoring, we will follow these principles:
+
+1. **Incremental Changes**
+   - Refactor one component at a time
+   - Make small, testable changes
+   - Commit working code frequently
+
+2. **Comprehensive Testing**
+   - Write tests before refactoring where possible
+   - Maintain existing test coverage
+   - Add manual test cases for critical UI interactions
+   - Test components in isolation before integration
+
+3. **Parallel Implementations**
+   - Keep old implementations working while developing new ones
+   - Use adapter patterns to bridge between old and new code
+   - Switch to new implementations only after thorough testing
+
+4. **Documentation**
+   - Document key component interactions
+   - Create a component dependency map
+   - Note critical state management patterns
+
+5. **Rollback Plan**
+   - Maintain git checkpoints of working implementations
+   - Document the process to rollback changes if needed
+   - Keep a reference of the original implementation patterns
 
 ## Next Phase: Backend Improvements - Higher Risk
 
@@ -179,16 +316,24 @@ The codebase is now more maintainable, has better separation of concerns, and fo
 
 ### Next Steps: Regression Fixes and Backend Improvements (Higher Risk)
 
-Before proceeding with backend improvements, we need to address the following regression:
+Before proceeding with backend improvements, we will complete the revised Phase 3 refactoring with the following plan:
 
-1. **Fix Chat Button Display Issue**
-   - Investigate why buttons are not displaying in the chat window after Phase 3 refactoring
-   - Check ChatContext implementation and state management
-   - Verify button rendering in ChatMessages and related components
-   - Compare with pre-refactoring implementation to identify differences
-   - Add tests to verify button display functionality
+1. **Create a detailed component dependency map**
+   - Document all component relationships and data flow
+   - Identify which components can be safely refactored in isolation
+   - Map out state dependencies between components
 
-After addressing the regression, the next phase will focus on implementing higher-risk backend improvements:
+2. **Implement comprehensive regression test suite**
+   - Add tests for critical UI interactions
+   - Create automated tests for button functionality
+   - Set up snapshot testing for UI components
+
+3. **Refactor remaining components incrementally**
+   - Refactor one component at a time with thorough testing
+   - Focus on maintaining functionality over architectural purity
+   - Create adapter patterns where needed to bridge old and new implementations
+
+Only after successfully completing the revised Phase 3 will we proceed with implementing higher-risk backend improvements:
 
 1. **Implement SQLAlchemy ORM**
    - Set up SQLAlchemy configuration
@@ -202,3 +347,44 @@ After addressing the regression, the next phase will focus on implementing highe
    - Group related routes under the same blueprint
    - Add method-level documentation
    - Apply decorators for common functionality
+
+## Detailed Implementation Plan
+
+Based on the plan from `code_refactor_plan.md` and `code_refactor.md`, we'll implement the remaining refactoring work using the following approach:
+
+### 1. Component Refactoring (One at a time)
+
+For each component, we will:
+1. **Analysis**: Document current functionality, props, state, and dependencies
+2. **Testing**: Write tests that verify current functionality (if not already present)
+3. **Refactoring**: Implement the improved component with TypeScript interfaces
+4. **Verification**: Test the component in isolation
+5. **Integration**: Update parent components to use the refactored component
+6. **Validation**: Perform regression testing on the entire application
+
+### 2. State Management Improvements
+
+After component refactoring is complete:
+1. **Create adapter layer** between React Context and FiniteStateMachine
+2. **Gradually migrate** state management to React Context/useReducer pattern
+3. **Verify state transitions** match original implementation
+4. **Maintain backward compatibility** until migration is complete
+
+### 3. User Interface Testing Protocol
+
+For each UI change:
+1. **Visual verification**: Ensure UI appears correctly
+2. **Interaction testing**: Verify all user interactions work as expected
+3. **Edge case testing**: Test error states, loading states, and empty states
+4. **Accessibility testing**: Verify keyboard navigation and screen reader support
+
+### Success Metrics
+
+We will consider the refactoring successful when:
+1. All tests pass at each stage
+2. The application maintains its original functionality
+3. The code is more maintainable and follows best practices
+4. TypeScript provides proper type safety across the codebase
+5. Components have clear, well-defined responsibilities
+
+After completing the frontend refactoring, we will proceed with the backend improvements as outlined in Phase 4 of the original plan.

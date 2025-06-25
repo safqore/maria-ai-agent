@@ -16,6 +16,7 @@ const ButtonGroup: React.FC<ButtonGroupProps> = ({
   onButtonClick,
   isButtonGroupVisible,
 }) => {
+  console.log('ButtonGroup rendering with visibility:', isButtonGroupVisible, buttons);
   if (!isButtonGroupVisible) {
     return null;
   }

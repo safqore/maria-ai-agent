@@ -24,6 +24,7 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
   const [messages, setMessages] = useState<Message[]>([initialBotMessage]);
   const [userInput, setUserInput] = useState<string>('');
   const [isInputDisabled, setIsInputDisabled] = useState<boolean>(true);
+  const [isButtonGroupVisible, setIsButtonGroupVisible] = useState<boolean>(false);
   const [sessionError] = useState<string | null>(null); // State kept but setter not used
   const {
     fsm,
@@ -31,14 +32,11 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
     typingCompleteHandler,
     processTextInputHandler,
     fileUploadHandler,
-    isButtonGroupVisible,
   } = useChatStateMachine({
     messages,
     setMessages,
     setIsInputDisabled,
-    setIsButtonGroupVisible: () => {
-      // This is intentionally left empty as visibility is managed by the state machine
-    },
+    setIsButtonGroupVisible,
   });
 
   // Enable/disable input based on chat state

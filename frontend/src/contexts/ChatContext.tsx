@@ -57,7 +57,7 @@ const welcomeMessage =
  */
 const initialState: ChatState = {
   messages: [{ text: welcomeMessage, isUser: false, isTyping: true, id: 0 }],
-  isInputDisabled: true,
+  isInputDisabled: false, // Change to false to enable input initially
   isButtonGroupVisible: true,
   error: null,
 };
