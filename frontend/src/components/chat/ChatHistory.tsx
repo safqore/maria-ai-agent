@@ -27,7 +27,7 @@ interface ChatHistoryProps {
 
 /**
  * Component that displays the chat history including messages, buttons, and file upload
- * 
+ *
  * This component renders all chat messages, special buttons based on the current state,
  * and the file upload component when needed. It uses both the chat and file upload contexts.
  */
@@ -66,17 +66,17 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
   }, [messages]);
 
   return (
-    <div 
-      className="chat-history" 
-      id="chat-history" 
-      role="log" 
+    <div
+      className="chat-history"
+      id="chat-history"
+      role="log"
       aria-live="polite"
       aria-label="Chat conversation history"
       data-testid="chat-history"
     >
       {messages.map((message, index) => (
-        <div 
-          key={message.id || index} 
+        <div
+          key={message.id || index}
           className={`message ${message.isUser ? 'user-message' : 'bot-message'}`}
           data-testid={`message-${index}`}
           role={message.isUser ? 'textbox' : 'article'}
@@ -91,10 +91,10 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
           ) : (
             <>
               {message.text && (
-                <div 
+                <div
                   data-testid={`message-text-${index}`}
-                  dangerouslySetInnerHTML={{ 
-                    __html: sanitizeHtml(message.text)
+                  dangerouslySetInnerHTML={{
+                    __html: sanitizeHtml(message.text),
                   }}
                   aria-live="polite"
                 />

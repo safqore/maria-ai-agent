@@ -7,23 +7,49 @@ import { Message } from '../../../utils/chatUtils';
 import { States } from '../../../state/FiniteStateMachine';
 
 // Mock the required components
-jest.mock('../../TypingEffect', () => ({ message, onTypingComplete }: { message: string, onTypingComplete: () => void }) => (
-  <div data-testid="typing-effect" onClick={onTypingComplete}>{message}</div>
-));
+jest.mock(
+  '../../TypingEffect',
+  () =>
+    ({ message, onTypingComplete }: { message: string; onTypingComplete: () => void }) => (
+      <div data-testid="typing-effect" onClick={onTypingComplete}>
+        {message}
+      </div>
+    )
+);
 
-jest.mock('../../ButtonGroup', () => ({ buttons, onButtonClick }: { buttons: any[], onButtonClick: (value: string) => void }) => (
-  <div data-testid="button-group" onClick={() => buttons && buttons.length > 0 && onButtonClick(buttons[0].value)}>
-    {buttons ? buttons.map(b => b.text).join(',') : ''}
-  </div>
-));
+jest.mock(
+  '../../ButtonGroup',
+  () =>
+    ({ buttons, onButtonClick }: { buttons: any[]; onButtonClick: (value: string) => void }) => (
+      <div
+        data-testid="button-group"
+        onClick={() => buttons && buttons.length > 0 && onButtonClick(buttons[0].value)}
+      >
+        {buttons ? buttons.map(b => b.text).join(',') : ''}
+      </div>
+    )
+);
 
 jest.mock('../../fileUpload/FileUpload', () => {
-  return function MockFileUpload({ onFileUploaded, onDone }: { onFileUploaded: (file: File) => void, onDone: () => void }) {
-    return <div data-testid="file-upload" onClick={() => { 
-      onFileUploaded(new File([''], 'test.txt')); 
-      onDone(); 
-    }}>File Upload</div>;
-  }
+  return function MockFileUpload({
+    onFileUploaded,
+    onDone,
+  }: {
+    onFileUploaded: (file: File) => void;
+    onDone: () => void;
+  }) {
+    return (
+      <div
+        data-testid="file-upload"
+        onClick={() => {
+          onFileUploaded(new File([''], 'test.txt'));
+          onDone();
+        }}
+      >
+        File Upload
+      </div>
+    );
+  };
 });
 
 // Mock the sanitizeUtils
@@ -93,16 +119,14 @@ describe('ChatHistory', () => {
   const renderWithProviders = (ui: React.ReactElement) => {
     return render(
       <ChatProvider>
-        <FileUploadProvider>
-          {ui}
-        </FileUploadProvider>
+        <FileUploadProvider>{ui}</FileUploadProvider>
       </ChatProvider>
     );
   };
 
   it('renders messages correctly', () => {
     renderWithProviders(<ChatHistory {...mockProps} />);
-    
+
     // Messages come from mocked context
     expect(screen.getByText('Hello')).toBeInTheDocument();
     expect(screen.getByText('Hi there')).toBeInTheDocument();
@@ -112,29 +136,29 @@ describe('ChatHistory', () => {
 
   it('renders buttons in USR_INIT_OPTIONS state', () => {
     renderWithProviders(<ChatHistory {...mockProps} currentState={States.USR_INIT_OPTIONS} />);
-    
+
     expect(screen.getByText('Yes,No')).toBeInTheDocument();
   });
 
   it('renders buttons in ENGAGE_USR_AGAIN state', () => {
     renderWithProviders(<ChatHistory {...mockProps} currentState={States.ENGAGE_USR_AGAIN} />);
-    
+
     expect(screen.getByText("Let's Go,Maybe next time")).toBeInTheDocument();
   });
 
   it('renders file upload in UPLOAD_DOCS state', () => {
     renderWithProviders(<ChatHistory {...mockProps} currentState={States.UPLOAD_DOCS} />);
-    
+
     expect(screen.getByTestId('file-upload')).toBeInTheDocument();
   });
 
   it('calls handlers when interactions occur', () => {
     renderWithProviders(<ChatHistory {...mockProps} />);
-    
+
     // Test typing complete
     screen.getByTestId('typing-effect').click();
     expect(mockProps.onTypingComplete).toHaveBeenCalledWith(2);
-    
+
     // Test file upload in UPLOAD_DOCS state
     renderWithProviders(<ChatHistory {...mockProps} currentState={States.UPLOAD_DOCS} />);
     screen.getByTestId('file-upload').click();
@@ -144,7 +168,7 @@ describe('ChatHistory', () => {
 
   it('handles button clicks correctly', () => {
     renderWithProviders(<ChatHistory {...mockProps} currentState={States.USR_INIT_OPTIONS} />);
-    
+
     fireEvent.click(screen.getByTestId('button-group'));
     expect(mockProps.onButtonClick).toHaveBeenCalled();
   });
