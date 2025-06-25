@@ -1,5 +1,4 @@
 import React, { useRef, useEffect } from 'react';
-import { Message } from '../../utils/chatUtils';
 import TypingEffect from '../TypingEffect';
 import ButtonGroup from '../ButtonGroup';
 import { useChat } from '../../contexts/ChatContext';
@@ -21,10 +20,7 @@ interface ChatMessagesProps {
  * including typing animations and auto-scrolling to the latest message.
  * It supports button groups for interactive chat options.
  */
-const ChatMessages: React.FC<ChatMessagesProps> = ({
-  onTypingComplete,
-  onButtonClick,
-}) => {
+const ChatMessages: React.FC<ChatMessagesProps> = ({ onTypingComplete, onButtonClick }) => {
   // Get messages and button visibility from chat context
   const {
     state: { messages, isButtonGroupVisible },
@@ -49,12 +45,14 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
   }, [messages]);
 
   return (
-    <>
+    <div role="log" aria-label="Chat messages" aria-live="polite">
       {messages.map((message, index) => (
-        <div 
-          key={index} 
+        <div
+          key={index}
           className={`message ${message.isUser ? 'user-message' : 'bot-message'}`}
           data-testid={`message-${index}`}
+          role={message.isUser ? 'textbox' : 'article'}
+          aria-label={message.isUser ? 'Your message' : 'Assistant message'}
         >
           {message.isTyping ? (
             <TypingEffect
@@ -64,9 +62,14 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
             />
           ) : (
             <>
-              <div 
+              <div
                 data-testid={`message-text-${index}`}
-                dangerouslySetInnerHTML={{ __html: message.text.replace(/\n/g, '<br>') }} 
+                dangerouslySetInnerHTML={{
+                  __html: message.text
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/\n/g, '<br>'),
+                }}
               />
               {message.buttons && onButtonClick && (
                 <ButtonGroup
@@ -81,7 +84,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
         </div>
       ))}
       <div ref={endOfMessagesRef} data-testid="end-of-messages" />
-    </>
+    </div>
   );
 };
 
