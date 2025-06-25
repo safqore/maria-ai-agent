@@ -7,30 +7,40 @@ import { Message } from '../../../utils/chatUtils';
 import { States } from '../../../state/FiniteStateMachine';
 
 // Mock the required components
-jest.mock(
-  '../../TypingEffect',
-  () =>
-    ({ message, onTypingComplete }: { message: string; onTypingComplete: () => void }) =>
-      (
-        <div data-testid="typing-effect" onClick={onTypingComplete}>
-          {message}
-        </div>
-      )
-);
+jest.mock('../../TypingEffect', () => {
+  const MockTypingEffect = ({
+    message,
+    onTypingComplete,
+  }: {
+    message: string;
+    onTypingComplete: () => void;
+  }) => (
+    <div data-testid="typing-effect" onClick={onTypingComplete}>
+      {message}
+    </div>
+  );
+  MockTypingEffect.displayName = 'MockTypingEffect';
+  return MockTypingEffect;
+});
 
-jest.mock(
-  '../../ButtonGroup',
-  () =>
-    ({ buttons, onButtonClick }: { buttons: any[]; onButtonClick: (value: string) => void }) =>
-      (
-        <div
-          data-testid="button-group"
-          onClick={() => buttons && buttons.length > 0 && onButtonClick(buttons[0].value)}
-        >
-          {buttons ? buttons.map(b => b.text).join(',') : ''}
-        </div>
-      )
-);
+jest.mock('../../ButtonGroup', () => {
+  const MockButtonGroup = ({
+    buttons,
+    onButtonClick,
+  }: {
+    buttons: Array<{ text: string; value: string }>;
+    onButtonClick: (value: string) => void;
+  }) => (
+    <div
+      data-testid="button-group"
+      onClick={() => buttons && buttons.length > 0 && onButtonClick(buttons[0].value)}
+    >
+      {buttons ? buttons.map(b => b.text).join(',') : ''}
+    </div>
+  );
+  MockButtonGroup.displayName = 'MockButtonGroup';
+  return MockButtonGroup;
+});
 
 jest.mock('../../fileUpload/FileUpload', () => {
   return function MockFileUpload({

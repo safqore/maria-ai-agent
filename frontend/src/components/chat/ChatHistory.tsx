@@ -45,7 +45,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
   } = useChat();
 
   // Get file upload state from context
-  const { state: fileUploadState } = useFileUpload();
+  const { state: _ } = useFileUpload(); // Using _ to indicate we're not using this at the moment
 
   // Ref for auto-scrolling to the end of messages
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
