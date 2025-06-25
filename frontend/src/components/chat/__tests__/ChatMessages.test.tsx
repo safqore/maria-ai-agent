@@ -55,10 +55,7 @@ describe('ChatMessages', () => {
 
   it('renders messages correctly', () => {
     render(
-      <ChatMessages 
-        onTypingComplete={mockOnTypingComplete} 
-        onButtonClick={mockOnButtonClick}
-      />
+      <ChatMessages onTypingComplete={mockOnTypingComplete} onButtonClick={mockOnButtonClick} />
     );
 
     expect(screen.getByTestId('message-0')).toBeInTheDocument();
@@ -70,10 +67,7 @@ describe('ChatMessages', () => {
 
   it('applies correct CSS classes for user and bot messages', () => {
     const { container } = render(
-      <ChatMessages 
-        onTypingComplete={mockOnTypingComplete} 
-        onButtonClick={mockOnButtonClick}
-      />
+      <ChatMessages onTypingComplete={mockOnTypingComplete} onButtonClick={mockOnButtonClick} />
     );
 
     const userMessageDiv = container.querySelector('.user-message');
@@ -98,10 +92,7 @@ describe('ChatMessages', () => {
     }));
 
     render(
-      <ChatMessages 
-        onTypingComplete={mockOnTypingComplete} 
-        onButtonClick={mockOnButtonClick}
-      />
+      <ChatMessages onTypingComplete={mockOnTypingComplete} onButtonClick={mockOnButtonClick} />
     );
 
     // The scroll should happen for typing messages too

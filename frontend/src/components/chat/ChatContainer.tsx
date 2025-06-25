@@ -168,10 +168,7 @@ const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID }) 
       {chatError && <div className="chat-error-message">{chatError}</div>}
 
       <div className="chat-history" id="chat-history">
-        <ChatMessages
-          onTypingComplete={handleTypingComplete}
-          onButtonClick={handleButtonClick}
-        />
+        <ChatMessages onTypingComplete={handleTypingComplete} onButtonClick={handleButtonClick} />
 
         {fsm.getState() === States.UPLOAD_DOCS && (
           <ChatActions
