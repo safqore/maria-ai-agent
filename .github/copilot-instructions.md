@@ -36,31 +36,51 @@
 - Remove or migrate any new documentation from other locations to the main `README.md` as part of your changes.
 
 ## Project-Specific Notes
-- **Frontend**: The frontend is built using React with TypeScript. It includes components for chat functionality, state management using a finite state machine, and file upload capabilities.
-- **Backend**: The backend uses Flask.
+- **Frontend**: The frontend is built using React with TypeScript. It includes components for chat functionality, state management using a finite state machine with React Context integration, and file upload capabilities.
+- **Backend**: The backend uses Flask with a service-oriented architecture, centralized error handling, and request validation using Marshmallow.
 - **Frontend/Backend Integration**: The frontend and backend will be deployed to different servers/services. All backend URLs in the frontend code must be specified via configuration (e.g., environment variables or config files), not hardcoded. There must be no hard dependencies between frontend and backend code.
-- **Development Workflow**: Ensure that the frontend and backend are developed in parallel, with clear integration points. After frontend development, prioritize code cleanup and optimization.
+- **Development Workflow**: Use the incremental approach for refactoring, making small changes that are easy to debug. Test thoroughly after each change. Follow the refactoring plan documented in the project.
 - **Environment Setup**: Use the provided requirements.txt and package.json files to set up the Python and Node.js environments, respectively. Follow the README for detailed setup instructions.
 
 ## Project Folder Structure
 The project is organized into the following structure:
 
 Maria AI Agent Project
-.env                                       # Environment variables for the project
-.gitignore                                 # Git ignore file to exclude specific files/folders from version control
-README.md                                  # Project overview and setup instructions
-requirements.txt                           # Python dependencies for the backend
-requirements/                              # Requirements documentation and images
-backend/                                   # Flask backend
-    app.py                                 # Main Flask app entry point
-frontend/                                  # React frontend (TypeScript)
-    package.json                           # Node.js dependencies and scripts
-    tsconfig.json                          # TypeScript configuration
-    public/                                # Public assets for the React frontend
-    src/                                   # Source code for React frontend
-        App.tsx                            # Main React app component
-        components/                        # Reusable React components
-        hooks/                             # Custom React hooks
-        state/                             # State management logic
-        utils/                             # Utility functions
-        ...                                # Other frontend files
+├── .env                                   # Environment variables for the project
+├── .github/                               # GitHub-related configuration
+├── .gitignore                             # Git ignore file
+├── Makefile                               # Development and build commands
+├── README.md                              # Project overview and setup instructions
+├── pyproject.toml                         # Python project configuration
+├── refactor/                              # Refactoring documentation and planning
+├── requirements.txt                       # Python dependencies for the backend
+├── requirements/                          # Requirements documentation and images
+├── backend/                               # Flask backend
+│   ├── config.py                          # Backend configuration
+│   ├── wsgi.py                            # WSGI application entrypoint
+│   ├── app/                               # Main application package
+│   │   ├── __init__.py                    # App initialization
+│   │   ├── db.py                          # Database connections
+│   │   ├── errors.py                      # Centralized error handling
+│   │   ├── routes/                        # API routes
+│   │   ├── schemas/                       # Request/response validation schemas
+│   │   ├── services/                      # Business logic services
+│   │   └── utils/                         # Utility functions
+│   ├── migrations/                        # Database migrations
+│   └── tests/                             # Backend tests
+└── frontend/                              # React frontend (TypeScript)
+    ├── package.json                       # Node.js dependencies and scripts
+    ├── tsconfig.json                      # TypeScript configuration
+    ├── jest.config.js                     # Jest test configuration
+    ├── public/                            # Public assets
+    └── src/                               # Source code
+        ├── App.tsx                        # Main React app component
+        ├── index.tsx                      # Application entry point
+        ├── api/                           # API service layer
+        ├── components/                    # Reusable React components
+        ├── contexts/                      # React Context providers
+        ├── hooks/                         # Custom React hooks
+        │   └── adapters/                  # State machine adapters
+        ├── state/                         # State management logic
+        ├── types/                         # TypeScript type definitions
+        └── utils/                         # Utility functions

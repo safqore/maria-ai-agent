@@ -1,7 +1,8 @@
 import React from 'react';
-import { render, act } from '@testing-library/react';
+import { render, act, waitFor, fireEvent } from '@testing-library/react';
 import { ChatProvider, useChat } from '../../contexts/ChatContext';
 import { ChatActionTypes } from '../../contexts/ChatContext';
+import { States } from '../../state/FiniteStateMachine';
 
 // A test component that uses the chat context
 const TestComponent: React.FC = () => {
@@ -15,6 +16,11 @@ const TestComponent: React.FC = () => {
     removeMessageButtons,
     setError,
     clearError,
+    setLoading,
+    updateFsmState,
+    handleButtonClick,
+    sendMessage,
+    resetChat,
   } = useChat();
 
   return (
@@ -48,6 +54,24 @@ const TestComponent: React.FC = () => {
       </button>
       <button data-testid="set-error" onClick={() => setError('Test error')}>
         Set Error
+      </button>
+      <button data-testid="clear-error" onClick={() => clearError()}>
+        Clear Error
+      </button>
+      <button data-testid="set-loading" onClick={() => setLoading(true)}>
+        Set Loading
+      </button>
+      <button data-testid="update-fsm" onClick={() => updateFsmState(States.COLLECTING_NAME)}>
+        Update FSM State
+      </button>
+      <button data-testid="handle-button" onClick={() => handleButtonClick('yes')}>
+        Handle Yes Button
+      </button>
+      <button data-testid="send-message" onClick={() => sendMessage('Hello!')}>
+        Send Message
+      </button>
+      <button data-testid="reset-chat" onClick={() => resetChat()}>
+        Reset Chat
       </button>
       <button data-testid="clear-error" onClick={() => clearError()}>
         Clear Error
@@ -124,6 +148,88 @@ describe('ChatContext', () => {
     });
 
     expect(getByTestId('error').textContent).toBe('Test error');
+    
+    act(() => {
+      getByTestId('clear-error').click();
+    });
+    
+    expect(getByTestId('error').textContent).toBe('no-error');
+  });
+  
+  it('updates FSM state', () => {
+    const { getByTestId } = render(
+      <ChatProvider>
+        <TestComponent />
+      </ChatProvider>
+    );
+    
+    // Update FSM state
+    act(() => {
+      getByTestId('update-fsm').click();
+    });
+    
+    // We can't directly check the state since it's not displayed in the test component
+    // But we can verify it doesn't crash
+  });
+  
+  it('handles button clicks', async () => {
+    const { getByTestId } = render(
+      <ChatProvider>
+        <TestComponent />
+      </ChatProvider>
+    );
+    
+    act(() => {
+      getByTestId('handle-button').click();
+    });
+    
+    // Should add a user message with the button value
+    await waitFor(() => {
+      expect(getByTestId('message-count').textContent).toBe('2');
+    });
+  });
+  
+  it('sends messages and processes responses', async () => {
+    const { getByTestId } = render(
+      <ChatProvider>
+        <TestComponent />
+      </ChatProvider>
+    );
+    
+    act(() => {
+      getByTestId('send-message').click();
+    });
+    
+    // Should add both user message and bot response
+    await waitFor(() => {
+      expect(getByTestId('message-count').textContent).toBe('3');
+    });
+  });
+  
+  it('resets the chat', async () => {
+    const { getByTestId } = render(
+      <ChatProvider>
+        <TestComponent />
+      </ChatProvider>
+    );
+    
+    // Add some messages first
+    act(() => {
+      getByTestId('add-user-message').click();
+      getByTestId('add-bot-message').click();
+    });
+    
+    expect(getByTestId('message-count').textContent).toBe('3');
+    
+    // Reset chat
+    act(() => {
+      getByTestId('reset-chat').click();
+    });
+    
+    // Should reset to initial state
+    await waitFor(() => {
+      expect(getByTestId('message-count').textContent).toBe('2'); // Welcome message + new welcome message
+    });
 
     act(() => {
       getByTestId('clear-error').click();

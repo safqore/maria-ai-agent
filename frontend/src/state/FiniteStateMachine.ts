@@ -74,6 +74,17 @@ export interface StateMachine {
    * @throws Error if the transition is not valid for the current state
    */
   transition: (action: Transition) => void;
+  
+  /**
+   * Reset the state machine to its initial state.
+   */
+  reset: () => void;
+  
+  /**
+   * Get the current state of the state machine.
+   * @returns The current state of the machine
+   */
+  getCurrentState: () => State;
 
   /**
    * Get the current state of the state machine.
@@ -165,6 +176,22 @@ class FiniteStateMachine implements StateMachine {
       this.currentState = nextState;
     }
     console.log(`New state: ${this.currentState}`);
+  }
+  
+  /**
+   * Reset the state machine to its initial state.
+   */
+  reset() {
+    console.log('Resetting state machine to initial state');
+    this.currentState = States.WELCOME_MSG;
+  }
+  
+  /**
+   * Get the current state of the state machine.
+   * @returns The current state of the machine
+   */
+  getCurrentState(): State {
+    return this.currentState;
   }
 
   /**
