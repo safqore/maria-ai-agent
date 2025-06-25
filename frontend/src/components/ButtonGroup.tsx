@@ -24,7 +24,7 @@ interface ButtonGroupProps {
 
 /**
  * Component that renders a group of buttons for user interaction
- * 
+ *
  * ButtonGroup displays a set of buttons that trigger actions when clicked.
  * It only renders when isButtonGroupVisible is true, otherwise renders nothing.
  */
@@ -41,9 +41,9 @@ const ButtonGroup: React.FC<ButtonGroupProps> = ({
   return (
     <div className="button-container">
       {buttons.map((button, index) => (
-        <button 
-          key={index} 
-          className="chat-button" 
+        <button
+          key={index}
+          className="chat-button"
           onClick={() => onButtonClick(button.value)}
           data-testid={`chat-button-${index}`}
         >

@@ -25,7 +25,7 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
   const [messages, setMessages] = useState<Message[]>([initialBotMessage]);
   const [userInput, setUserInput] = useState<string>('');
   const [isInputDisabled, setIsInputDisabled] = useState<boolean>(true);
-  const [sessionError, setSessionError] = useState<string | null>(null);
+  // State for session errors - will be used in future implementation
   const [isButtonGroupVisible, setIsButtonGroupVisible] = useState<boolean>(true);
 
   const {

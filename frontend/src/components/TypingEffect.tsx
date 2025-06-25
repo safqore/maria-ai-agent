@@ -18,7 +18,7 @@ interface TypingEffectProps {
 
 /**
  * Component that simulates a typing effect for text messages
- * 
+ *
  * TypingEffect displays text character by character to simulate typing.
  * It supports newlines and automatically calls a callback when typing is complete.
  */
@@ -34,12 +34,12 @@ const TypingEffect: React.FC<TypingEffectProps> = ({
   const [complete, setComplete] = useState<boolean>(false);
   const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
   const intervalIdRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   useEffect(() => {
     // Reset state when message changes
     setTypedText('');
     setComplete(false);
-    
+
     // Clean up any existing timers
     if (timeoutIdRef.current) {
       clearTimeout(timeoutIdRef.current);
@@ -47,15 +47,15 @@ const TypingEffect: React.FC<TypingEffectProps> = ({
     if (intervalIdRef.current) {
       clearInterval(intervalIdRef.current);
     }
-    
+
     // Don't start if message is empty
     if (!message) {
       onTypingComplete();
       return;
     }
-    
+
     let currentIndex = 0;
-    
+
     // Start typing after the initial delay
     timeoutIdRef.current = setTimeout(() => {
       // Set up interval to type character by character
@@ -73,7 +73,7 @@ const TypingEffect: React.FC<TypingEffectProps> = ({
         }
       }, typingSpeed);
     }, startDelay);
-    
+
     // Clean up on unmount or when dependencies change
     return () => {
       if (timeoutIdRef.current) {
@@ -84,7 +84,7 @@ const TypingEffect: React.FC<TypingEffectProps> = ({
       }
     };
   }, [message, onTypingComplete, typingSpeed, startDelay]);
-  
+
   // Process the message to display with newline support
   const renderTypedText = () => {
     const lines = typedText.split('\n');
@@ -99,10 +99,10 @@ const TypingEffect: React.FC<TypingEffectProps> = ({
       </>
     );
   };
-  
+
   return (
-    <div 
-      className={`typing-effect ${className}`} 
+    <div
+      className={`typing-effect ${className}`}
       data-testid="typing-effect"
       aria-live="polite"
       aria-busy={!complete}

@@ -22,7 +22,7 @@ interface ChatInputAreaProps {
 
 /**
  * Component that provides a text input area with a send button for chat interactions
- * 
+ *
  * ChatInputArea handles user text input and provides a way to send messages.
  * It includes an input field and a send button that can be enabled/disabled.
  * The send button is disabled when there's no text input.
@@ -33,11 +33,11 @@ const ChatInputArea: React.FC<ChatInputAreaProps> = ({
   sendButtonHandler,
   disabled,
   autoFocus = false,
-  placeholder = "Type your message...",
+  placeholder = 'Type your message...',
 }) => {
   // Reference to the input element for autofocus
   const inputRef = useRef<HTMLInputElement>(null);
-  
+
   // Auto-focus the input field if autoFocus is true
   useEffect(() => {
     if (autoFocus && inputRef.current && !disabled) {
@@ -59,10 +59,10 @@ const ChatInputArea: React.FC<ChatInputAreaProps> = ({
         disabled={disabled}
         aria-label="Message input"
       />
-      <button 
-        id="send-button" 
+      <button
+        id="send-button"
         data-testid="send-button"
-        onClick={sendButtonHandler} 
+        onClick={sendButtonHandler}
         disabled={disabled || !userInput.trim()}
         aria-label="Send message"
       >
