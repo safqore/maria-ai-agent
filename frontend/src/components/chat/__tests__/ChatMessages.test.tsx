@@ -6,19 +6,33 @@ import { Message } from '../../../utils/chatUtils';
 // Mock scrollIntoView to avoid JSDOM errors
 const mockScrollIntoView = jest.fn();
 
+// Test messages
+const mockMessages: Message[] = [
+  { id: 0, text: 'Hello', isUser: false, isTyping: false },
+  { id: 1, text: 'Hi there', isUser: true, isTyping: false },
+];
+
+// Mock typing messages
+const mockTypingMessages: Message[] = [
+  { id: 0, text: 'Hello', isUser: false, isTyping: false },
+  { id: 1, text: 'Typing...', isUser: false, isTyping: true },
+];
+
+// Mock the ChatContext
+jest.mock('../../../contexts/ChatContext', () => ({
+  useChat: () => ({
+    state: {
+      messages: mockMessages,
+      isButtonGroupVisible: true,
+    },
+  }),
+}));
+
+// Mock handlers
+const mockOnTypingComplete = jest.fn();
+const mockOnButtonClick = jest.fn();
+
 describe('ChatMessages', () => {
-  const mockMessages: Message[] = [
-    { id: 0, text: 'Hello', isUser: false, isTyping: false },
-    { id: 1, text: 'Hi there', isUser: true, isTyping: false },
-  ];
-
-  const mockTypingMessages: Message[] = [
-    { id: 0, text: 'Hello', isUser: false, isTyping: false },
-    { id: 1, text: 'Typing...', isUser: false, isTyping: true },
-  ];
-
-  const mockOnTypingComplete = jest.fn();
-
   // Set up and tear down the mock for scrollIntoView
   beforeEach(() => {
     // Save the original implementation if it exists
@@ -29,6 +43,8 @@ describe('ChatMessages', () => {
 
     // Clear mock calls between tests
     mockScrollIntoView.mockClear();
+    mockOnTypingComplete.mockClear();
+    mockOnButtonClick.mockClear();
   });
 
   afterEach(() => {
@@ -38,25 +54,26 @@ describe('ChatMessages', () => {
   });
 
   it('renders messages correctly', () => {
-    render(<ChatMessages messages={mockMessages} onTypingComplete={mockOnTypingComplete} />);
+    render(
+      <ChatMessages 
+        onTypingComplete={mockOnTypingComplete} 
+        onButtonClick={mockOnButtonClick}
+      />
+    );
 
+    expect(screen.getByTestId('message-0')).toBeInTheDocument();
     expect(screen.getByText('Hello')).toBeInTheDocument();
     expect(screen.getByText('Hi there')).toBeInTheDocument();
     // scrollIntoView should be called when messages are rendered
     expect(mockScrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
   });
 
-  it('renders typing effect for typing messages', () => {
-    render(<ChatMessages messages={mockTypingMessages} onTypingComplete={mockOnTypingComplete} />);
-
-    expect(screen.getByText('Hello')).toBeInTheDocument();
-    // The typing effect component will be rendered
-    expect(mockScrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
-  });
-
   it('applies correct CSS classes for user and bot messages', () => {
     const { container } = render(
-      <ChatMessages messages={mockMessages} onTypingComplete={mockOnTypingComplete} />
+      <ChatMessages 
+        onTypingComplete={mockOnTypingComplete} 
+        onButtonClick={mockOnButtonClick}
+      />
     );
 
     const userMessageDiv = container.querySelector('.user-message');
@@ -64,6 +81,30 @@ describe('ChatMessages', () => {
 
     expect(userMessageDiv).toBeInTheDocument();
     expect(botMessageDiv).toBeInTheDocument();
+    expect(mockScrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
+  });
+
+  // Test with typing messages
+  it('handles typing messages correctly', () => {
+    // Override the mock to include typing messages
+    jest.resetModules();
+    jest.mock('../../../contexts/ChatContext', () => ({
+      useChat: () => ({
+        state: {
+          messages: mockTypingMessages,
+          isButtonGroupVisible: true,
+        },
+      }),
+    }));
+
+    render(
+      <ChatMessages 
+        onTypingComplete={mockOnTypingComplete} 
+        onButtonClick={mockOnButtonClick}
+      />
+    );
+
+    // The scroll should happen for typing messages too
     expect(mockScrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
   });
 });

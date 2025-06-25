@@ -2,39 +2,40 @@ import React, { useRef, useEffect } from 'react';
 import { Message } from '../../utils/chatUtils';
 import TypingEffect from '../TypingEffect';
 import ButtonGroup from '../ButtonGroup';
+import { useChat } from '../../contexts/ChatContext';
 
 /**
  * Props for the ChatMessages component
  */
 interface ChatMessagesProps {
-  /** List of messages to display in the chat */
-  messages: Message[];
   /** Function to call when a typing animation completes */
   onTypingComplete: (messageId: number) => void;
   /** Optional function to handle button clicks */
   onButtonClick?: (value: string) => void;
-  /** Whether the button group is visible */
-  isButtonGroupVisible?: boolean;
 }
 
 /**
  * Component to display chat messages with typing effects
  *
- * This component handles the rendering of individual messages,
+ * This component renders chat messages from the ChatContext,
  * including typing animations and auto-scrolling to the latest message.
+ * It supports button groups for interactive chat options.
  */
 const ChatMessages: React.FC<ChatMessagesProps> = ({
-  messages,
   onTypingComplete,
   onButtonClick,
-  isButtonGroupVisible = true,
 }) => {
+  // Get messages and button visibility from chat context
+  const {
+    state: { messages, isButtonGroupVisible },
+  } = useChat();
+
   // Ref for auto-scrolling to the end of messages
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll when messages change
   useEffect(() => {
-    if (typeof window !== 'undefined' && endOfMessagesRef.current?.scrollIntoView) {
+    if (endOfMessagesRef.current?.scrollIntoView) {
       endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
@@ -42,7 +43,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
   // Also scroll when a message is typing
   useEffect(() => {
     const typing = messages.some(msg => msg.isTyping);
-    if (typing && typeof window !== 'undefined' && endOfMessagesRef.current?.scrollIntoView) {
+    if (typing && endOfMessagesRef.current?.scrollIntoView) {
       endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
@@ -50,27 +51,36 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
   return (
     <>
       {messages.map((message, index) => (
-        <div key={index} className={`message ${message.isUser ? 'user-message' : 'bot-message'}`}>
+        <div 
+          key={index} 
+          className={`message ${message.isUser ? 'user-message' : 'bot-message'}`}
+          data-testid={`message-${index}`}
+        >
           {message.isTyping ? (
             <TypingEffect
               message={message.text}
               onTypingComplete={() => onTypingComplete(message.id)}
+              data-testid={`typing-effect-${index}`}
             />
           ) : (
             <>
-              <div dangerouslySetInnerHTML={{ __html: message.text.replace(/\n/g, '<br>') }} />
+              <div 
+                data-testid={`message-text-${index}`}
+                dangerouslySetInnerHTML={{ __html: message.text.replace(/\n/g, '<br>') }} 
+              />
               {message.buttons && onButtonClick && (
                 <ButtonGroup
                   buttons={message.buttons}
                   onButtonClick={onButtonClick}
                   isButtonGroupVisible={isButtonGroupVisible}
+                  data-testid={`button-group-${index}`}
                 />
               )}
             </>
           )}
         </div>
       ))}
-      <div ref={endOfMessagesRef} />
+      <div ref={endOfMessagesRef} data-testid="end-of-messages" />
     </>
   );
 };

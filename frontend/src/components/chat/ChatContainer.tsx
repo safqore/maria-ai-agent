@@ -169,7 +169,6 @@ const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID }) 
 
       <div className="chat-history" id="chat-history">
         <ChatMessages
-          messages={messages}
           onTypingComplete={handleTypingComplete}
           onButtonClick={handleButtonClick}
         />
