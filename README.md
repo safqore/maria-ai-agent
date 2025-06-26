@@ -63,19 +63,6 @@ REACT_APP_API_BASE_URL=http://localhost:5000  # Should match backend's PORT
 
 Note: The frontend development server runs on port 3000 by default, configured in `package.json`.
 
-#### Important Note on Frontend Port Configuration
-
-React's development server handles the PORT environment variable in a special way. To ensure it always runs on port 3000:
-
-- We've configured the Makefile to explicitly set PORT=3000 when running the frontend
-- If you run into port conflicts, you can manually specify a different port:
-  ```bash
-  cd frontend && PORT=3001 npm start
-  ```
-- Remember to update the API URL in frontend/.env if you change the backend port
-
-For more details on our configuration strategy, see [config-strategy.md](config-strategy.md).
-
 ### 3. Backend Setup
 
 Create and activate a Python virtual environment:
@@ -159,69 +146,74 @@ pre-commit install
 ```
 
 This will run formatting and linting checks automatically before each commit.
-```
-
-- The backend supports CORS for both `http://localhost:3000` and `http://127.0.0.1:3000` for frontend integration.
-
-- To run backend tests:
-
-```bash
-PYTHONPATH=backend pytest
-```
-- Tests are located in `backend/tests/` and use pytest with all external dependencies mocked.
-
-### 3. Frontend Setup
-
-```bash
-cd frontend
-npm install
-```
-
-- To check for outdated packages:
-
-```bash
-npm outdated
-```
-
-- To update all packages to the latest compatible versions:
-
-```bash
-npm update
-```
-
-- To start the React app:
-
-```bash
-npm start
-```
-
-- Useful NPM Scripts:
-  - `npm test` — Run tests with Jest
-  - `npm run build` — Build for production
-
-## Environment Variables
-
-To configure the backend API URL for the frontend, create a `.env` file in the `frontend/` directory with the following content:
-
-```
-REACT_APP_API_BASE_URL=https://your-backend-url.com
-```
-
-- Do not commit your `.env` file to version control; it is already listed in `.gitignore`.
-- The frontend will use this variable to connect to the backend for file uploads and other API requests.
-
-## Customizing & Extending
-
-- Modify backend logic in `backend/app/`
-- Update frontend React components in `frontend/src/components/`
-
-## Documentation & Support
-
-- [React Docs](https://reactjs.org/)
 
 ---
 
-For detailed requirements and user stories, see `requirements/EPIC Requirements.md` and `requirements/Story Requirements.md`.
+## Configuration Guide
+
+### Configuration Strategy
+
+To simplify project configuration and better reflect deployment reality, our project uses a fully separated configuration approach:
+
+1. **Separate Configurations for Separate Services**
+   - `backend/.env` contains all backend-specific configuration
+   - `frontend/.env` contains all frontend-specific configuration
+   - Each service manages its own environment independently
+
+2. **Standard Naming Conventions**
+   - Backend uses standard environment variable names (e.g., `PORT=5000`)
+   - Frontend uses React standard variables (with `REACT_APP_` prefix)
+   - Service-specific variables are kept with their respective services
+
+3. **Shared Configuration Values**
+   - API URL in frontend must match the backend's host/port
+   - These values must be manually kept in sync during development
+   - This reflects the reality of deploying services independently
+
+### Port Configuration
+
+To avoid port conflicts between the backend and frontend servers:
+
+#### Backend Port Configuration
+- The backend server runs on port 5000 by default
+- Configured in `backend/.env` via the `PORT` environment variable
+- Can be overridden by modifying this value
+
+#### Frontend Port Configuration
+- The frontend React development server runs on port 3000 by default
+- Configured in `frontend/package.json` via the start script
+- Uses cross-env to ensure consistent port usage: `"start": "cross-env PORT=3000 react-scripts start"`
+
+#### Why Separate Configuration Files?
+- Reflects deployment reality (services will be deployed separately)
+- Avoids naming conflicts (both can use standard names like `PORT`)
+- Follows standard practices for each technology stack
+- Maintains clean separation of concerns
+
+### Troubleshooting Configuration Issues
+
+#### Port Conflicts
+If you see an error about a port already being in use:
+
+1. Make sure backend and frontend are using different ports
+2. Check if other applications are using your ports
+3. Modify the port settings in the respective files:
+   ```
+   # In backend/.env
+   PORT=5000  # Change to an available port
+   
+   # In frontend/package.json
+   "start": "cross-env PORT=3000 react-scripts start"  # Change port number
+   ```
+4. Remember to update the API URL in frontend/.env if you change the backend port
+
+#### Frontend API Connection Issues
+If you see `ERR_CONNECTION_REFUSED` errors in the console:
+
+1. Verify the backend server is running
+2. Check that `REACT_APP_API_BASE_URL` is set correctly in `frontend/.env`
+3. Make sure the port in the URL matches the backend's port
+4. Remember that React environment variables are only read when the server starts
 
 ---
 

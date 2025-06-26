@@ -42,6 +42,14 @@
 - **Development Workflow**: Use the incremental approach for refactoring, making small changes that are easy to debug. Test thoroughly after each change. Follow the refactoring plan documented in the project.
 - **Environment Setup**: Use the provided requirements.txt and package.json files to set up the Python and Node.js environments, respectively. Follow the README for detailed setup instructions.
 
+## Environment Configuration Best Practices
+- Maintain separate configuration files for frontend (`frontend/.env`) and backend (`backend/.env`) services
+- Use standard naming conventions for each platform (e.g., `PORT` for backend, `REACT_APP_` prefix for React)
+- For React applications, set the development server port in package.json scripts using cross-env
+- Ensure all environment variables are documented in the main README.md
+- Keep example .env.example files updated in both frontend/ and backend/ directories
+- Remember that the frontend and backend will be deployed separately, so their configurations should be independent
+
 ## Project Folder Structure
 The project is organized into the following structure:
 
