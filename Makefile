@@ -16,6 +16,9 @@ help:
 install-dev:
 	pip install -r requirements.txt
 	cd frontend && npm install
+	@echo "\nConfiguration Setup:"
+	@echo "  - Copy backend/.env.example to backend/.env and customize"
+	@echo "  - Copy frontend/.env.example to frontend/.env and customize"
 
 format:
 	black backend/
@@ -32,7 +35,7 @@ test:
 	cd frontend && npm test
 
 run-backend:
-	python backend/wsgi.py
+	cd backend && python wsgi.py
 
 run-frontend:
 	cd frontend && npm start

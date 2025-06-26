@@ -24,36 +24,57 @@ npm -v
 
 ### 2. Configuration
 
-Create a `.env` file in the project root by copying the provided example:
+We use a separated configuration approach, with each service maintaining its own environment files:
 
+#### Backend Configuration
 ```bash
-cp .env.example .env
+# Copy the example configuration
+cp backend/.env.example backend/.env
+
+# Edit the backend configuration
+nano backend/.env
 ```
 
-Edit the `.env` file to set your configuration:
-
+Key backend configuration options:
 ```
-# Backend Configuration
-PORT=5000  # Change this if port 5000 is already in use
-MODEL=gpt-4o-mini
-OPENAI_API_KEY=<REPLACE WITH API KEY>
+# Server Configuration
+PORT=5000
 
-# Frontend Configuration
-REACT_APP_API_BASE_URL=http://localhost:5000  # Must match the PORT setting above
-
-# AWS Configuration
-AWS_ACCESS_KEY_ID=<REPLACE WITH AWS KEY>
-AWS_SECRET_ACCESS_KEY=<REPLACE WITH AWS SECRET>
-AWS_REGION=<REPLACE WITH REGION>
-S3_BUCKET_NAME=<REPLACE WITH BUCKET>
-
-# Database Configuration
-POSTGRES_DB=maria_ai_agent
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
+# API Keys
+OPENAI_API_KEY=<YOUR_API_KEY_HERE>
+# ... other backend-specific config
 ```
+
+#### Frontend Configuration
+```bash
+# Copy the example configuration
+cp frontend/.env.example frontend/.env
+
+# Edit the frontend configuration
+nano frontend/.env
+```
+
+Key frontend configuration options:
+```
+# API Configuration
+REACT_APP_API_BASE_URL=http://localhost:5000  # Should match backend's PORT
+# ... other frontend-specific config
+```
+
+Note: The frontend development server runs on port 3000 by default, configured in `package.json`.
+
+#### Important Note on Frontend Port Configuration
+
+React's development server handles the PORT environment variable in a special way. To ensure it always runs on port 3000:
+
+- We've configured the Makefile to explicitly set PORT=3000 when running the frontend
+- If you run into port conflicts, you can manually specify a different port:
+  ```bash
+  cd frontend && PORT=3001 npm start
+  ```
+- Remember to update the API URL in frontend/.env if you change the backend port
+
+For more details on our configuration strategy, see [config-strategy.md](config-strategy.md).
 
 ### 3. Backend Setup
 
