@@ -6,9 +6,15 @@ create_app factory function from the app module.
 """
 
 from app import create_app
+import os
+import argparse
 
 app = create_app()
 
 if __name__ == "__main__":
-    # Run the application in development mode when executed directly
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    parser = argparse.ArgumentParser(description="Run the Maria AI Agent backend Flask app.")
+    parser.add_argument('--port', type=int, help='Port to run the server on')
+    args = parser.parse_args()
+
+    port = args.port or int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
