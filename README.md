@@ -22,7 +22,40 @@ node -v
 npm -v
 ```
 
-### 2. Backend Setup
+### 2. Configuration
+
+Create a `.env` file in the project root by copying the provided example:
+
+```bash
+cp .env.example .env
+```
+
+Edit the `.env` file to set your configuration:
+
+```
+# Backend Configuration
+PORT=5000  # Change this if port 5000 is already in use
+MODEL=gpt-4o-mini
+OPENAI_API_KEY=<REPLACE WITH API KEY>
+
+# Frontend Configuration
+REACT_APP_API_BASE_URL=http://localhost:5000  # Must match the PORT setting above
+
+# AWS Configuration
+AWS_ACCESS_KEY_ID=<REPLACE WITH AWS KEY>
+AWS_SECRET_ACCESS_KEY=<REPLACE WITH AWS SECRET>
+AWS_REGION=<REPLACE WITH REGION>
+S3_BUCKET_NAME=<REPLACE WITH BUCKET>
+
+# Database Configuration
+POSTGRES_DB=maria_ai_agent
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+```
+
+### 3. Backend Setup
 
 Create and activate a Python virtual environment:
 
@@ -30,17 +63,6 @@ Create and activate a Python virtual environment:
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-```
-
-- Add your `OPENAI_API_KEY` and other environment variables to a `.env` file in the project root:
-
-```
-MODEL=gpt-4o-mini
-OPENAI_API_KEY=<REPLACE WITH API KEY>
-AWS_ACCESS_KEY_ID=<REPLACE WITH AWS KEY>
-AWS_SECRET_ACCESS_KEY=<REPLACE WITH AWS SECRET>
-AWS_REGION=<REPLACE WITH REGION>
-S3_BUCKET_NAME=<REPLACE WITH BUCKET>
 ```
 
 - To run the backend Flask app:
@@ -54,7 +76,7 @@ python wsgi.py
 make run-backend
 ```
 
-### 3. Frontend Setup
+### 4. Frontend Setup
 
 Install dependencies and start the development server:
 
@@ -69,7 +91,7 @@ make run-frontend
 
 The frontend will be available at http://localhost:3000.
 
-### 4. Development Tools
+### 5. Development Tools
 
 This project uses several tools to maintain code quality:
 

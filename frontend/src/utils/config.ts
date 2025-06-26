@@ -10,7 +10,7 @@
  * Base URL for backend API requests.
  *
  * This value is read from the REACT_APP_API_BASE_URL environment variable,
- * with a fallback to localhost:5001 if the environment variable is not set.
+ * with a fallback to localhost:5000 if the environment variable is not set.
  *
  * @example
  * // Import and use in API calls
@@ -18,4 +18,4 @@
  *
  * fetch(`${API_BASE_URL}/api/endpoint`);
  */
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001';
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
