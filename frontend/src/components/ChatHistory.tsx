@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import TypingEffect from './TypingEffect';
 import ButtonGroup from './ButtonGroup';
-import { FileUpload } from './fileUpload';
+import FileUpload from './FileUpload';
 import { States } from '../state/FiniteStateMachine';
 import { Message } from '../utils/chatUtils';
 

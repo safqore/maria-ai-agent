@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, fireEvent, waitFor, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { FileUpload } from './fileUpload';
+import FileUpload from './FileUpload';
 import * as sessionApi from '../api/sessionApi';
 import * as fileApi from '../api/fileApi';
 

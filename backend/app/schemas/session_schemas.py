@@ -11,7 +11,7 @@ class UUIDSchema(Schema):
     uuid = fields.String(required=True)
 
     @validates("uuid")
-    def validate_uuid(self, value):
+    def validate_uuid(self, value, **kwargs):
         """Validate that the UUID is in the correct format."""
         from uuid import UUID
 
@@ -29,7 +29,7 @@ class SessionPersistSchema(Schema):
     email = fields.String(required=False, load_default="", allow_none=True)
 
     @validates("session_uuid")
-    def validate_session_uuid(self, value):
+    def validate_session_uuid(self, value, **kwargs):
         """Validate that the session UUID is in the correct format."""
         from uuid import UUID
 

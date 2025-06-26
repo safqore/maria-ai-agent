@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileUpload } from '../fileUpload';
+import FileUpload from '../fileUpload/FileUpload';
 
 /**
  * Props for ChatActions component
