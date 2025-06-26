@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import ChatMessage from '../ChatMessage';
+import { ChatButton } from '../../contexts/ChatContext';
 
 describe('ChatMessage', () => {
   test('renders user message correctly', () => {
@@ -84,5 +85,32 @@ describe('ChatMessage', () => {
     await waitFor(() => {
       expect(onTypingComplete).toHaveBeenCalledWith(5);
     }, { timeout: 1500 });
+  });
+  
+  test('avoids re-rendering when props have not changed', () => {
+    // Create a test message
+    const message = {
+      text: 'Test message',
+      isUser: false,
+      isTyping: false,
+      id: 6
+    };
+    
+    // Create a spy on React.createElement to count renders
+    const createElementSpy = jest.spyOn(React, 'createElement');
+    
+    // Initial render
+    const { rerender } = render(<ChatMessage message={message} />);
+    
+    const initialRenderCount = createElementSpy.mock.calls.length;
+    
+    // Re-render with same props
+    rerender(<ChatMessage message={message} />);
+    
+    // Should have same number of createElement calls (no extra renders)
+    expect(createElementSpy.mock.calls.length).toBe(initialRenderCount);
+    
+    // Clean up
+    createElementSpy.mockRestore();
   });
 });

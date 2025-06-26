@@ -1,6 +1,43 @@
+/**
+ * Chat State Machine Adapter
+ * 
+ * This module provides an adapter between the finite state machine (FSM) and
+ * the React Context API for the chat interface. It handles bidirectional communication,
+ * allowing components to interact with the FSM through a unified interface.
+ * 
+ * The adapter maintains state synchronization between the FSM and the context,
+ * providing type-safe methods for state transitions and event handling.
+ */
+
 import { useState, useCallback, useEffect } from 'react';
 import { StateMachine, States, Transitions } from '../../state/FiniteStateMachine';
 import { useChat } from '../../contexts/ChatContext';
+
+/**
+ * Interface for adapter return values
+ */
+export interface ChatStateMachineAdapter {
+  /** The finite state machine instance */
+  fsm: StateMachine;
+  /** Function to handle button clicks */
+  buttonClickHandler: (value: string) => void;
+  /** Function to handle typing complete events */
+  typingCompleteHandler: (messageId: number) => void;
+  /** Function to process text input based on current state */
+  processTextInputHandler: (userInput: string) => void;
+  /** Function to handle file uploads */
+  fileUploadHandler: (file: File) => void;
+  /** Function to get the current state of the FSM */
+  getCurrentState: () => States;
+  /** Function to check if a transition is possible */
+  canTransition: (transition: Transitions) => boolean;
+  /** Function to perform a transition and update the context */
+  performTransition: (transition: Transitions) => boolean;
+  /** Function to reset the FSM and context state */
+  reset: () => void;
+  /** Current chat state from context */
+  state: ReturnType<typeof useChat>['state'];
+}
 
 /**
  * Hook that connects the state machine with the React Context
@@ -10,9 +47,9 @@ import { useChat } from '../../contexts/ChatContext';
  * 2. Context actions can trigger FSM transitions
  * 
  * @param {StateMachine} fsm - The finite state machine instance
- * @returns {Object} Functions to interact with both context and FSM
+ * @returns {ChatStateMachineAdapter} Functions to interact with both context and FSM
  */
-const useChatStateMachineAdapter = (fsm: StateMachine) => {
+const useChatStateMachineAdapter = (fsm: StateMachine): ChatStateMachineAdapter => {
   // Get chat context functions and state
   const { 
     state,
@@ -23,12 +60,61 @@ const useChatStateMachineAdapter = (fsm: StateMachine) => {
     setMessageTypingComplete,
     updateFsmState,
     handleButtonClick,
-    sendMessage
+    sendMessage,
+    resetChat
   } = useChat();
   
   // Local state for tracking user information
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
+  
+  /**
+   * Synchronize FSM state with context
+   */
+  const syncFsmState = useCallback(() => {
+    updateFsmState(fsm.getCurrentState());
+  }, [fsm, updateFsmState]);
+  
+  /**
+   * Get current state from FSM
+   */
+  const getCurrentState = useCallback((): States => {
+    return fsm.getCurrentState();
+  }, [fsm]);
+
+  /**
+   * Check if transition is possible
+   */
+  const canTransition = useCallback(
+    (transition: Transitions): boolean => {
+      return fsm.canTransition(transition);
+    },
+    [fsm]
+  );
+
+  /**
+   * Perform a transition and update context
+   */
+  const performTransition = useCallback(
+    (transition: Transitions): boolean => {
+      if (fsm.canTransition(transition)) {
+        fsm.transition(transition);
+        syncFsmState();
+        return true;
+      }
+      return false;
+    },
+    [fsm, syncFsmState]
+  );
+
+  /**
+   * Reset both FSM and context state
+   */
+  const reset = useCallback((): void => {
+    fsm.reset();
+    resetChat();
+    syncFsmState();
+  }, [fsm, resetChat, syncFsmState]);
   
   // Sync FSM state to context
   useEffect(() => {
@@ -57,7 +143,9 @@ const useChatStateMachineAdapter = (fsm: StateMachine) => {
         addBotMessage('We have several opportunities to help your business with AI!');
         // Transition after message is shown
         setTimeout(() => {
+          // Update FSM state directly since we're in effect scope
           fsm.transition(Transitions.OPPTYS_EXIST_MSG_COMPLETE);
+          updateFsmState(fsm.getCurrentState());
         }, 2000);
         break;
         
@@ -79,7 +167,9 @@ const useChatStateMachineAdapter = (fsm: StateMachine) => {
         addBotMessage(`We've saved your contact info. Now you can upload documents to help us understand your needs better.`);
         // Transition after message is shown
         setTimeout(() => {
+          // Update FSM state directly since we're in effect scope
           fsm.transition(Transitions.UPLOAD_DOCS_MSG_COMPLETE);
+          updateFsmState(fsm.getCurrentState());
         }, 2000);
         break;
         
@@ -106,7 +196,14 @@ const useChatStateMachineAdapter = (fsm: StateMachine) => {
         addBotMessage('Thank you! We\'ll be in touch soon.');
         break;
     }
-  }, [fsm.getCurrentState()]);
+  }, [
+    fsm, 
+    setInputDisabled,
+    setButtonGroupVisible,
+    addBotMessage,
+    updateFsmState,
+    userName
+  ]);
   
   /**
    * Handle typing complete events
@@ -116,9 +213,9 @@ const useChatStateMachineAdapter = (fsm: StateMachine) => {
     
     // If it was the welcome message, proceed to initial options
     if (messageId === 0) {
-      fsm.transition(Transitions.WELCOME_MSG_COMPLETE);
+      performTransition(Transitions.WELCOME_MSG_COMPLETE);
     }
-  }, [fsm, setMessageTypingComplete]);
+  }, [setMessageTypingComplete, performTransition]);
   
   /**
    * Handles text processing in collect name or email states
@@ -153,17 +250,22 @@ const useChatStateMachineAdapter = (fsm: StateMachine) => {
       // Simulate successful upload
       setTimeout(() => {
         addBotMessage('File uploaded successfully!');
-        fsm.transition(Transitions.DOCS_UPLOADED);
+        // Use performTransition to ensure context is updated
+        performTransition(Transitions.DOCS_UPLOADED);
       }, 1500);
     }
-  }, [fsm, addBotMessage]);
-  
+  }, [fsm, addBotMessage, performTransition]);
+
   return {
     fsm,
     buttonClickHandler: handleButtonClick,
     typingCompleteHandler,
     processTextInputHandler,
     fileUploadHandler,
+    getCurrentState,
+    canTransition,
+    performTransition,
+    reset,
     state
   };
 };

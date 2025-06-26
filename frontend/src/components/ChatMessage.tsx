@@ -1,5 +1,6 @@
 import React, { memo, useMemo } from 'react';
 import { Message } from '../utils/chatUtils';
+import { ChatButton } from '../contexts/ChatContext';
 
 /**
  * Props for ChatMessage component
@@ -14,6 +15,8 @@ interface ChatMessageProps {
 /**
  * A memoized chat message component that only re-renders when its props change
  * This optimization reduces unnecessary re-renders when the chat state changes
+ * 
+ * The custom comparison function ensures we only re-render when actual content changes
  */
 const ChatMessage: React.FC<ChatMessageProps> = memo(({ message, onTypingComplete }) => {
   const { text, isUser, isTyping, id, buttons } = message;
@@ -53,6 +56,22 @@ const ChatMessage: React.FC<ChatMessageProps> = memo(({ message, onTypingComplet
         {buttonElements}
       </div>
     </div>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison function for React.memo optimization
+  // Only re-render if these specific properties change
+  const prevMsg = prevProps.message;
+  const nextMsg = nextProps.message;
+  
+  return (
+    prevMsg.id === nextMsg.id &&
+    prevMsg.text === nextMsg.text &&
+    prevMsg.isTyping === nextMsg.isTyping &&
+    prevMsg.isUser === nextMsg.isUser &&
+    // Compare buttons array
+    ((!prevMsg.buttons && !nextMsg.buttons) || 
+     (prevMsg.buttons?.length === nextMsg.buttons?.length &&
+      JSON.stringify(prevMsg.buttons) === JSON.stringify(nextMsg.buttons)))
   );
 });
 

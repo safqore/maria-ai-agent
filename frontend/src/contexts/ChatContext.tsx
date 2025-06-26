@@ -252,6 +252,30 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children, fsm }) => 
   const [state, dispatch] = useReducer(chatReducer, initialState);
 
   /**
+   * Enable or disable user input
+   * @param {boolean} isDisabled - Whether input should be disabled
+   */
+  const setInputDisabled = useCallback((isDisabled: boolean): void => {
+    dispatch({ type: ChatActionTypes.SET_INPUT_DISABLED, payload: { isDisabled } });
+  }, []);
+
+  /**
+   * Show or hide button groups
+   * @param {boolean} isVisible - Whether buttons should be visible
+   */
+  const setButtonGroupVisible = useCallback((isVisible: boolean): void => {
+    dispatch({ type: ChatActionTypes.SET_BUTTON_GROUP_VISIBLE, payload: { isVisible } });
+  }, []);
+
+  /**
+   * Update FSM state
+   * @param {States} state - New FSM state
+   */
+  const updateFsmState = useCallback((state: States): void => {
+    dispatch({ type: ChatActionTypes.UPDATE_FSM_STATE, payload: { state } });
+  }, []);
+
+  /**
    * Add a user message to the chat
    * @param {string} text - Message text
    */
@@ -277,23 +301,40 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children, fsm }) => 
    */
   const setMessageTypingComplete = useCallback((messageId: number): void => {
     dispatch({ type: ChatActionTypes.SET_MESSAGE_TYPING_COMPLETE, payload: { messageId } });
-  }, []);
-
-  /**
-   * Enable or disable user input
-   * @param {boolean} isDisabled - Whether input should be disabled
-   */
-  const setInputDisabled = useCallback((isDisabled: boolean): void => {
-    dispatch({ type: ChatActionTypes.SET_INPUT_DISABLED, payload: { isDisabled } });
-  }, []);
-
-  /**
-   * Show or hide button groups
-   * @param {boolean} isVisible - Whether buttons should be visible
-   */
-  const setButtonGroupVisible = useCallback((isVisible: boolean): void => {
-    dispatch({ type: ChatActionTypes.SET_BUTTON_GROUP_VISIBLE, payload: { isVisible } });
-  }, []);
+    
+    // Handle special cases for certain message IDs
+    if (messageId === 0 && fsm) {
+      // Welcome message is done typing
+      fsm.transition(Transitions.WELCOME_MSG_COMPLETE);
+      updateFsmState(fsm.getCurrentState());
+      setInputDisabled(false);
+      setButtonGroupVisible(true);
+    } else {
+      // For other messages, just enable input
+      setInputDisabled(false);
+    }
+    
+    // Handle state-specific actions when typing completes
+    if (fsm && state.currentFsmState === States.OPPTYS_EXIST_MSG && 
+        messageId === state.messages.length - 1) {
+      fsm.transition(Transitions.OPPTYS_EXIST_MSG_COMPLETE);
+      updateFsmState(fsm.getCurrentState());
+      setButtonGroupVisible(true);
+    }
+    
+    if (fsm && state.currentFsmState === States.UPLOAD_DOCS_MSG && 
+        messageId === state.messages.length - 1) {
+      fsm.transition(Transitions.UPLOAD_DOCS_MSG_COMPLETE);
+      updateFsmState(fsm.getCurrentState());
+    }
+    
+    // Always ensure buttons are visible in relevant states
+    if (fsm && (state.currentFsmState === States.USR_INIT_OPTIONS || 
+                state.currentFsmState === States.ENGAGE_USR_AGAIN)) {
+      setButtonGroupVisible(true);
+    }
+  }, [fsm, state.currentFsmState, state.messages.length, 
+      setInputDisabled, setButtonGroupVisible, updateFsmState]);
 
   /**
    * Remove all message buttons
@@ -326,127 +367,166 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children, fsm }) => 
   }, []);
   
   /**
-   * Update FSM state
-   * @param {States} state - New FSM state
-   */
-  const updateFsmState = useCallback((state: States): void => {
-    dispatch({ type: ChatActionTypes.UPDATE_FSM_STATE, payload: { state } });
-  }, []);
-  
-  /**
    * Handle button click
    * @param {string} value - Button value
    */
-  const handleButtonClick = useCallback((value: string): void => {
-    // Process button click based on current state
-    if (fsm && state.currentFsmState) {
-      // Map button values to transitions
-      switch (value) {
-        case 'yes':
-          fsm.transition(Transitions.YES_CLICKED);
-          break;
-        case 'no':
-          fsm.transition(Transitions.NO_CLICKED);
-          break;
-        case 'lets-go':
-          fsm.transition(Transitions.LETS_GO_CLICKED);
-          break;
-        case 'maybe-next-time':
-          fsm.transition(Transitions.MAYBE_NEXT_TIME_CLICKED);
-          break;
-        case 'create-bot':
-          fsm.transition(Transitions.BOT_CREATION_INITIALISED);
-          break;
-        case 'end-workflow':
-          // Use a valid transition that leads to END_WORKFLOW
-          fsm.transition(Transitions.MAYBE_NEXT_TIME_CLICKED);
-          break;
-        default:
-          console.warn(`Unhandled button value: ${value}`);
+  const handleButtonClick = useCallback(
+    (value: string): void => {
+      if (!fsm) return;
+
+      const displayValue = fsm.getResponseDisplayValue(value) || value;
+      
+      // Add the user's button choice as a message
+      addUserMessage(displayValue);
+      
+      // Hide buttons after click
+      setButtonGroupVisible(false);
+      removeMessageButtons();
+      
+      // Disable input while processing
+      setInputDisabled(true);
+
+      // Handle different button actions based on FSM state
+      if (
+        (state.currentFsmState === States.USR_INIT_OPTIONS && 
+         value === 'YES_CLICKED' && 
+         fsm.canTransition(Transitions.YES_CLICKED))
+      ) {
+        fsm.transition(Transitions.YES_CLICKED);
+        updateFsmState(fsm.getCurrentState());
+        
+        // Add bot response for yes clicked
+        addBotMessage("Absolutely! Let's get started. First things first — what's your name?");
+      } 
+      else if (
+        (state.currentFsmState === States.USR_INIT_OPTIONS && 
+         value === 'NO_CLICKED' && 
+         fsm.canTransition(Transitions.NO_CLICKED))
+      ) {
+        fsm.transition(Transitions.NO_CLICKED);
+        updateFsmState(fsm.getCurrentState());
+        
+        // Add bot response for no clicked
+        addBotMessage("💡 Psst… Great opportunities start with a \"yes.\" Change your mind? Click \"Let's Go\" anytime!");
       }
-    }
-    
-    // Add the button text as a user message
-    addUserMessage(value);
-    
-    // Remove buttons after click
-    removeMessageButtons();
-    
-    // Disable input temporarily
-    setInputDisabled(true);
-  }, [fsm, state.currentFsmState, addUserMessage, removeMessageButtons, setInputDisabled]);
+      else if (
+        (state.currentFsmState === States.ENGAGE_USR_AGAIN && 
+         value === 'LETS_GO_CLICKED' && 
+         fsm.canTransition(Transitions.LETS_GO_CLICKED))
+      ) {
+        fsm.transition(Transitions.LETS_GO_CLICKED);
+        updateFsmState(fsm.getCurrentState());
+        
+        // Add bot response for let's go clicked
+        addBotMessage("Great choice! Let's get started. First things first — what's your name?");
+      }
+      else if (
+        (state.currentFsmState === States.ENGAGE_USR_AGAIN && 
+         value === 'MAYBE_NEXT_TIME_CLICKED' && 
+         fsm.canTransition(Transitions.MAYBE_NEXT_TIME_CLICKED))
+      ) {
+        fsm.transition(Transitions.MAYBE_NEXT_TIME_CLICKED);
+        updateFsmState(fsm.getCurrentState());
+        
+        // Add bot response for maybe next time clicked
+        addBotMessage("I'll be here when you're ready!");
+        
+        // Enable buttons again
+        setButtonGroupVisible(true);
+      }
+    },
+    [fsm, state.currentFsmState, addUserMessage, removeMessageButtons, setInputDisabled, 
+     setButtonGroupVisible, updateFsmState, addBotMessage]
+  );
   
   /**
    * Send a message and process the response
    * @param {string} text - Message text
    * @returns {Promise<void>}
    */
-  const sendMessage = useCallback(async (text: string): Promise<void> => {
-    if (!text.trim()) return;
-    
-    // Add user message
-    addUserMessage(text);
-    
-    // Disable input during processing
-    setInputDisabled(true);
-    setLoading(true);
-    
-    try {
-      // This would normally call an API
-      // For now we'll just simulate a response
-      await new Promise(resolve => setTimeout(resolve, 1000));
+  const sendMessage = useCallback(
+    async (text: string): Promise<void> => {
+      if (text.trim() === '') return;
       
-      // Process input based on current state
-      if (fsm && state.currentFsmState) {
-        switch (state.currentFsmState) {
-          case States.COLLECTING_NAME:
-            fsm.transition(Transitions.NAME_PROVIDED);
-            addBotMessage(`Thanks ${text}! What's your email address?`);
-            break;
-          case States.COLLECTING_EMAIL:
-            fsm.transition(Transitions.EMAIL_PROVIDED);
-            addBotMessage('Great! Now you can upload your documents.');
-            break;
-          default:
-            addBotMessage(`I received your message: "${text}"`);
+      // Add user message
+      addUserMessage(text);
+      
+      // Disable input while processing
+      setInputDisabled(true);
+      setLoading(true);
+      
+      try {
+        if (!fsm) {
+          throw new Error("State machine not initialized");
         }
-      } else {
-        addBotMessage(`I received your message: "${text}"`);
+
+        // Process user input based on current state
+        if (state.currentFsmState === States.COLLECTING_NAME) {
+          if (/^[a-zA-Z\s]+$/.test(text)) {
+            // Valid name provided
+            fsm.transition(Transitions.NAME_PROVIDED);
+            updateFsmState(fsm.getCurrentState());
+            
+            // Add bot response for name provided
+            addBotMessage(
+              `Nice to meet you, ${text}! Let's build your personalized AI agent.\n\n` +
+              `To get started, I'll need a document to train on—like a PDF of your ` +
+              `business materials, process guides, or product details. This helps ` +
+              `me tailor insights just for you!`
+            );
+          } else {
+            // Invalid name provided
+            addBotMessage(
+              "Please provide a valid name. Names can only contain letters and spaces."
+            );
+          }
+        }
+        // Add additional state handling here as needed
+        
+      } catch (error) {
+        console.error("Error processing message:", error);
+        setError(error instanceof Error ? error.message : "An unknown error occurred");
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'An unknown error occurred');
-    } finally {
-      setLoading(false);
-      setInputDisabled(false);
-    }
-  }, [
-    addUserMessage,
-    setInputDisabled,
-    setLoading,
-    fsm,
-    state.currentFsmState,
-    addBotMessage,
-    setError
-  ]);
+    },
+    [
+      addUserMessage,
+      setInputDisabled,
+      setLoading,
+      fsm,
+      state.currentFsmState,
+      updateFsmState,
+      addBotMessage,
+      setError
+    ]
+  );
   
   /**
    * Reset the chat to initial state
    */
   const resetChat = useCallback((): void => {
-    // Reset to initial state
-    const [initialMessage] = initialState.messages;
-    dispatch({ type: ChatActionTypes.ADD_BOT_MESSAGE, payload: { text: initialMessage.text } });
+    // Reset the FSM if available
+    if (fsm) {
+      fsm.reset();
+      updateFsmState(fsm.getCurrentState());
+    }
+    
+    // Reset UI state
     setInputDisabled(false);
     setButtonGroupVisible(true);
     clearError();
     
-    // Reset FSM if provided
-    if (fsm) {
-      fsm.reset();
-      updateFsmState(States.WELCOME_MSG);
-    }
+    // Reset messages to initial welcome message
+    dispatch({
+      type: ChatActionTypes.ADD_BOT_MESSAGE,
+      payload: {
+        text: welcomeMessage
+      }
+    });
   }, [fsm, setInputDisabled, setButtonGroupVisible, clearError, updateFsmState]);
 
+  // Create the context value with all methods
   const value = {
     state,
     addUserMessage,
@@ -469,6 +549,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children, fsm }) => 
 
 /**
  * Hook to use the chat context
+ * @returns {ChatContextValue} The chat context value
  */
 export const useChat = (): ChatContextValue => {
   const context = useContext(ChatContext);
