@@ -2,11 +2,11 @@
 
 This document serves as the main entry point for session management implementation in the Maria AI Agent project, last updated on June 26, 2025.
 
-This document serves as the main entry point for session management implementation in the Maria AI Agent project.
-
 ## Introduction
 
 The session management system enables persistent user sessions, linking uploads with user conversations and providing a seamless experience across interactions. This feature addresses the need for associating uploaded files with specific users and maintaining contextual conversation history.
+
+This implementation is based on the requirements and decisions outlined in the README.md file. All original requirements have been consolidated in the README to maintain a single source of truth for session management requirements.
 
 ## Goals
 
@@ -78,12 +78,8 @@ File Upload Component → sessionUUID → Upload Service → S3 Storage (with UU
 
 ## Documentation Structure
 
-- [README.md](README.md): Overview and structure
-- [plan.md](plan.md): Detailed implementation plan
+- [README.md](README.md): Overview, requirements and structure
+- [plan.md](plan.md): Detailed implementation plan with code examples
 - [testing.md](testing.md): Test strategy and cases
 - [tracking.md](tracking.md): Progress tracking
 - [next-steps.md](next-steps.md): Future improvements
-
-## Related Requirements
-
-For detailed requirements, see [user_session.md](user_session.md)
