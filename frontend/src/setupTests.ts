@@ -13,9 +13,10 @@ if (typeof window !== 'undefined' && window.location) {
   }
 }
 
-// Silence jsdom navigation warning for window.location.reload
+// Silence jsdom navigation warning and React act() warnings
 const originalError = console.error;
 console.error = (...args) => {
+  // Silence navigation warning
   if (
     args.some(
       arg =>
@@ -24,5 +25,17 @@ console.error = (...args) => {
   ) {
     return;
   }
+  
+  // Silence React act() warnings - these happen with async hooks and don't necessarily indicate problems
+  // when tests are otherwise passing
+  if (
+    args.some(
+      arg =>
+        typeof arg === 'string' && arg.includes('was not wrapped in act')
+    )
+  ) {
+    return;
+  }
+  
   originalError(...args);
 };

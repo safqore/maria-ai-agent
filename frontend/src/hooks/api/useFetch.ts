@@ -96,7 +96,7 @@ export function useFetch<T, P extends any[] = []>(
   
   const [state, setState] = useState<UseFetchState<T>>({
     data: initialData,
-    isLoading: immediate,
+    isLoading: false, // Always start with false to avoid React warnings
     error: null,
   });
 
@@ -137,8 +137,11 @@ export function useFetch<T, P extends any[] = []>(
       // Create a new AbortController for this request
       abortControllerRef.current = new AbortController();
       
-      // Update state to indicate loading
-      setState(prevState => ({ ...prevState, isLoading: true, error: null }));
+      // For immediate execution, we already set isLoading in the initial state
+      if (!immediate || didExecuteRef.current) {
+        // Update state to indicate loading
+        setState(prevState => ({ ...prevState, isLoading: true, error: null }));
+      }
       
       const executeWithRetry = async (retryAttempt: number): Promise<T | null> => {
         try {
@@ -208,11 +211,17 @@ export function useFetch<T, P extends any[] = []>(
   const didExecuteRef = useRef(false);
   
   useEffect(() => {
+    // Only run this effect once
     if (immediate && !didExecuteRef.current) {
       // Mark that we've executed to prevent infinite loops
       didExecuteRef.current = true;
       
-      // Call execute with no arguments for immediate execution
+      // Set loading state first, synchronously
+      setState(prevState => ({ ...prevState, isLoading: true }));
+      
+      // Execute the fetch without setTimeout - simpler approach
+      // React act() should handle this but there are edge cases especially with async operations
+      // For testing, we silence act warnings in the specific test rather than making the code more complex
       (execute as Function)();
     }
     

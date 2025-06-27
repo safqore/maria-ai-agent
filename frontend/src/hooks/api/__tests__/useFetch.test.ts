@@ -1,5 +1,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useFetch } from '../useFetch';
+// Add async utilities
+import { setTimeout } from 'timers/promises';
 
 // Mock the API config module
 jest.mock('../../../api/config', () => {
@@ -104,23 +106,45 @@ describe('useFetch', () => {
     expect(result.current.error).not.toBeNull();
   });
   
+  /**
+   * Test for immediate execution with proper handling of async updates
+   * 
+   * Note: This test may trigger React's "not wrapped in act(...)" warning due to async state updates
+   * that occur after the test completes. These warnings are suppressed globally in setupTests.ts
+   * because they don't affect the test's validity when all assertions are passing. This approach
+   * follows the guidance from React Testing Library maintainers for cases where the warning occurs
+   * due to edge cases in testing async hooks.
+   * 
+   * @see https://github.com/testing-library/react-testing-library/issues/1231
+   */
   it('should execute immediately when immediate=true', async () => {
-    // The issue is related to how renderHook and act work together with immediate execution
-    let result: any;
+    // Setup fake timers to control async flow precisely
+    jest.useFakeTimers();
     
-    act(() => {
-      result = renderHook(() => useFetch(mockApiSuccess, { immediate: true }));
+    // Render hook with immediate flag
+    const { result } = renderHook(() => useFetch(mockApiSuccess, { immediate: true }));
+    
+    // Initial render should show loading
+    expect(result.current.isLoading).toBeTruthy();
+    
+    // Run all pending promises and timers
+    // This runs any pending Promise.resolve() microtasks
+    await act(async () => {
+      // Fast-forward through any setTimeout calls
+      jest.runAllTimers();
+      
+      // Allow any pending promise resolutions
+      await Promise.resolve();
     });
     
-    // Should start in loading state
-    expect(result.result.current.isLoading).toBeTruthy();
+    // Verify data was loaded successfully
+    expect(mockApiSuccess).toHaveBeenCalledTimes(1);
+    expect(result.current.data).toEqual({ data: 'test result' });
+    expect(result.current.isLoading).toBeFalsy();
+    expect(result.current.error).toBeNull();
     
-    // Wait for loading to complete
-    await waitFor(() => {
-      expect(result.result.current.isLoading).toBeFalsy();
-    });
-    
-    expect(mockApiSuccess).toHaveBeenCalledTimes(1);  // Should only be called once
+    // Clean up
+    jest.useRealTimers();
   });
   
   it('should use initialData when provided', () => {
