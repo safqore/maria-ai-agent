@@ -11,7 +11,7 @@ import traceback
 from functools import wraps
 from typing import Any, Callable, Dict, Tuple, TypeVar, cast
 
-from flask import Response, current_app, jsonify
+from flask import Response, current_app, jsonify, request
 
 # Type variable for function return type
 F = TypeVar("F", bound=Callable[..., Any])
@@ -85,7 +85,13 @@ def handle_api_error(error: APIError) -> Tuple[Response, int]:
         tuple: (response, status_code)
     """
     response = {"error": error.message, "status": "error", "details": error.details}
-    return jsonify(response), error.status_code
+    resp = jsonify(response)
+    # Add CORS headers to ensure preflight requests pass even on errors
+    resp.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    resp.headers.add('Access-Control-Allow-Credentials', 'true')
+    return resp, error.status_code
 
 
 def handle_general_error(error: Exception) -> Tuple[Response, int]:
@@ -108,7 +114,13 @@ def handle_general_error(error: Exception) -> Tuple[Response, int]:
             {"message": str(error)} if current_app.config.get("DEBUG", False) else {}
         ),
     }
-    return jsonify(response), 500
+    resp = jsonify(response)
+    # Add CORS headers to ensure preflight requests pass even on errors
+    resp.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    resp.headers.add('Access-Control-Allow-Credentials', 'true')
+    return resp, 500
 
 
 def register_error_handlers(app):
@@ -135,6 +147,10 @@ def api_route(func: F) -> F:
 
     @wraps(func)
     def wrapper(*args, **kwargs):
+        # Always allow OPTIONS requests to pass through without trying to parse JSON
+        if request.method == "OPTIONS":
+            return func(*args, **kwargs)
+            
         try:
             return func(*args, **kwargs)
         except APIError as e:

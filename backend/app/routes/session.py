@@ -14,7 +14,6 @@ from backend.app.errors import api_route
 from backend.app.schemas.session_schemas import SessionPersistSchema, UUIDSchema
 from backend.app.services.session_service import SessionService
 from flask import Blueprint, jsonify, request, g
-from flask_cors import cross_origin
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from marshmallow import ValidationError
@@ -40,9 +39,8 @@ def with_session_service(f):
 session_bp.before_request(lambda: setattr(g, 'session_service', SessionService()))
 
 
-@session_bp.route("/validate-uuid", methods=["POST"])
-@cross_origin()
-@limiter.limit(SESSION_RATE_LIMIT)
+@session_bp.route("/validate-uuid", methods=["POST", "OPTIONS"])
+@limiter.limit(SESSION_RATE_LIMIT, exempt_when=lambda: request.method == "OPTIONS")
 @api_route
 def validate_uuid():
     """
@@ -66,6 +64,11 @@ def validate_uuid():
         - 400: Invalid UUID format
         - 409: UUID already exists in the database
     """
+    # Handle OPTIONS requests separately
+    if request.method == "OPTIONS":
+        response = jsonify({"status": "success"})
+        return response, 200
+        
     data = request.get_json()
 
     # Validate request data
@@ -90,9 +93,8 @@ def validate_uuid():
     return jsonify(response_data), status_code
 
 
-@session_bp.route("/generate-uuid", methods=["POST"])
-@cross_origin()
-@limiter.limit(SESSION_RATE_LIMIT)
+@session_bp.route("/generate-uuid", methods=["POST", "OPTIONS"])
+@limiter.limit(SESSION_RATE_LIMIT, exempt_when=lambda: request.method == "OPTIONS")
 @api_route
 def generate_uuid():
     """
@@ -111,11 +113,15 @@ def generate_uuid():
         - 200: Successfully generated UUID
         - 500: Failed to generate unique UUID after multiple attempts
     """
+    # Handle OPTIONS requests separately
+    if request.method == "OPTIONS":
+        response = jsonify({"status": "success"})
+        return response, 200
     response_data, status_code = g.session_service.generate_uuid()
     return jsonify(response_data), status_code
 
 
-@session_bp.route("/persist_session", methods=["POST"])
+@session_bp.route("/persist_session", methods=["POST", "OPTIONS"])
 @api_route
 def persist_session():
     """
@@ -138,6 +144,11 @@ def persist_session():
         - 200: Successfully persisted or assigned new UUID
         - 400: Invalid UUID format
     """
+    # Handle OPTIONS requests separately
+    if request.method == "OPTIONS":
+        response = jsonify({"status": "success"})
+        return response, 200
+        
     data = request.get_json()
 
     # Validate request data

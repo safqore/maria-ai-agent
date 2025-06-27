@@ -7,7 +7,7 @@ with all the necessary configuration and blueprint registrations.
 
 import os
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -37,11 +37,10 @@ def create_app(test_config=None):
     # Create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     
-    # Configure CORS for frontend access
+    # Configure CORS for frontend access - using resources to avoid duplicate headers
     CORS(
         app,
-        origins=["http://localhost:3000", "http://127.0.0.1:3000"],
-        supports_credentials=True,
+        resources={r"/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"], "supports_credentials": True}},
     )
     
     # Initialize rate limiter with config from env
@@ -57,9 +56,9 @@ def create_app(test_config=None):
         # Load the test config if passed in
         app.config.from_mapping(test_config)
     
-    # Register blueprints with API versioning
-    app.register_blueprint(session_bp, url_prefix='/api/v1/session')
-    app.register_blueprint(upload_bp, url_prefix='/api/v1/upload')
+    # Register blueprints with proper URL prefixes
+    app.register_blueprint(session_bp, url_prefix='')  # Keep root level for backward compatibility
+    app.register_blueprint(upload_bp, url_prefix='')
     
     # Create instance directory if it doesn't exist
     try:
@@ -70,6 +69,17 @@ def create_app(test_config=None):
     # Register error handlers
     from backend.app.errors import register_error_handlers
     register_error_handlers(app)
+    
+    # Add a general OPTIONS route to handle CORS preflight requests
+    @app.route('/<path:path>', methods=['OPTIONS'])
+    def options_handler(path):
+        response = app.make_default_options_response()
+        return response
+    
+    @app.after_request
+    def after_request_func(response):
+        """Add additional headers or process responses if needed"""
+        return response
     
     # Create database tables if they don't exist
     from backend.app.database import Base, engine

@@ -3,7 +3,15 @@ WSGI entry point for the Maria AI Agent backend application.
 """
 
 import os
-from app import create_app
+import sys
+from pathlib import Path
+
+# Add the project root directory to the Python path
+project_dir = Path(__file__).resolve().parent.parent
+sys.path.append(str(project_dir))
+
+# Now use absolute imports consistent with the rest of the codebase
+from backend.app.app_factory import create_app
 
 app = create_app()
 
