@@ -57,4 +57,8 @@ def create_app():
     app.register_blueprint(upload_bp)
     # Add other blueprints as needed
 
+    # Create database tables if they don't exist
+    from app.database import Base, engine
+    Base.metadata.create_all(bind=engine)
+
     return app

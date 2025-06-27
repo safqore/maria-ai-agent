@@ -8,9 +8,9 @@ This module provides services for:
 """
 
 import uuid
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, Optional
 
-from app.db import get_db_connection
+from app.repositories.user_session_repository import UserSessionRepository
 from app.utils.audit_utils import log_audit_event
 from app.utils.s3_utils import migrate_s3_files
 
@@ -51,15 +51,7 @@ class SessionService:
         Returns:
             bool: True if the UUID exists, False otherwise
         """
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute(
-            "SELECT COUNT(*) FROM user_sessions WHERE uuid = %s", (session_uuid,)
-        )
-        count = cur.fetchone()[0]
-        cur.close()
-        conn.close()
-        return count > 0
+        return UserSessionRepository.exists(session_uuid)
 
     @staticmethod
     def validate_uuid(session_uuid: str) -> Tuple[Dict[str, Any], int]:
@@ -185,31 +177,27 @@ class SessionService:
                 "code": "invalid session",
             }, 400
 
-        conn = get_db_connection()
-        cur = conn.cursor()
-
-        cur.execute(
-            "SELECT COUNT(*) FROM user_sessions WHERE uuid = %s", (session_uuid,)
-        )
-        count = cur.fetchone()[0]
-
-        if count > 0:
+        # Check if session UUID already exists
+        if UserSessionRepository.exists(session_uuid):
             new_uuid = str(uuid.uuid4())
             migrate_s3_files(session_uuid, new_uuid)
             session_uuid = new_uuid
-            cur.close()
-            conn.close()
             return {
                 "new_uuid": new_uuid,
                 "message": "UUID collision, new UUID assigned",
             }, 200
 
-        cur.execute(
-            "INSERT INTO user_sessions (uuid, name, email) VALUES (%s, %s, %s)",
-            (session_uuid, name, email),
+        # Create the user session
+        user_session = UserSessionRepository.create(
+            session_uuid=session_uuid,
+            name=name,
+            email=email
         )
-        conn.commit()
-        cur.close()
-        conn.close()
 
-        return {"message": "Session persisted", "session_uuid": session_uuid}, 200
+        log_audit_event(
+            "session_persisted",
+            user_uuid=str(user_session.uuid),
+            details={"name": name, "email": email}
+        )
+        
+        return {"message": "Session persisted", "session_uuid": str(user_session.uuid)}, 200

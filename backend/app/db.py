@@ -1,17 +1,25 @@
 """
 Database connection module for the Maria AI Agent backend.
 
-This module provides functions to establish connections to the PostgreSQL database.
+This module provides:
+1. Direct psycopg2 connections to PostgreSQL (legacy)
+2. SQLAlchemy ORM integration (preferred)
+
+Note: The direct connection function is kept for backward compatibility during
+the transition to SQLAlchemy ORM.
 """
 
 import os
 
 import psycopg2
+from app.database import get_db_session, engine
 
 
 def get_db_connection():
     """
-    Create and return a connection to the PostgreSQL database.
+    Create and return a direct connection to the PostgreSQL database.
+    
+    DEPRECATED: Use SQLAlchemy ORM through app.database.get_db_session() instead.
 
     The connection parameters are read from environment variables:
     - POSTGRES_DB: Database name
