@@ -16,6 +16,12 @@ Detailed task breakdown and implementation guides for upcoming phases.
 ### [testing.md](./testing.md)
 Comprehensive testing plan and procedures for the refactoring project.
 
+### [orm-implementation.md](./orm-implementation.md)
+Documentation for SQLAlchemy ORM implementation in Phase 4.
+
+### [blueprint-implementation.md](./blueprint-implementation.md)
+Implementation plan for Flask blueprints and route organization.
+
 ## Previous Documentation
 
 These files have been consolidated and are now maintained in this directory:
@@ -27,5 +33,6 @@ These files have been consolidated and are now maintained in this directory:
 
 ## Project Status
 
-**Current Phase:** Phase 3 Complete, moving to Phase 5 (Context and Global State Refinements)
-**Last Updated:** June 25, 2025
+**Current Phase:** Phase 4 (Backend Improvements - Higher Risk)
+**Current Step:** Step 2 (Improve Route Organization)
+**Last Updated:** June 27, 2025

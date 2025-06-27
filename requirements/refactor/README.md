@@ -34,13 +34,22 @@ This document serves as the central reference for the Maria AI Agent refactoring
 - Implement consistent error handling ✅
 - Improve state management ✅
 
-#### Phase 4: Backend Improvements - Higher Risk (Weeks 9-11) ⏳
-- ✅ Implement SQLAlchemy ORM
-- ⏳ Improve route organization
+#### Phase 5: Frontend Improvements - Higher Risk (Weeks 9-11) ✅
+- Reorganize folder structure ✅
+- Finalize state management implementation ✅
+- Implement FSM adapters ✅
+- Add data fetching layer ✅
+- Address cross-cutting concerns ✅
 
-#### Phase 5: Frontend Improvements - Higher Risk (Weeks 12-14) ✅
-- ✅ Reorganize folder structure
-- ✅ Finalize state management implementation
+#### Phase 4: Backend Improvements - Higher Risk (Weeks 12-14) ⏳
+- Implement SQLAlchemy ORM ✅
+  - Design database models ✅
+  - Create repository pattern implementation ✅ 
+  - Update services to use repositories ✅
+- Improve route organization ⏳
+  - Create Flask blueprints (partially complete ⏳)
+  - Add API versioning
+  - Enhance middleware
 
 #### Phase 6: Security and Performance (Weeks 15-16)
 - Enhance security measures

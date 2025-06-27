@@ -2,9 +2,9 @@
 
 This document outlines the planned tasks for the upcoming phases of the Maria AI Agent refactoring project following the completion of Phase 5.
 
-## Phase 4: Backend Improvements - Higher Risk (July 1-15, 2025)
+## Phase 4: Backend Improvements - Higher Risk (June 27 - July 10, 2025)
 
-### Step 1: SQLAlchemy ORM Implementation (July 1-5, 2025) ✅
+### Step 1: SQLAlchemy ORM Implementation (June 27-30, 2025) ✅
 
 1. **Database Models Setup** ✅
    - [x] Design SQLAlchemy models for existing database tables 
@@ -16,17 +16,19 @@ This document outlines the planned tasks for the upcoming phases of the Maria AI
    - [x] Update service layer to use repositories
    - [x] Ensure proper transaction management with context managers
 
-### Step 2: Improve Route Organization (July 8-12, 2025)
+### Step 2: Improve Route Organization (July 1-10, 2025) ⏳
 
-1. **Blueprint Implementation**
-   - [ ] Organize routes into Flask blueprints
+1. **Blueprint Implementation** ⏳
+   - [x] Create initial blueprint structure for routes (session_bp)
+   - [x] Implement basic blueprint registration
+   - [ ] Complete migration of remaining routes to blueprints
    - [ ] Add versioning to API endpoints
    - [ ] Create consistent route documentation
 
-2. **Middleware Improvements**
+2. **Middleware Improvements** ⏳
+   - [x] Add rate limiting capabilities (already implemented with flask-limiter)
    - [ ] Add request logging middleware
    - [ ] Improve authentication middleware
-   - [ ] Create rate limiting capabilities
 
 ## Phase 6: Security and Performance (July 15-31, 2025)
 
