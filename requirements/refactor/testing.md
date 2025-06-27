@@ -1,6 +1,6 @@
 # Maria AI Agent Refactoring Testing Plan
 
-This document outlines the comprehensive testing approach for the Maria AI Agent refactoring project.
+This document outlines the comprehensive testing approach for the Maria AI Agent refactoring project. Last updated on June 27, 2025.
 
 ## Testing Strategy
 
@@ -28,258 +28,238 @@ This document outlines the comprehensive testing approach for the Maria AI Agent
    - Validate critical user flows
 
 4. **Visual Regression Tests**
-   - Compare UI appearance before and after changes
-   - Ensure design consistency
+   - Ensure UI components maintain appearance
+   - Compare before and after screenshots
 
-5. **Manual Testing**
-   - Verify user experience and interactions
-   - Validate edge cases difficult to automate
-   - Exploratory testing
+## Testing Plan by Phase
 
-## Testing Scripts
+### Phase 4: Backend Improvements - Higher Risk
+
+#### SQLAlchemy ORM Implementation
+
+1. **Unit Tests**
+   - Test each repository method in isolation
+   - Verify model relationships
+   - Test transaction handling
+
+2. **Integration Tests**
+   - Test repository integration with services
+   - Verify database operations
+   - Test migration scripts
+
+#### Improved Route Organization
+
+1. **Unit Tests**
+   - Test individual endpoints
+   - Verify request validation
+   - Test error handling
+
+2. **Integration Tests**
+   - Test endpoint interactions
+   - Verify middleware functionality
+   - Test authentication and authorization
+
+### Phase 5: Context and Global State Refinements
+
+1. **Unit Tests**
+   - Test state transitions
+   - Verify context providers
+   - Test adapter functionality
+
+2. **Integration Tests**
+   - Test context integration with components
+   - Verify state management flows
+   - Test API integration
+
+## Test Implementation
 
 ### Backend Testing
 
-```bash
-cd backend
-pytest -v
+#### Example Repository Test
+
+```python
+# tests/test_user_session_repository.py
+
+import pytest
+from backend.app.repositories.user_session_repository import UserSessionRepository
+from backend.app.database.models import UserSession
+
+class TestUserSessionRepository:
+    def test_create_session(self, db_session):
+        # Arrange
+        repo = UserSessionRepository(db_session)
+        session_data = {
+            "uuid": "test-uuid",
+            "created_at": "2025-06-27T12:00:00Z",
+            "status": "active"
+        }
+        
+        # Act
+        session = repo.create(UserSession(**session_data))
+        
+        # Assert
+        assert session.uuid == "test-uuid"
+        assert session.status == "active"
+        
+    def test_get_by_uuid(self, db_session):
+        # Arrange
+        repo = UserSessionRepository(db_session)
+        session_data = {
+            "uuid": "test-uuid",
+            "created_at": "2025-06-27T12:00:00Z",
+            "status": "active"
+        }
+        repo.create(UserSession(**session_data))
+        
+        # Act
+        session = repo.get_by_uuid("test-uuid")
+        
+        # Assert
+        assert session is not None
+        assert session.uuid == "test-uuid"
 ```
 
-Or use the Makefile command:
+#### Example Blueprint Test
 
-```bash
-make test-backend
+```python
+# tests/test_session_blueprint.py
+
+import pytest
+import json
+from backend.app import create_app
+
+class TestSessionBlueprint:
+    @pytest.fixture
+    def client(self):
+        app = create_app(testing=True)
+        with app.test_client() as client:
+            yield client
+    
+    def test_create_session(self, client):
+        # Arrange
+        data = {
+            "uuid": "test-uuid",
+            "client_info": {"browser": "Chrome"}
+        }
+        
+        # Act
+        response = client.post(
+            '/api/v1/sessions',
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        
+        # Assert
+        assert response.status_code == 201
+        resp_data = json.loads(response.data)
+        assert resp_data.get('uuid') == "test-uuid"
 ```
 
 ### Frontend Testing
 
-```bash
-cd frontend
-npm test
+#### Example Context Test
+
+```typescript
+// src/__tests__/contexts/ChatContext.test.tsx
+
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { ChatProvider } from '../../contexts/ChatContext';
+import { useChatContext } from '../../hooks/useChatContext';
+
+// Mock component that uses the context
+const TestComponent = () => {
+  const { state, sendMessage } = useChatContext();
+  
+  return (
+    <div>
+      <div data-testid="loading">{state.isLoading.toString()}</div>
+      <div data-testid="message-count">{state.messages.length}</div>
+      <button data-testid="send-button" onClick={() => sendMessage('Hello')}>
+        Send Message
+      </button>
+    </div>
+  );
+};
+
+describe('ChatContext', () => {
+  it('should initialize with default state', () => {
+    render(
+      <ChatProvider>
+        <TestComponent />
+      </ChatProvider>
+    );
+    
+    expect(screen.getByTestId('loading').textContent).toBe('false');
+    expect(screen.getByTestId('message-count').textContent).toBe('0');
+  });
+  
+  it('should handle sending a message', async () => {
+    // Mock API implementation
+    jest.mock('../../api/chatApi', () => ({
+      useChatApi: () => ({
+        sendMessage: jest.fn().mockResolvedValue({ text: 'Response' })
+      })
+    }));
+    
+    render(
+      <ChatProvider>
+        <TestComponent />
+      </ChatProvider>
+    );
+    
+    fireEvent.click(screen.getByTestId('send-button'));
+    
+    // Should show loading state
+    expect(screen.getByTestId('loading').textContent).toBe('true');
+    
+    // Wait for response
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+      expect(screen.getByTestId('message-count').textContent).toBe('2');
+    });
+  });
+});
 ```
 
-Or use the Makefile command:
+## Test Coverage Goals
 
-```bash
-make test-frontend
-```
+| Module | Current Coverage | Target Coverage |
+|--------|-----------------|----------------|
+| Backend Services | 65% | 90% |
+| Backend Routes | 70% | 90% |
+| Backend Repositories | 75% | 95% |
+| Frontend Components | 60% | 80% |
+| Frontend State | 50% | 85% |
+| Frontend Hooks | 55% | 80% |
 
-### Running All Tests
+## Testing Infrastructure
 
-```bash
-make test-all
-```
+### Tools and Libraries
 
-## Test Coverage by Component
+#### Backend
+- pytest for test framework
+- pytest-cov for coverage reporting
+- pytest-mock for mocking
+- pytest-flask for Flask-specific testing
 
-### Backend Components
+#### Frontend
+- Jest for test framework
+- React Testing Library for component testing
+- Mock Service Worker for API mocking
+- Jest Snapshot for UI testing
 
-| Component | Test Type | Coverage Status | Notes |
-|-----------|-----------|----------------|-------|
-| Session Service | Unit | ✅ Complete | Tests for UUID generation, validation, and persistence |
-| Upload Service | Unit | ✅ Complete | Tests for file validation and storage |
-| Error Handling | Unit | ✅ Complete | Tests for API error responses |
-| Database Layer | Unit | ⚠️ Partial | Additional tests needed for edge cases |
-| API Routes | Integration | ✅ Complete | Tests for all API endpoints |
+### Continuous Integration
 
-### Frontend Components
+- Run tests automatically on every pull request
+- Block merges if tests fail
+- Report coverage metrics
+- Run performance tests on scheduled basis
 
-| Component | Test Type | Coverage Status | Notes |
-|-----------|-----------|----------------|-------|
-| Chat Components | Unit | ✅ Complete | Tests for rendering and user interactions |
-| File Upload | Unit | ✅ Complete | Tests for file selection and upload process |
-| API Services | Unit | ✅ Complete | Tests for API calls and error handling |
-| Hooks | Unit | ⚠️ Partial | Missing tests for some custom hooks |
-| State Management | Unit | ⚠️ Partial | Additional tests needed for complex state transitions |
-| ErrorBoundary | Unit | ✅ Complete | Tests for error catching and fallback rendering |
-| End-to-End Flows | E2E | ❌ Missing | Planned for Phase 5 |
+## Test Implementation Plan
 
-## Critical Test Cases
-
-### Backend
-
-1. **Session Management**
-   - Generate and validate UUIDs
-   - Test UUID collision handling
-   - Verify session persistence and retrieval
-   - Test session expiration logic
-
-2. **File Upload**
-   - Validate file mime types
-   - Test file size limits
-   - Verify file storage and retrieval
-   - Test error handling for invalid files
-   - Verify multiple file uploads
-
-3. **API Error Handling**
-   - Test 400 error responses for invalid input
-   - Test 404 error responses for missing resources
-   - Test 500 error responses for server errors
-   - Verify error response format consistency
-
-### Frontend
-
-1. **Chat Flow**
-   - Display welcome message on load
-   - Send user message and receive response
-   - Display action buttons at appropriate times
-   - Handle button click actions
-   - Display typing indicator during AI response
-   - Handle error states gracefully
-
-2. **File Upload Flow**
-   - Select files via file dialog
-   - Display file list with status
-   - Show upload progress
-   - Handle upload errors
-   - Limit file types and sizes
-
-3. **State Management**
-   - Initialize state correctly
-   - Transition between states based on actions
-   - Maintain consistent UI based on state
-   - Handle error states
-   - Recover from errors
-
-## Regressions to Watch
-
-1. **Chat Button Display Issue**
-   - Button actions must appear at appropriate times during chat flow
-   - Buttons must respond to clicks
-   - Visual appearance must match design
-
-2. **Error Handling Regression**
-   - API errors must be caught and displayed
-   - Network errors must be handled gracefully
-   - UI should provide recovery options
-
-3. **State Management Regression**
-   - State transitions must follow expected flow
-   - UI must update correctly based on state
-   - No unexpected state changes
-
-## Test Infrastructure Improvements
-
-### Completed
-
-1. **Backend Test Organization**
-   - Added conftest.py for shared fixtures
-   - Standardized import organization
-   - Fixed pytest warnings
-   - Created separate test directory structure
-
-2. **Frontend Test Configuration**
-   - Fixed Jest configuration
-   - Added style mocks for CSS imports
-   - Updated component tests to use modern testing practices
-   - Fixed React 18 compatibility issues
-
-### Completed in Phase 2
-
-1. **Backend Service Layer Testing**
-   - Updated tests to use the new service layer classes
-   - Fixed test mocking to patch the correct service methods
-   - Verified all backend tests pass with the new architecture
-
-### Completed in Phase 3
-
-1. **Frontend Component Tests**
-   - Added tests for new split components
-   - Updated existing tests to use the new API service layer
-   - Used proper mocking strategies for API services
-   - Added tests for error handling with ErrorBoundary
-   - Created tests for context-based state management
-   - Fixed component mocking strategies
-   - Added proper TypeScript typing to test files
-
-### Planned for Next Phases
-
-1. **End-to-End Testing Setup**
-   - Set up Cypress for E2E testing
-   - Create test fixtures for common scenarios
-   - Implement page object model for test maintainability
-   - Create automated test scripts for critical flows
-
-2. **Visual Regression Testing**
-   - Set up visual regression testing tool
-   - Create baseline screenshots for key UI components
-   - Implement automated visual comparison in CI/CD
-
-3. **Performance Testing**
-   - Set up tools to measure rendering performance
-   - Create benchmarks for API response times
-   - Implement monitoring for key performance metrics
-
-4. **Test Automation Pipeline**
-   - Set up GitHub Actions workflow for CI/CD
-   - Implement pre-push hooks for running tests
-   - Create test coverage reports
-   - Add test status badges to README
-
-## Testing Checklist for Each Phase
-
-Before considering a refactoring phase complete, verify that:
-
-1. All unit tests pass
-2. All integration tests pass
-3. The application functions correctly in a manual test
-4. No new errors appear in the browser console or server logs
-5. The application behaves identically to the pre-refactoring version
-6. Code coverage has not decreased
-7. Documentation is updated to reflect changes
-
-## Manual Testing Procedures
-
-### Setup
-
-1. Start backend server:
-   ```bash
-   cd backend
-   python wsgi.py
-   ```
-
-2. Start frontend development server:
-   ```bash
-   cd frontend
-   npm start
-   ```
-
-3. Open browser at http://localhost:3000
-
-### Chat Flow Test
-
-1. Verify welcome message appears
-2. Click available action buttons and verify responses
-3. Type a message and send
-4. Verify typing indicator appears
-5. Verify AI response appears
-6. Verify subsequent action buttons appear as expected
-
-### File Upload Test
-
-1. Click the file upload button
-2. Select multiple files of different types
-3. Verify file list appears with status indicators
-4. Verify upload progress is displayed
-5. Verify success message after upload completes
-6. Verify error handling for invalid file types
-
-### Error Handling Test
-
-1. Disconnect from internet and attempt to send a message
-2. Verify appropriate error message is displayed
-3. Reconnect to internet and verify recovery
-4. Submit invalid input and verify error handling
-5. Test with very large files to trigger size limit errors
-
-## Acceptance Criteria
-
-The refactoring will be considered successful from a testing perspective if:
-
-1. All existing functionality works as it did before
-2. All tests pass in the CI/CD pipeline
-3. No regression bugs are reported by users
-4. The codebase has improved test coverage
-5. Testing procedures are well-documented and maintainable
-
-This testing plan will be updated as the refactoring progresses and new test cases are identified.
+1. **Week 1**: Create test infrastructure and base test cases
+2. **Week 2**: Implement repository and model tests
+3. **Week 3**: Implement service and endpoint tests
+4. **Week 4**: Implement frontend component and state tests
+5. **Week 5**: Create end-to-end test suites and performance tests

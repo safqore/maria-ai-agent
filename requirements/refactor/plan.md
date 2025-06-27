@@ -1,0 +1,126 @@
+# Maria AI Agent Refactoring Plan
+
+This document details the implementation plans and strategies for the Maria AI Agent refactoring project. Last updated on June 27, 2025.
+
+## Architectural Approach
+
+### Backend Architecture
+
+#### Service-Oriented Architecture
+- Separation of concerns between routes, services, and data access
+- Services contain business logic
+- Routes handle request/response formatting
+- Repositories handle data access
+- Centralized error handling
+
+#### Database Access
+- SQLAlchemy ORM for type-safe database access
+- Repository pattern for encapsulating data access logic
+- TransactionContext for atomic operations
+- Migration management with Alembic
+
+#### API Organization
+- Flask blueprints for feature-based route organization
+- API versioning with URL prefixes
+- Rate limiting and middleware for enhanced control
+- Request validation with Marshmallow schemas
+
+### Frontend Architecture
+
+#### Component Structure
+- Functional components with React hooks
+- Component-specific logic in custom hooks
+- Shared state in React Context
+
+#### State Management
+- Finite State Machine for predictable state transitions
+- React Context for global state
+- Adapters for connecting FSM to React components
+
+#### Error Handling
+- Consistent error boundaries
+- User-friendly error messages
+- Logging for debugging
+
+## Implementation Phases
+
+### Phase 1: Setup and Preparation (Completed ✅)
+Set up linting, formatting, documentation, and testing infrastructure.
+
+### Phase 2: Backend Improvements - Lower Risk (Completed ✅)
+Created service layer, centralized error handling, and request validation.
+
+### Phase 3: Frontend Improvements - Lower Risk (Completed ✅)
+Refactored component structure, implemented state management, and improved error handling.
+
+### Phase 4: Backend Improvements - Higher Risk (In Progress ⏳)
+
+#### Step 1: SQLAlchemy ORM Implementation (Completed ✅)
+- Database models setup with SQLAlchemy
+- Repository pattern implementation
+- Transaction management with context managers
+
+#### Step 2: Improve Route Organization (In Progress ⏳)
+- Blueprint implementation for modular route organization
+- API versioning for better backward compatibility
+- Middleware improvements for enhanced control
+
+### Phase 5: Context and Global State Refinements (In Progress ⏳)
+- Finalizing ChatContext and adapters
+- Consolidating context interfaces
+- Implementing optimized state transitions
+
+## Blueprint Implementation Strategy
+
+The blueprint implementation follows these principles:
+
+1. **Feature-Based Organization**
+   - Routes grouped by feature (sessions, uploads, etc.)
+   - Consistent URL structure with versioning
+
+2. **Registration Process**
+   - Blueprints registered in app_factory.py
+   - Configuration applied at registration time
+
+3. **Middleware Integration**
+   - Rate limiting applied at blueprint level
+   - Authentication and logging middleware
+
+## Repository Pattern Strategy
+
+The repository pattern implementation follows these principles:
+
+1. **Generic Base Repository**
+   - Type-safe operations with generics
+   - Common CRUD operations implemented once
+
+2. **Specialized Repositories**
+   - Inherit from BaseRepository
+   - Add domain-specific methods
+
+3. **Factory Pattern**
+   - Repositories created via factory for consistent setup
+   - Dependency injection for better testing
+
+## Transaction Implementation Strategy
+
+The transaction management strategy uses a TransactionContext class that:
+
+1. Provides a context manager interface for atomic operations
+2. Handles commit/rollback based on success/failure
+3. Integrates with repositories for consistent transaction boundaries
+4. Ensures proper resource cleanup
+
+## Migration Strategy
+
+1. Alembic for database schema migrations
+2. Version control for migrations
+3. Automated testing for migration scripts
+4. Forward and backward compatibility support
+
+## Frontend State Management Strategy
+
+1. Finite State Machine for predictable state transitions
+2. React Context for global state storage
+3. Adapter pattern for connecting FSM to React components
+4. Custom hooks for component-specific logic

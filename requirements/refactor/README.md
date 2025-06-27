@@ -1,326 +1,73 @@
 # Maria AI Agent Refactoring Project
 
-This document serves as the central reference for the Maria AI Agent refactoring project. It consolidates information from previously separate documents to provide a single source of truth for the refactoring effort.
+This document serves as the central reference for the Maria AI Agent refactoring project. Last updated on June 27, 2025.
 
-## Table of Contents
-1. [Refactoring Plan](#refactoring-plan)
-2. [Current Progress](#current-progress)
-3. [Next Steps](#next-steps)
-4. [Testing Plan](#testing-plan)
+## Documentation Structure
 
-## Refactoring Plan
+**This folder follows a strict 6-file structure:**
+- [README.md](./README.md) - Overview and main documentation (this file)
+- [index.md](./index.md) - Central entry point with navigation links
+- [plan.md](./plan.md) - Implementation plans and strategies
+- [next-steps.md](./next-steps.md) - Upcoming tasks and priorities
+- [testing.md](./testing.md) - Testing strategies and procedures
+- [tracking.md](./tracking.md) - Progress tracking and milestones
 
-### Goals
+**IMPORTANT:** Do not create additional files in this folder. When adding new content, update one of the six files above based on the content type. This keeps documentation organized and prevents folder bloat.
+
+**Code Examples:** All code examples, implementation details, and sample patterns must be included directly in these six core files. Do not create separate files or subfolders (like `/examples`) for code samples or other documentation. Include relevant sample code in the appropriate section of one of the core files.
+
+## Goals
+
 - Improve code organization, maintainability, and adherence to best practices
 - Make the codebase more extendable and easier to understand for future development
 - Maintain functional behavior throughout the refactoring process
 
-### Implementation Phases
+## Implementation Phases
 
-#### Phase 1: Setup and Preparation (Weeks 1-2) ✅
+### Phase 1: Setup and Preparation (Weeks 1-2) ✅
 - Set up linting and formatting ✅
 - Improve documentation ✅
 - Prepare testing infrastructure ✅
 
-#### Phase 2: Backend Improvements - Lower Risk (Weeks 3-5) ✅
+### Phase 2: Backend Improvements - Lower Risk (Weeks 3-5) ✅
 - Create service layer ✅
 - Implement centralized error handling ✅
 - Add request validation ✅
 
-#### Phase 3: Frontend Improvements - Lower Risk (Weeks 6-8) ✅
-- Create API service layer ✅
-- Refactor custom hooks ✅
-- Break down large components ✅
-- Implement consistent error handling ✅
-- Improve state management ✅
-
-#### Phase 5: Frontend Improvements - Higher Risk (Weeks 9-11) ✅
-- Reorganize folder structure ✅
-- Finalize state management implementation ✅
-- Implement FSM adapters ✅
-- Add data fetching layer ✅
-- Address cross-cutting concerns ✅
-
-#### Phase 4: Backend Improvements - Higher Risk (Weeks 12-14) ⏳
-- Implement SQLAlchemy ORM ✅
-  - Design database models ✅
-  - Create repository pattern implementation ✅ 
-  - Update services to use repositories ✅
-- Improve route organization ⏳
-  - Create Flask blueprints (partially complete ⏳)
-  - Add API versioning
-  - Enhance middleware
-
-#### Phase 6: Security and Performance (Weeks 15-16)
-- Enhance security measures
-- Optimize performance
-
-#### Phase 7: Final Verification and Cleanup (Weeks 17-18)
-- Final testing and verification
-- Code cleanup
-
-## Current Progress
-
-### Phase 1: Setup and Preparation (Completed) ✅
-
-1. **Set up linting and formatting** ✅
-   - Added ESLint and Prettier for frontend TypeScript/React code
-   - Added Black, isort, and flake8 for backend Python code
-   - Created configuration files (.eslintrc.json, .prettierrc, pyproject.toml, .flake8)
-   - Added scripts to package.json for linting and formatting
-   - Created Makefile with common development commands
-   - Set up pre-commit hooks for automatic code quality checks
-   - Fixed ESLint/Prettier dependency conflicts
-   - Fixed pre-commit config YAML syntax
-   - Fixed locale settings for consistent development environment
-   - Fixed all linting and code quality issues
-
-2. **Improve documentation** ✅
-   - Added comprehensive docstrings to key backend files
-   - Added JSDoc comments to key frontend files
-   - Updated README.md with setup and development instructions
-
-3. **Prepare testing infrastructure** ✅
-   - Created testing plan
-   - Updated Makefile with testing commands
-   - Added testing information to README.md
-   - Fixed Jest configuration and dependencies for frontend testing
-   - Added style mocks for CSS imports in tests
-   - Created backend/tests/conftest.py for shared test fixtures
-   - Fixed test import organization to follow best practices
-
-### Phase 2: Backend Improvements - Lower Risk (Completed) ✅
-
-1. **Create service layer** ✅
-   - Created services directory
-   - Moved business logic from routes to service classes
-   - Updated route handlers to use the service classes
-   - Added comprehensive type hints
-   - Verified all tests pass
-
-2. **Implement centralized error handling** ✅
-   - Created error handler utility (app/errors.py)
-   - Defined custom exception classes
-   - Registered error handlers with Flask app
-   - Updated routes to use the api_route decorator
-   - Replaced manual error handling with exceptions
-
-3. **Add request validation** ✅
-   - Installed Marshmallow
-   - Created schema definitions
-   - Updated route handlers to use schemas
-   - Implemented appropriate error responses
-
-### Phase 3: Frontend Improvements - Lower Risk (Completed) ✅
-
-1. **Create API service layer** ✅
-   - Created API directory with configuration
-   - Implemented separate API modules for different features
-   - Created type-safe API implementations with proper error handling
-
-2. **Refactor custom hooks** ✅
-   - Improved error handling in useSessionUUID hook
-   - Added proper TypeScript types to hook parameters and returns
-   - Updated components that use these hooks
-
-3. **Break down large components** ✅
-   - Split FileUpload component into smaller components
-   - Fixed component prop type issues and TypeScript errors
-
-4. **Implement consistent error handling** ✅
-   - Created ErrorBoundary component for handling component errors
-   - Created standardized error display components
-
-5. **Improve state management** ✅
-   - Created ChatContext for centralized chat state management
-   - Improved action typing with proper payload types
-
-## Next Steps
-
-### Phase 5: Context and Global State Refinements (Current - June 26-30, 2025)
-
-#### Step 1: Finalize ChatContext and Adapters (June 26, 2025) ✅
-
-1. **Consolidate Context Interfaces** ✅
-   - [x] Review all context types and interfaces for consistency
-   - [x] Add proper JSDoc documentation to all interfaces
-   - [x] Ensure all methods have proper TypeScript return types
-   - [x] Add unit tests for all context-related logic
-
-2. **Improve State Machine Integration** ✅
-   - [x] Create proper adapter layer between state machine and contexts
-   - [x] Ensure FSM state changes trigger appropriate context updates
-   - [x] Document the relationship between FSM states and UI changes
-   - [x] Add visualization of state transitions for development use (FsmVisualizer component)
-
-3. **Optimize Context Performance** ✅
-   - [x] Use React.memo for components that only read from context
-   - [x] Split context if needed to avoid unnecessary re-renders
-   - [x] Implement useMemo for complex derived state
-
-For detailed implementation notes and progress tracking, see [phase5.md](./phase5.md).
-
-#### Step 2: Add Data Fetching Layer (June 27, 2025) ✅
-
-1. **Create API Data-Fetching System** ✅
-   - [x] Implement proper loading states in contexts (via useFetch hook)
-   - [x] Add request cancellation for network requests (implemented in useFetch)
-   - [x] Create standardized error handling for API responses (via ApiError class and error logging)
-   - [x] Make API endpoints configurable via environment variables (already implemented in config.ts)
-
-2. **Session Management Improvements** ✅
-   - [x] Implement proper session restoration logic (via useSessionManager hook)
-   - [x] Add automatic session expiration handling (via useSessionManager)
-   - [x] Ensure all API calls include proper session headers (via getSessionHeaders)
-   - [x] Create a retry mechanism for failed requests (implemented in useFetch)
-
-#### Step 3: Cross-cutting Concerns (June 27, 2025) ✅
-
-1. **Logging and Analytics** ✅
-   - [x] Implement proper error logging (via logger.ts utility)
-   - [x] Add user interaction analytics (via logger performance tracking)
-   - [x] Create performance monitoring hooks (via logger.logPerformance)
-   - [x] Ensure all logs are properly anonymized (implemented in logger.ts)
-
-2. **Accessibility Improvements** ✅
-   - [x] Run a comprehensive accessibility audit (implemented groundwork for this)
-   - [x] Ensure proper keyboard navigation (via useFocusTrap)
-   - [x] Verify screen reader compatibility (via useAnnouncer)
-   - [x] Add proper focus management (via useFocusTrap)
-
-#### Step 4: Final Integration and Testing (June 28, 2025)
-
-1. **End-to-End Testing**
-   - [ ] Create comprehensive E2E tests with Cypress
-   - [ ] Test all critical user flows
-   - [ ] Add visual regression tests
-   - [ ] Create automated performance benchmarks
-
-2. **Documentation Updates**
-   - [ ] Update component API documentation
-   - [ ] Create architectural diagrams
-   - [ ] Document state management patterns
-   - [ ] Add setup instructions for new developers
-
-## Testing Plan
-
-### Testing Scripts
-
-#### Backend Testing
-```bash
-cd backend
-pytest -v
-```
-
-Or use the Makefile command:
-```bash
-make test-backend
-```
-
-#### Frontend Testing
-```bash
-cd frontend
-npm test
-```
-
-Or use the Makefile command:
-```bash
-make test-frontend
-```
-
-#### Running All Tests
-```bash
-make test-all
-```
-
-### Testing Approach
-
-The testing approach ensures that the functionality remains intact while improving the codebase. We use a combination of unit tests, integration tests, and manual testing.
-
-#### Testing Levels
-
-1. **Unit Testing**
-   - Backend: Testing individual functions and classes in isolation
-   - Frontend: Testing individual components, hooks, and utilities
-
-2. **Integration Testing**
-   - Backend: Testing API endpoints with mock database
-   - Frontend: Testing component interactions
-
-3. **Manual Testing**
-   - Verify that the user interface works correctly
-   - Verify that the application flow works as expected
-   - Verify that the API endpoints work as expected
-
-### Critical Functionality to Test
-
-#### Backend
-1. **Session Management**
-   - UUID generation and validation
-   - Session persistence
-   - Session retrieval
-
-2. **File Upload**
-   - File validation
-   - File storage
-   - Error handling
-
-#### Frontend
-1. **State Management**
-   - State transitions
-   - State persistence
-   - Error handling
-
-2. **User Interactions**
-   - Chat interactions
-   - File upload interactions
-   - Form submissions
-
-3. **API Integration**
-   - API calls for session management
-   - API calls for file upload
-
-### Testing Checklist for Each Phase
-
-Before considering a refactoring phase complete, verify that:
-
-1. All unit tests pass
-2. All integration tests pass
-3. The application functions correctly in a manual test
-4. No new errors appear in the browser console or server logs
-5. The application behaves identically to the pre-refactoring version
-
-### Test Infrastructure Improvements
-
-#### Completed
-- Backend Test Organization
-- Frontend Test Configuration
-- Backend Service Layer Testing
-- Frontend Component Tests
-
-#### Planned for Next Phases
-- Improved Test Coverage
-- Test Automation (GitHub Actions workflows, pre-push hooks)
-
-### Regressions to Address
-
-1. **Chat Button Display Issue**
-   - Add test cases to verify buttons are properly displayed
-   - Create specific tests to validate button action handlers
-   - Create visual regression tests
-   - Verify state machine integration with the context system
-   - Add integration tests for the button workflow
-
-### Acceptance Criteria
-
-The refactoring will be considered successful if:
-
-1. All existing functionality works as it did before
-2. No regression bugs are introduced
-3. The codebase is more maintainable and follows best practices
-4. Documentation is improved
-5. Test coverage is improved
-
----
-
-**Note:** This document will be updated as the refactoring progresses. All dates and timelines are subject to change based on development progress and priorities.
+### Phase 3: Frontend Improvements - Lower Risk (Weeks 6-8) ✅
+- Refactor component structure ✅
+- Implement state management ✅
+- Add better error handling ✅
+
+### Phase 4: Backend Improvements - Higher Risk (June 27 - July 10, 2025) ⏳
+- SQLAlchemy ORM Implementation ✅
+- Improve Route Organization ⏳
+
+### Phase 5: Context and Global State Refinements (June 26-30, 2025) ⏳
+- Finalize ChatContext and Adapters ✅
+- Consolidate Context Interfaces ✅
+
+## Major Architectural Components
+
+### ORM and Repository Pattern
+- SQLAlchemy ORM with repository pattern implementation
+- Generic BaseRepository with type-safe operations
+- TransactionContext for improved transaction handling
+
+### Flask Blueprint Structure
+- Session Blueprint (session_bp) with proper versioning
+- Upload Blueprint (upload_bp) for file management
+- API versioning support in app_factory.py
+
+### Frontend State Management
+- React Context API with state adapters
+- Finite State Machine integration with React
+
+## Current Status Summary
+
+The project is currently in Phase 4, with SQLAlchemy ORM implementation complete and route organization improvements in progress. Phase 5 frontend improvements are also ongoing in parallel.
+
+For detailed current status, see [tracking.md](./tracking.md).
+For upcoming tasks, see [next-steps.md](./next-steps.md).
+For testing information, see [testing.md](./testing.md).
+For detailed implementation plans, see [plan.md](./plan.md).

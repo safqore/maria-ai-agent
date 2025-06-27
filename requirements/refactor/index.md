@@ -1,11 +1,16 @@
 # Maria AI Agent Refactoring Documentation
 
-This directory contains the consolidated documentation for the Maria AI Agent refactoring project.
+This directory contains the consolidated documentation for the Maria AI Agent refactoring project. Last updated on June 27, 2025.
 
 ## Documentation Files
 
+**This folder follows a strict 6-file structure. Do not create additional files in this folder.**
+
 ### [README.md](./README.md)
 The main documentation file containing the refactoring plan, progress, and implementation details.
+
+### [plan.md](./plan.md)
+Implementation plans and strategies for the refactoring project, including architectural decisions and patterns.
 
 ### [tracking.md](./tracking.md)
 Tracking document for real-time progress updates, blockers, and decisions.
@@ -16,23 +21,31 @@ Detailed task breakdown and implementation guides for upcoming phases.
 ### [testing.md](./testing.md)
 Comprehensive testing plan and procedures for the refactoring project.
 
-### [orm-implementation.md](./orm-implementation.md)
-Documentation for SQLAlchemy ORM implementation in Phase 4.
+## Key Implementation Details
 
-### [blueprint-implementation.md](./blueprint-implementation.md)
-Implementation plan for Flask blueprints and route organization.
+### SQLAlchemy ORM Implementation
+- Repository pattern with type-safe operations
+- Migration support with Alembic
+- Transaction management with context managers
 
-## Previous Documentation
+### Blueprint Implementation
+- API versioning with Flask blueprints
+- Rate limiting and middleware integration
+- Route organization by feature
 
-These files have been consolidated and are now maintained in this directory:
+### Transaction Management
+- TransactionContext for atomic operations
+- Integration with repository pattern
+- Consistent error handling
 
-- `/testing_plan.md` → `/refactor/testing.md`
-- `/refactoring_progress.md` → `/refactor/tracking.md`
-- `/frontend/next-steps.md` → `/refactor/next-steps.md`
-- `/prompts/code_refactor.md` and `/prompts/code_refactor_plan.md` → `/refactor/README.md`
+### Frontend State Refinements
+- ChatContext and adapters
+- Finite State Machine for state management
+- React Context API integration
 
-## Project Status
+## Recent Updates
 
-**Current Phase:** Phase 4 (Backend Improvements - Higher Risk)
-**Current Step:** Step 2 (Improve Route Organization)
-**Last Updated:** June 27, 2025
+- June 27, 2025: Added TransactionContext implementation and documentation
+- June 27, 2025: Consolidated app factory implementation
+- June 27, 2025: Fixed import path consistency issues
+- June 26, 2025: Completed Phase 5 frontend improvements
