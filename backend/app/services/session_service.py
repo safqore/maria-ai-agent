@@ -10,7 +10,7 @@ This module provides services for:
 import uuid
 from typing import Any, Dict, Tuple, Optional
 
-from app.repositories.user_session_repository import UserSessionRepository
+from app.repositories.factory import get_user_session_repository
 from app.utils.audit_utils import log_audit_event
 from app.utils.s3_utils import migrate_s3_files
 
@@ -22,6 +22,10 @@ class SessionService:
     This class handles all business logic related to user sessions including
     UUID validation, generation, and session persistence.
     """
+    
+    def __init__(self):
+        """Initialize with a repository instance."""
+        self.user_session_repository = get_user_session_repository()
 
     @staticmethod
     def is_valid_uuid(val: Any) -> bool:
@@ -40,8 +44,7 @@ class SessionService:
         except ValueError:
             return False
 
-    @staticmethod
-    def check_uuid_exists(session_uuid: str) -> bool:
+    def check_uuid_exists(self, session_uuid: str) -> bool:
         """
         Check if a UUID exists in the database.
 
@@ -51,10 +54,9 @@ class SessionService:
         Returns:
             bool: True if the UUID exists, False otherwise
         """
-        return UserSessionRepository.exists(session_uuid)
+        return self.user_session_repository.exists(session_uuid)
 
-    @staticmethod
-    def validate_uuid(session_uuid: str) -> Tuple[Dict[str, Any], int]:
+    def validate_uuid(self, session_uuid: str) -> Tuple[Dict[str, Any], int]:
         """
         Validate a session UUID.
 
@@ -69,7 +71,7 @@ class SessionService:
                 response_data: Dictionary with validation result
                 status_code: HTTP status code
         """
-        if not session_uuid or not SessionService.is_valid_uuid(session_uuid):
+        if not session_uuid or not self.is_valid_uuid(session_uuid):
             log_audit_event(
                 "uuid_validation_failed",
                 user_uuid=session_uuid,
@@ -82,7 +84,7 @@ class SessionService:
                 "details": {"reason": "invalid format"},
             }, 400
 
-        exists = SessionService.check_uuid_exists(session_uuid)
+        exists = self.check_uuid_exists(session_uuid)
 
         if exists:
             log_audit_event(
@@ -105,8 +107,7 @@ class SessionService:
             "details": {},
         }, 200
 
-    @staticmethod
-    def generate_uuid() -> Tuple[Dict[str, Any], int]:
+    def generate_uuid(self) -> Tuple[Dict[str, Any], int]:
         """
         Generate a unique UUID.
 
@@ -124,7 +125,7 @@ class SessionService:
 
         while attempts < max_attempts:
             candidate = str(uuid.uuid4())
-            if not SessionService.check_uuid_exists(candidate):
+            if not self.check_uuid_exists(candidate):
                 new_uuid = candidate
                 break
             attempts += 1
@@ -151,8 +152,8 @@ class SessionService:
                 },
             }, 500
 
-    @staticmethod
     def persist_session(
+        self,
         session_uuid: str, name: str, email: str
     ) -> Tuple[Dict[str, Any], int]:
         """
@@ -171,14 +172,14 @@ class SessionService:
                 response_data: Dictionary with persistence result
                 status_code: HTTP status code
         """
-        if not session_uuid or not SessionService.is_valid_uuid(session_uuid):
+        if not session_uuid or not self.is_valid_uuid(session_uuid):
             return {
                 "error": "Invalid or missing session UUID",
                 "code": "invalid session",
             }, 400
 
         # Check if session UUID already exists
-        if UserSessionRepository.exists(session_uuid):
+        if self.user_session_repository.exists(session_uuid):
             new_uuid = str(uuid.uuid4())
             migrate_s3_files(session_uuid, new_uuid)
             session_uuid = new_uuid
@@ -188,7 +189,7 @@ class SessionService:
             }, 200
 
         # Create the user session
-        user_session = UserSessionRepository.create(
+        user_session = self.user_session_repository.create_session(
             session_uuid=session_uuid,
             name=name,
             email=email

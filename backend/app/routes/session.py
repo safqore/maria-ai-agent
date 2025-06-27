@@ -8,11 +8,12 @@ This module provides routes for:
 """
 
 import os
+import functools
 
 from app.errors import api_route
 from app.schemas.session_schemas import SessionPersistSchema, UUIDSchema
 from app.services.session_service import SessionService
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, g
 from flask_cors import cross_origin
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -26,6 +27,17 @@ SESSION_RATE_LIMIT = os.getenv("SESSION_RATE_LIMIT", "10/minute")
 
 # Limiter will be initialized in app factory and attached to app
 limiter = Limiter(key_func=get_remote_address, default_limits=[SESSION_RATE_LIMIT])
+
+# Create a service instance for each request
+def with_session_service(f):
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        g.session_service = SessionService()
+        return f(*args, **kwargs)
+    return wrapper
+
+# Apply the with_session_service decorator to all route handlers in this blueprint
+session_bp.before_request(lambda: setattr(g, 'session_service', SessionService()))
 
 
 @session_bp.route("/validate-uuid", methods=["POST"])
@@ -74,7 +86,7 @@ def validate_uuid():
         )
 
     session_uuid = validated_data["uuid"]
-    response_data, status_code = SessionService.validate_uuid(session_uuid)
+    response_data, status_code = g.session_service.validate_uuid(session_uuid)
     return jsonify(response_data), status_code
 
 
@@ -99,7 +111,7 @@ def generate_uuid():
         - 200: Successfully generated UUID
         - 500: Failed to generate unique UUID after multiple attempts
     """
-    response_data, status_code = SessionService.generate_uuid()
+    response_data, status_code = g.session_service.generate_uuid()
     return jsonify(response_data), status_code
 
 
@@ -139,7 +151,7 @@ def persist_session():
     name = validated_data.get("name", "")
     email = validated_data.get("email", "")
 
-    response_data, status_code = SessionService.persist_session(
+    response_data, status_code = g.session_service.persist_session(
         session_uuid, name, email
     )
     return jsonify(response_data), status_code

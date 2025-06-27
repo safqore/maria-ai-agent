@@ -14,9 +14,10 @@ from sqlalchemy.orm import Session
 from app.database import get_db_session
 from app.models import UserSession
 from app.errors import ServerError
+from app.repositories.base_repository import BaseRepository
 
 
-class UserSessionRepository:
+class UserSessionRepository(BaseRepository[UserSession]):
     """
     Repository for UserSession-related database operations.
     
@@ -24,8 +25,11 @@ class UserSessionRepository:
     for the UserSession model, making it easier to test and maintain.
     """
     
-    @staticmethod
-    def get_by_uuid(session_uuid: str) -> Optional[UserSession]:
+    def __init__(self):
+        """Initialize with the UserSession model class."""
+        super().__init__(UserSession)
+    
+    def get_by_uuid(self, session_uuid: str) -> Optional[UserSession]:
         """
         Get a user session by UUID.
         
@@ -38,16 +42,9 @@ class UserSessionRepository:
         Raises:
             ServerError: If a database error occurs
         """
-        try:
-            with get_db_session() as session:
-                return session.query(UserSession).filter(
-                    UserSession.uuid == session_uuid
-                ).first()
-        except SQLAlchemyError as e:
-            raise ServerError(f"Database error: {str(e)}")
+        return self.get_by_id(session_uuid)
             
-    @staticmethod
-    def exists(session_uuid: str) -> bool:
+    def exists(self, session_uuid: str) -> bool:
         """
         Check if a session with the given UUID exists.
         
@@ -60,18 +57,10 @@ class UserSessionRepository:
         Raises:
             ServerError: If a database error occurs
         """
-        try:
-            with get_db_session() as session:
-                return session.query(
-                    session.query(UserSession).filter(
-                        UserSession.uuid == session_uuid
-                    ).exists()
-                ).scalar()
-        except SQLAlchemyError as e:
-            raise ServerError(f"Database error: {str(e)}")
+        return super().exists(session_uuid)
             
-    @staticmethod
-    def create(
+    def create_session(
+        self,
         session_uuid: str, 
         name: str = "", 
         email: str = "", 
@@ -94,24 +83,16 @@ class UserSessionRepository:
         Raises:
             ServerError: If a database error occurs
         """
-        try:
-            with get_db_session() as session:
-                user_session = UserSession(
-                    uuid=session_uuid,
-                    name=name,
-                    email=email,
-                    ip_address=ip_address,
-                    consent_user_data=consent_user_data
-                )
-                session.add(user_session)
-                session.commit()
-                session.refresh(user_session)
-                return user_session
-        except SQLAlchemyError as e:
-            raise ServerError(f"Database error: {str(e)}")
+        return self.create(
+            uuid=session_uuid,
+            name=name,
+            email=email,
+            ip_address=ip_address,
+            consent_user_data=consent_user_data
+        )
             
-    @staticmethod
-    def update(
+    def update_session(
+        self,
         session_uuid: str, 
         data: Dict[str, Any]
     ) -> Optional[UserSession]:
@@ -127,28 +108,17 @@ class UserSessionRepository:
             
         Raises:
             ServerError: If a database error occurs
+            NotFoundError: If the session does not exist
         """
         try:
-            with get_db_session() as session:
-                user_session = session.query(UserSession).filter(
-                    UserSession.uuid == session_uuid
-                ).first()
-                
-                if not user_session:
-                    return None
-                    
-                for key, value in data.items():
-                    if hasattr(user_session, key):
-                        setattr(user_session, key, value)
-                        
-                session.commit()
-                session.refresh(user_session)
-                return user_session
-        except SQLAlchemyError as e:
-            raise ServerError(f"Database error: {str(e)}")
+            return self.update(session_uuid, data)
+        except Exception as e:
+            # Return None for NotFoundError to maintain backward compatibility
+            if hasattr(e, 'name') and e.name == 'NotFoundError':
+                return None
+            raise
     
-    @staticmethod
-    def delete(session_uuid: str) -> bool:
+    def delete_session(self, session_uuid: str) -> bool:
         """
         Delete a user session.
         
@@ -161,17 +131,4 @@ class UserSessionRepository:
         Raises:
             ServerError: If a database error occurs
         """
-        try:
-            with get_db_session() as session:
-                user_session = session.query(UserSession).filter(
-                    UserSession.uuid == session_uuid
-                ).first()
-                
-                if not user_session:
-                    return False
-                    
-                session.delete(user_session)
-                session.commit()
-                return True
-        except SQLAlchemyError as e:
-            raise ServerError(f"Database error: {str(e)}")
+        return self.delete(session_uuid)
