@@ -30,7 +30,8 @@ Comprehensive testing plan and procedures for the refactoring project.
 
 ### Blueprint Implementation
 - API versioning with Flask blueprints
-- Rate limiting and middleware integration
+- Rate limiting with Redis storage backend
+- Middleware integration
 - Route organization by feature
 
 ### Transaction Management
@@ -45,6 +46,8 @@ Comprehensive testing plan and procedures for the refactoring project.
 
 ## Recent Updates
 
+- June 27, 2025: Added Flask-Limiter configuration guide
+- June 27, 2025: Identified and documented rate limiter storage backend issue
 - June 27, 2025: Added TransactionContext implementation and documentation
 - June 27, 2025: Consolidated app factory implementation
 - June 27, 2025: Fixed import path consistency issues

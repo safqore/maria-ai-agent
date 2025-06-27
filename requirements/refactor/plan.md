@@ -83,8 +83,13 @@ The blueprint implementation follows these principles:
    - Configuration applied at registration time
 
 3. **Middleware Integration**
-   - Rate limiting applied at blueprint level
+   - Rate limiting applied at blueprint level with Redis storage backend
    - Authentication and logging middleware
+   
+4. **Rate Limiting Strategy**
+   - Redis storage backend for production-grade rate limiting
+   - Environment-specific configurations
+   - Fallback mechanism for development environments
 
 ## Repository Pattern Strategy
 

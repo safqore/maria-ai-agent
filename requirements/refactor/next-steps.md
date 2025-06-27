@@ -9,6 +9,33 @@ This document outlines the detailed tasks for the upcoming phases of the Maria A
 - Update import statements throughout the codebase
 - Test application startup and all key functionality
 
+### Configure Flask-Limiter Storage Backend (High Priority)
+- Add Redis as a dependency in requirements.txt ✅
+- Configure Redis as the persistent storage backend for rate limiting
+- Update app_factory.py with the following configuration:
+  ```python
+  redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+  limiter = Limiter(
+      key_func=get_remote_address,
+      storage_uri=redis_url,
+      storage_options={"socket_connect_timeout": 30},
+      strategy="fixed-window",
+  )
+  ```
+- Add REDIS_URL environment variable to .env and .env.example
+- Implement fallback for development environments:
+  ```python
+  if app.config["ENV"] == "development" or app.config["TESTING"]:
+      try:
+          # Test Redis connection
+          redis_client = redis.from_url(redis_url)
+          redis_client.ping()
+      except redis.ConnectionError:
+          print("Warning: Redis unavailable, falling back to in-memory storage")
+          limiter.storage_uri = "memory://"
+  ```
+- Update tests to handle Redis dependency
+
 ### Phase 4: Backend Improvements - Higher Risk (Continue)
 
 #### Step 2: Complete Route Organization (By July 10, 2025)

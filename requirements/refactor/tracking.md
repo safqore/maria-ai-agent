@@ -5,13 +5,21 @@ This document serves as a real-time progress tracker for the Maria AI Agent refa
 ## Latest Status (June 27, 2025)
 
 ### Current Phase: Phase 4 (Backend Improvements - Higher Risk)
-We have successfully completed Step 1 of Phase 4 (SQLAlchemy ORM Implementation) and have made significant progress on Step 2 (Improve Route Organization). However, we have encountered an import error that needs immediate attention.
+We have successfully completed Step 1 of Phase 4 (SQLAlchemy ORM Implementation) and have made significant progress on Step 2 (Improve Route Organization). However, we have encountered two issues that need immediate attention.
 
-### Critical Blocker
+### Critical Blockers
+
+1. **Import Path Issue**
 ```
 ModuleNotFoundError: No module named 'backend'
 ```
 This error occurs because the application is trying to use absolute imports with `backend.app` but the package structure is not properly configured for this approach.
+
+2. **Flask-Limiter Storage Backend Warning**
+```
+Using the in-memory storage for tracking rate limits as no storage was explicitly specified. This is not recommended for production use.
+```
+The current rate limiter setup is using the in-memory storage backend which is not recommended for production use. We need to configure a proper persistent storage backend for rate limiting.
 
 ### Recent Accomplishments
 
@@ -60,9 +68,11 @@ This error occurs because the application is trying to use absolute imports with
 - Updated import paths throughout the codebase
 - Created TransactionContext documentation
 - Encountered and documented import path issue
+- Identified Flask-Limiter storage backend warning
 
 #### Friday (June 28) - Planned
 - Fix import path issue
+- Configure persistent storage for Flask-Limiter
 - Continue blueprint implementation
 - Complete repository pattern documentation
 
@@ -78,6 +88,7 @@ This error occurs because the application is trying to use absolute imports with
 ### June 27, 2025
 - Decision to use absolute imports with a backend package structure
 - Decision to consolidate app_factory.py and __init__.py logic
+- Decision to configure Redis as the storage backend for Flask-Limiter
 
 ### June 26, 2025
 - Decision to use TransactionContext for all database operations
@@ -97,7 +108,9 @@ This error occurs because the application is trying to use absolute imports with
 ## Next Actions
 
 1. Fix the import error by properly configuring the backend package
-2. Complete the blueprint implementation for all routes
+2. Configure Redis as the persistent storage backend for Flask-Limiter
+3. Update configuration in app_factory.py for rate limiting storage
+4. Complete the blueprint implementation for all routes
 3. Finalize the transaction management integration with services
 4. Continue testing implementation for repositories and blueprints
 5. Update documentation with latest changes
@@ -108,6 +121,7 @@ This error occurs because the application is trying to use absolute imports with
 2. What is the best strategy for handling database connection pooling?
 3. Should we add more granular rate limiting per endpoint or user?
 4. What approach should we take for handling database migrations in production?
+5. Should we use Redis or another storage backend for Flask-Limiter in production?
 
 ## Risk Assessment
 
@@ -117,6 +131,7 @@ This error occurs because the application is trying to use absolute imports with
 | Database migration issues | Medium | High | Test migrations thoroughly, have rollback plan |
 | Performance degradation | Medium | Medium | Benchmark before/after, optimize as needed |
 | API incompatibility | Low | High | Maintain version compatibility, document changes |
+| Rate limiting failures | Medium | Medium | Configure persistent storage for limiter, implement fallback mechanism |
 
 ## Progress Against Timeline
 
