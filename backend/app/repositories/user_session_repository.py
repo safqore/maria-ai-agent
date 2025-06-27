@@ -11,10 +11,10 @@ from typing import List, Optional, Dict, Any, Tuple
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.database import get_db_session
-from app.models import UserSession
-from app.errors import ServerError
-from app.repositories.base_repository import BaseRepository
+from backend.app.database import get_db_session
+from backend.app.models import UserSession
+from backend.app.errors import ServerError
+from backend.app.repositories.base_repository import BaseRepository
 
 
 class UserSessionRepository(BaseRepository[UserSession]):

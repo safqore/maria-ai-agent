@@ -1,64 +1,10 @@
 """
 Main application factory for the Maria AI Agent backend.
 
-This module initializes the Flask application, sets up configuration,
-registers blueprints, and configures middleware like CORS and rate limiting.
+This module provides the entry point for the Flask application by importing
+and using the application factory from app_factory.py.
 """
 
-import os
+from backend.app.app_factory import create_app
 
-from dotenv import load_dotenv
-from flask import Flask
-from flask_cors import CORS
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-
-# Initialize rate limiter with remote address as the key function
-limiter = Limiter(key_func=get_remote_address)
-
-
-def create_app():
-    """
-    Application factory function that creates and configures the Flask app.
-
-    Returns:
-        Flask: The configured Flask application instance
-    """
-    # Load environment variables from .env file
-    load_dotenv(
-        dotenv_path=os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
-    )
-
-    # Create Flask app
-    app = Flask(__name__)
-
-    # Configure CORS for frontend access
-    CORS(
-        app,
-        origins=["http://localhost:3000", "http://127.0.0.1:3000"],
-        supports_credentials=True,
-    )
-
-    # Initialize rate limiter with config from env
-    session_rate_limit = os.getenv("SESSION_RATE_LIMIT", "10/minute")
-    limiter.default_limits = [session_rate_limit]
-    limiter.init_app(app)
-
-    # Register error handlers
-    from app.errors import register_error_handlers
-
-    register_error_handlers(app)
-
-    # Register blueprints
-    from app.routes.session import session_bp
-    from app.routes.upload import upload_bp
-
-    app.register_blueprint(session_bp)
-    app.register_blueprint(upload_bp)
-    # Add other blueprints as needed
-
-    # Create database tables if they don't exist
-    from app.database import Base, engine
-    Base.metadata.create_all(bind=engine)
-
-    return app
+__all__ = ["create_app"]

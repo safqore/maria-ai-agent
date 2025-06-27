@@ -11,8 +11,10 @@ The initial blueprint implementation has been started ahead of schedule. The `/s
 ### 1. Complete Route Migration
 
 - [x] Create session blueprint (`session_bp`) ✅
-- [ ] Create upload blueprint (`upload_bp`)
-- [ ] Register all blueprints in the Flask application factory
+- [ ] Complete upload blueprint implementation (draft exists in `upload_blueprint.py`)
+- [x] Register session blueprint in the Flask application factory ✅
+- [ ] Register upload blueprint in the Flask application factory
+- [ ] Consolidate app/__init__.py and app_factory.py to use a single application factory
 
 Example structure:
 
@@ -108,8 +110,32 @@ def handle_exception(error):
 
 ## Timeline
 
-1. Complete upload blueprint migration: July 2, 2025
-2. Add API versioning: July 3, 2025
-3. Enhance route documentation: July 5, 2025
-4. Implement blueprint-specific middleware: July 7, 2025
-5. Review and test: July 8-10, 2025
+1. Complete upload blueprint migration: June 29, 2025  
+   - [x] Draft upload_blueprint.py created
+   - [x] Updated upload.py with blueprint implementation
+   - [ ] Final testing of upload routes
+   
+2. Consolidate application factories: June 28, 2025  
+   - [x] Updated app/__init__.py to import from app_factory.py
+   - [x] Updated app_factory.py with all necessary components
+   - [ ] Verify application still works with consolidated factory
+   
+3. Add API versioning: June 30, 2025  
+   - [x] Added /api/v1/ prefix to session_bp
+   - [x] Added /api/v1/ prefix to upload_bp
+   - [ ] Update frontend to use versioned endpoints
+   
+4. Enhance route documentation: July 1, 2025  
+   - [x] Added OpenAPI-style docstrings to session endpoints
+   - [x] Added OpenAPI-style docstrings to upload endpoints
+   - [ ] Add API documentation generator
+   
+5. Implement blueprint-specific middleware: July 2, 2025  
+   - [x] Added service initialization middleware to session_bp
+   - [x] Added service initialization middleware to upload_bp
+   - [ ] Add other middleware as needed
+   
+6. Review and test: July 3-4, 2025  
+   - [ ] Complete test coverage for blueprint structure
+   - [ ] Manual testing of all endpoints
+   - [ ] Verify frontend integration

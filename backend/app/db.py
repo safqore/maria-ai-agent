@@ -12,7 +12,7 @@ the transition to SQLAlchemy ORM.
 import os
 
 import psycopg2
-from app.database import get_db_session, engine
+from backend.app.database import get_db_session, engine
 
 
 def get_db_connection():

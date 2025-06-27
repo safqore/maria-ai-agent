@@ -1,97 +1,95 @@
 """
-Transaction manager for SQLAlchemy ORM.
+Transaction context manager for database operations.
 
-This module provides a transaction manager for handling atomic database operations
-that span multiple steps and potentially multiple repositories.
+This module provides a context manager for database transactions,
+ensuring proper handling of commits and rollbacks.
 """
 
-from functools import wraps
-import logging
-from typing import Any, Callable, TypeVar
-
-from sqlalchemy.exc import SQLAlchemyError
+from typing import Optional
 from sqlalchemy.orm import Session
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+import os
 
-from backend.app.database import SessionLocal
-from backend.app.errors import ServerError
-
-# Type variable for the return value of a transaction function
-R = TypeVar('R')
-
-logger = logging.getLogger(__name__)
-
-
-class TransactionManager:
-    """
-    Transaction manager for coordinating database operations across repositories.
+# Create engine and session factory directly to avoid circular imports
+def get_database_url():
+    """Create database URL from environment variables."""
+    db_user = os.getenv("POSTGRES_USER", "postgres")
+    db_password = os.getenv("POSTGRES_PASSWORD", "postgres")
+    db_host = os.getenv("POSTGRES_HOST", "localhost")
+    db_port = os.getenv("POSTGRES_PORT", "5432")
+    db_name = os.getenv("POSTGRES_DB", "maria_ai")
     
-    This class provides a context manager and decorator for database transactions,
-    ensuring that multiple database operations are performed atomically.
+    return f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+
+# Create session factory - we need this for the TransactionContext
+_engine = create_engine(
+    get_database_url(),
+    pool_pre_ping=True,
+    pool_recycle=3600,
+    echo=False
+)
+
+# Create session factory directly here
+_SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
+
+
+class TransactionContext:
+    """
+    Context manager for database transactions.
+    
+    This class ensures that database operations within a context are atomic,
+    with proper commit and rollback handling.
+    
+    Examples:
+        ```python
+        # Using with an existing session
+        session = SessionLocal()
+        with TransactionContext(session) as tx_session:
+            # Do operations with tx_session
+            # Commits or rollbacks based on exceptions
+        
+        # Creating a new session automatically
+        with TransactionContext() as session:
+            # Do operations with session
+            # Session is closed after the context
+        ```
     """
     
-    @staticmethod
-    def transactional(func: Callable[..., R]) -> Callable[..., R]:
+    def __init__(self, session: Optional[Session] = None):
         """
-        Decorator for functions that should be executed in a transaction.
+        Initialize with optional session.
         
         Args:
-            func: The function to wrap in a transaction
-            
-        Returns:
-            Wrapped function that executes in a transaction
-            
-        Raises:
-            ServerError: If a database error occurs during the transaction
+            session: SQLAlchemy session to use. If None, a new session is created.
         """
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            session = SessionLocal()
-            try:
-                # Add the session as a keyword argument
-                kwargs['session'] = session
-                
-                # Call the function
-                result = func(*args, **kwargs)
-                
-                # Commit the transaction
-                session.commit()
-                
-                return result
-            except Exception as e:
-                # Rollback the transaction on error
-                session.rollback()
-                
-                if isinstance(e, SQLAlchemyError):
-                    logger.error(f"Database error in transaction: {str(e)}")
-                    raise ServerError(f"Database error: {str(e)}")
-                    
-                # Re-raise other exceptions
-                raise
-            finally:
-                session.close()
+        self.session = session or _SessionLocal()
+        self.should_close = session is None
+    
+    def __enter__(self) -> Session:
+        """
+        Begin transaction and return session.
         
-        return wrapper
-
-
-# Create a singleton instance
-transaction_manager = TransactionManager()
-
-
-# Example usage:
-# @transaction_manager.transactional
-# def create_user_with_profile(user_data, profile_data, session=None):
-#     """Creates a user and profile in a single transaction."""
-#     # Use the provided session instead of creating a new one
-#     user_repo = UserRepository()
-#     profile_repo = ProfileRepository()
-#     
-#     # Create user
-#     user = user_repo.create_with_session(session, **user_data)
-#     
-#     # Add user ID to profile data
-#     profile_data['user_id'] = user.id
-#     
-#     # Create profile
-#     profile = profile_repo.create_with_session(session, **profile_data)
-#     
-#     return user, profile
+        Returns:
+            SQLAlchemy session for database operations
+        """
+        return self.session
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Commit transaction if no exception, otherwise rollback.
+        
+        Args:
+            exc_type: Exception type if an exception occurred, None otherwise
+            exc_val: Exception value if an exception occurred, None otherwise
+            exc_tb: Exception traceback if an exception occurred, None otherwise
+        """
+        try:
+            if exc_type is not None:
+                self.session.rollback()
+            else:
+                self.session.commit()
+        finally:
+            if self.should_close:
+                self.session.close()

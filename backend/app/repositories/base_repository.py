@@ -13,8 +13,9 @@ from sqlalchemy import inspect
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.database import Base, get_db_session
-from app.errors import ServerError, ResourceNotFoundError as NotFoundError
+from backend.app.database import Base, get_db_session
+from backend.app.database.transaction import TransactionContext
+from backend.app.errors import ServerError, ResourceNotFoundError as NotFoundError
 
 # Define a TypeVar for SQLAlchemy models
 T = TypeVar('T', bound=Base)
@@ -52,7 +53,7 @@ class BaseRepository(Generic[T]):
             ServerError: If a database error occurs
         """
         try:
-            with get_db_session() as session:
+            with TransactionContext() as session:
                 return session.query(self.model_class).all()
         except SQLAlchemyError as e:
             raise ServerError(f"Database error in get_all: {str(e)}")
@@ -71,7 +72,7 @@ class BaseRepository(Generic[T]):
             ServerError: If a database error occurs
         """
         try:
-            with get_db_session() as session:
+            with TransactionContext() as session:
                 # Get the primary key column name
                 primary_key = inspect(self.model_class).primary_key[0].name
                 
@@ -96,13 +97,15 @@ class BaseRepository(Generic[T]):
             ServerError: If a database error occurs
         """
         try:
-            with get_db_session() as session:
+            with TransactionContext() as session:
                 instance = self.model_class(**kwargs)
                 session.add(instance)
-                session.commit()
+                # No need to explicitly commit - TransactionContext handles it
+                session.flush()  # Ensure the instance gets its ID assigned
                 session.refresh(instance)
                 return instance
         except SQLAlchemyError as e:
+            # No need to rollback - TransactionContext handles it
             raise ServerError(f"Database error in create: {str(e)}")
     
     def update(self, id_value: Union[int, str, uuid.UUID], data: Dict[str, Any]) -> Optional[T]:
@@ -121,7 +124,7 @@ class BaseRepository(Generic[T]):
             NotFoundError: If the record is not found
         """
         try:
-            with get_db_session() as session:
+            with TransactionContext() as session:
                 # Get the primary key column name
                 primary_key = inspect(self.model_class).primary_key[0].name
                 
@@ -139,10 +142,12 @@ class BaseRepository(Generic[T]):
                     if hasattr(instance, key):
                         setattr(instance, key, value)
                 
-                session.commit()
+                # No need to explicitly commit - TransactionContext handles it
+                session.flush()
                 session.refresh(instance)
                 return instance
         except SQLAlchemyError as e:
+            # No need to rollback - TransactionContext handles it
             raise ServerError(f"Database error in update: {str(e)}")
     
     def delete(self, id_value: Union[int, str, uuid.UUID]) -> bool:

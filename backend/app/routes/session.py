@@ -10,9 +10,9 @@ This module provides routes for:
 import os
 import functools
 
-from app.errors import api_route
-from app.schemas.session_schemas import SessionPersistSchema, UUIDSchema
-from app.services.session_service import SessionService
+from backend.app.errors import api_route
+from backend.app.schemas.session_schemas import SessionPersistSchema, UUIDSchema
+from backend.app.services.session_service import SessionService
 from flask import Blueprint, jsonify, request, g
 from flask_cors import cross_origin
 from flask_limiter import Limiter

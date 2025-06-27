@@ -11,7 +11,7 @@ from typing import Optional
 from sqlalchemy import Column, String, DateTime, Boolean, Text
 from sqlalchemy.dialects.postgresql import UUID
 
-from app.database import Base
+from backend.app.database import Base
 
 
 class UserSession(Base):
