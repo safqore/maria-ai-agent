@@ -178,11 +178,25 @@ To avoid port conflicts between the backend and frontend servers:
 - The backend server runs on port 5000 by default
 - Configured in `backend/.env` via the `PORT` environment variable
 - Can be overridden by modifying this value
+- **IMPORTANT**: Never hardcode this port value in application code
 
 #### Frontend Port Configuration
 - The frontend React development server runs on port 3000 by default
 - Configured in `frontend/package.json` via the start script
 - Uses cross-env to ensure consistent port usage: `"start": "cross-env PORT=3000 react-scripts start"`
+- Can also be set in `frontend/.env` via the `PORT` environment variable
+
+#### Cross-Origin Resource Sharing (CORS)
+- The backend automatically configures CORS based on environment variables
+- Reads the frontend port from frontend/.env or uses a fallback value
+- Dynamically generates allowed origins list for both HTTP and HTTPS
+- Allows frontend to connect from any configured port without manual adjustments
+
+#### API URL Configuration
+- Frontend must use `REACT_APP_API_BASE_URL` to reference the backend API
+- This value should include the backend port: `http://localhost:5000`
+- When backend port changes, this value must be updated accordingly
+- **IMPORTANT**: Never hardcode API URLs directly in component code
 
 #### Why Separate Configuration Files?
 - Reflects deployment reality (services will be deployed separately)
@@ -202,10 +216,17 @@ If you see an error about a port already being in use:
    # In backend/.env
    PORT=5000  # Change to an available port
    
-   # In frontend/package.json
+   # In frontend/.env
+   PORT=3000  # Change to an available port
+   
+   # OR in frontend/package.json
    "start": "cross-env PORT=3000 react-scripts start"  # Change port number
    ```
-4. Remember to update the API URL in frontend/.env if you change the backend port
+4. Remember to update the API URL in frontend/.env if you change the backend port:
+   ```
+   # In frontend/.env after changing backend port to 5001
+   REACT_APP_API_BASE_URL=http://localhost:5001
+   ```
 
 #### Frontend API Connection Issues
 If you see `ERR_CONNECTION_REFUSED` errors in the console:
@@ -214,6 +235,14 @@ If you see `ERR_CONNECTION_REFUSED` errors in the console:
 2. Check that `REACT_APP_API_BASE_URL` is set correctly in `frontend/.env`
 3. Make sure the port in the URL matches the backend's port
 4. Remember that React environment variables are only read when the server starts
+
+#### CORS Issues
+If you see CORS errors in the browser console:
+
+1. Check that your frontend port is correctly configured in backend's CORS settings
+2. Verify that the backend is reading the frontend port correctly
+3. Try setting the `FRONTEND_PORT_FALLBACK` value in `backend/.env` to match your frontend port
+4. Ensure you're accessing the frontend via a URL that matches the allowed origins
 
 ---
 

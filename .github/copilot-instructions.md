@@ -50,6 +50,14 @@
 - Keep example .env.example files updated in both frontend/ and backend/ directories
 - Remember that the frontend and backend will be deployed separately, so their configurations should be independent
 
+### Port Configuration Best Practices
+- NEVER hardcode port values within application code; always use environment variables
+- Backend port is configured via the `PORT` environment variable in `backend/.env`
+- Frontend development server port is configured via `PORT` environment variable or in package.json with cross-env
+- When a developer changes their port configuration, CORS settings must automatically adapt
+- Frontend must reference backend API URL via `REACT_APP_API_BASE_URL` environment variable with the correct port
+- Backend should dynamically configure CORS to allow requests from the frontend's origin, including its port
+
 ## Project Folder Structure
 The project is organized into the following structure:
 

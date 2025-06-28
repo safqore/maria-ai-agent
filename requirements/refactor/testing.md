@@ -263,3 +263,100 @@ describe('ChatContext', () => {
 3. **Week 3**: Implement service and endpoint tests
 4. **Week 4**: Implement frontend component and state tests
 5. **Week 5**: Create end-to-end test suites and performance tests
+
+### Port Configuration Tests
+
+#### Example CORS Configuration Test
+
+```python
+# tests/test_app_factory.py
+
+import pytest
+from backend.app.app_factory import create_app, get_frontend_port
+
+class TestAppFactory:
+    def test_cors_configuration_with_frontend_port(self, monkeypatch):
+        # Arrange
+        monkeypatch.setenv("FRONTEND_PORT_FALLBACK", "3333")
+        
+        # Act
+        app = create_app(testing=True)
+        
+        # Assert
+        # Check that CORS is configured with the correct frontend port
+        cors_origins = app.config.get('CORS_ORIGINS', [])
+        assert "http://localhost:3333" in cors_origins
+        assert "http://127.0.0.1:3333" in cors_origins
+    
+    def test_get_frontend_port(self, monkeypatch, tmp_path):
+        # Arrange
+        # Create a mock frontend/.env file
+        frontend_env = tmp_path / "frontend" / ".env"
+        frontend_env.parent.mkdir()
+        frontend_env.write_text("PORT=4444\n")
+        
+        monkeypatch.setattr("backend.app.app_factory.FRONTEND_ENV_PATH", 
+                           str(frontend_env))
+        
+        # Act
+        port = get_frontend_port()
+        
+        # Assert
+        assert port == "4444"
+    
+    def test_get_frontend_port_fallback(self, monkeypatch):
+        # Arrange
+        # Set non-existent path to force fallback
+        monkeypatch.setattr("backend.app.app_factory.FRONTEND_ENV_PATH", 
+                           "/nonexistent/path")
+        monkeypatch.setenv("FRONTEND_PORT_FALLBACK", "5555")
+        
+        # Act
+        port = get_frontend_port()
+        
+        # Assert
+        assert port == "5555"
+```
+
+#### Example Frontend API Configuration Test
+
+```typescript
+// src/__tests__/utils/config.test.ts
+
+import { API_BASE_URL } from '../../utils/config';
+
+describe('API Configuration', () => {
+  const originalEnv = process.env;
+  
+  beforeEach(() => {
+    jest.resetModules();
+    process.env = { ...originalEnv };
+  });
+  
+  afterAll(() => {
+    process.env = originalEnv;
+  });
+  
+  it('should use the environment variable for API_BASE_URL when available', () => {
+    // Arrange
+    process.env.REACT_APP_API_BASE_URL = 'http://localhost:8888';
+    
+    // Act - force reloading the module
+    const config = require('../../utils/config');
+    
+    // Assert
+    expect(config.API_BASE_URL).toBe('http://localhost:8888');
+  });
+  
+  it('should fall back to default API_BASE_URL when environment variable not available', () => {
+    // Arrange
+    delete process.env.REACT_APP_API_BASE_URL;
+    
+    // Act - force reloading the module
+    const config = require('../../utils/config');
+    
+    // Assert
+    expect(config.API_BASE_URL).toBe('http://localhost:5000');
+  });
+});
+```

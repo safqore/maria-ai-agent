@@ -129,3 +129,31 @@ The transaction management strategy uses a TransactionContext class that:
 2. React Context for global state storage
 3. Adapter pattern for connecting FSM to React components
 4. Custom hooks for component-specific logic
+
+## Environment Configuration Strategy
+
+The environment configuration strategy follows these principles:
+
+1. **Separated Service Configuration**
+   - Backend configuration in `backend/.env`
+   - Frontend configuration in `frontend/.env`
+   - No cross-service configuration dependencies
+
+2. **Port Configuration**
+   - No hardcoded port values in application code
+   - Backend port configured via `PORT` in `backend/.env`
+   - Frontend development server port configured via `PORT` environment variable or package.json
+   - API connection URL in frontend uses `REACT_APP_API_BASE_URL` to reference backend
+   - CORS configuration automatically adapts to port changes for local development
+
+3. **Service Independence**
+   - Environment configurations designed for independent service deployment
+   - Consistent naming conventions by platform (e.g., `REACT_APP_` prefix for React)
+   - Automatic fallback mechanisms when optional configuration is missing
+
+4. **Documentation**
+   - Example environment files provided as templates
+   - All environment variables documented in main README.md
+   - Clear instructions for developers on configuring their environments
+
+This strategy ensures developers can modify port settings on their machines without hardcoded limitations, allowing the application to run correctly across different environments with minimal manual adjustments.

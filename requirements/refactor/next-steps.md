@@ -228,3 +228,32 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 ```
+
+### Port Configuration and Environment Variables (High Priority)
+
+- Audit codebase to ensure no hardcoded port values exist anywhere in the code
+- Ensure dynamic CORS configuration correctly reads frontend port:
+  ```python
+  # Dynamic CORS configuration in app_factory.py
+  def get_frontend_origin():
+      frontend_port = get_frontend_port()  # Read from frontend/.env or fallback
+      allowed_hosts = os.getenv("CORS_HOSTS", "localhost,127.0.0.1").split(",")
+      
+      origins = []
+      for host in allowed_hosts:
+          origins.append(f"http://{host}:{frontend_port}")
+          origins.append(f"https://{host}:{frontend_port}")
+      
+      return origins
+  ```
+- Update all environment variable documentation to emphasize:
+  - Port configuration flexibility
+  - No hardcoding of ports or URLs
+  - Configuration variable precedence
+- Ensure frontend API configuration correctly uses the configured backend URL:
+  ```typescript
+  // frontend/src/api/config.ts - example implementation
+  export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+  ```
+- Add validation to ensure API URLs are correctly set before making API requests
+- Create thorough documentation for troubleshooting port conflicts
