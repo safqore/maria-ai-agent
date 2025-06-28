@@ -6,11 +6,19 @@ with all the necessary configuration and blueprint registrations.
 """
 
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 from flask import Flask, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+
+# Path constants
+FRONTEND_ENV_PATH = Path(__file__).parent.parent.parent / "frontend" / ".env"
+
+# Environment variables - read at module level
+CORS_HOSTS = os.getenv("CORS_HOSTS")
+FRONTEND_PORT_FALLBACK = os.getenv("FRONTEND_PORT_FALLBACK")
 
 # Import the blueprints
 from backend.app.routes.session import session_bp
@@ -18,6 +26,55 @@ from backend.app.routes.upload import upload_bp
 
 # Initialize rate limiter with remote address as the key function
 limiter = Limiter(key_func=get_remote_address)
+
+def read_frontend_env_file() -> dict[str, str]:
+    """Read frontend .env file and return as dictionary.
+    
+    Returns:
+        dict[str, str]: Dictionary of environment variables from frontend .env
+    """
+    env_vars = {}
+    try:
+        with open(FRONTEND_ENV_PATH, 'r') as file:
+            for line in file:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    env_vars[key.strip()] = value.strip()
+    except FileNotFoundError:
+        pass
+    
+    return env_vars
+
+def get_frontend_port() -> str:
+    """Read frontend port from frontend/.env file.
+    
+    Returns:
+        str: The frontend port number as a string
+    """
+    frontend_env = read_frontend_env_file()
+    
+    # First try to get PORT from frontend .env
+    if 'PORT' in frontend_env:
+        return frontend_env['PORT']
+    
+    # If PORT not found in frontend .env, use backend fallback
+    return FRONTEND_PORT_FALLBACK
+
+def get_cors_origins() -> list[str]:
+    """Build CORS origins list from environment configuration.
+    
+    Returns:
+        list[str]: List of allowed CORS origins
+    """
+    frontend_port = get_frontend_port()
+    cors_hosts = [host.strip() for host in CORS_HOSTS.split(",") if host.strip()]
+    
+    cors_origins_list = []
+    for host in cors_hosts:
+        cors_origins_list.append(f"http://{host}:{frontend_port}")
+    
+    return cors_origins_list
 
 def create_app(test_config=None):
     """
@@ -37,10 +94,12 @@ def create_app(test_config=None):
     # Create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     
-    # Configure CORS for frontend access - using resources to avoid duplicate headers
+    # Configure CORS with dynamic origins
+    cors_origins = get_cors_origins()
+    
     CORS(
         app,
-        resources={r"/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"], "supports_credentials": True}},
+        resources={r"/*": {"origins": cors_origins, "supports_credentials": True}},
     )
     
     # Initialize rate limiter with config from env
