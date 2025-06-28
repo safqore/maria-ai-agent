@@ -9,6 +9,14 @@ Maria is an AI agent that autonomously creates and orchestrates other AI agents.
 - **requirements.txt**: Python dependencies
 - **package.json**: Node.js dependencies for frontend
 
+## Recent Updates
+
+- **API Versioning**: All endpoints are now available at `/api/v1/` prefix while maintaining backward compatibility
+- **Rate Limiting**: Configured Redis-backed rate limiting with development environment fallback
+- **Import Structure**: Fixed import structure throughout the codebase
+- **SQLAlchemy ORM**: Implemented SQLAlchemy ORM with repository pattern
+- **Blueprint Organization**: Improved route organization using Flask blueprints
+
 ## Setup Instructions
 
 ### 1. Environment Setup
@@ -338,6 +346,20 @@ frontend/
 - Component tests with React Testing Library
 - Mock services for isolated testing
 
+#### 6. API Versioning
+
+- Versioned API endpoints with `/api/v1/` prefix
+- Backward compatibility with legacy routes
+- Consistent URL structure across all endpoints
+- Environment variable configuration for version and prefix
+
+#### 7. Rate Limiting
+
+- Redis-backed rate limiting for production environments
+- In-memory fallback for development environments
+- Configurable rate limits via environment variables
+- Proper client notification for rate limit errors
+
 ---
 
 ## Local PostgreSQL Setup Guide
@@ -459,6 +481,45 @@ To automate cleanup every 30 minutes, add a cron job or use a task scheduler (e.
 - Review logs for any errors or unexpected deletions.
 - The script double-checks UUIDs against the database before deleting folders.
 - Legacy files in the base of `uploads/` are also cleaned up if old.
+
+---
+
+## Environment Variables
+
+### Backend Environment Variables
+
+Key backend configuration variables include:
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| PORT | Backend server port | 5000 | No |
+| API_VERSION | API version for versioned endpoints | v1 | No |
+| API_PREFIX | API URL prefix for versioned endpoints | /api | No |
+| REDIS_URL | Redis connection URL for rate limiting | redis://localhost:6379/0 | No |
+| SESSION_RATE_LIMIT | Rate limit for session endpoints | 10/minute | No |
+| FRONTEND_PORT_FALLBACK | Frontend port fallback if not specified in frontend/.env | 3000 | No |
+| CORS_HOSTS | Comma-separated list of allowed CORS hosts | localhost,127.0.0.1 | No |
+| POSTGRES_DB | PostgreSQL database name | - | Yes |
+| POSTGRES_USER | PostgreSQL username | - | Yes |
+| POSTGRES_PASSWORD | PostgreSQL password | - | Yes |
+| POSTGRES_HOST | PostgreSQL host | localhost | No |
+| POSTGRES_PORT | PostgreSQL port | 5432 | No |
+
+### Frontend Environment Variables
+
+Key frontend configuration variables include:
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| REACT_APP_API_BASE_URL | Backend API base URL | http://localhost:5000 | Yes |
+| REACT_APP_API_VERSION | API version for versioned endpoints | v1 | No |
+| REACT_APP_API_PREFIX | API URL prefix for versioned endpoints | /api | No |
+| REACT_APP_MOCK_API | Whether to use mock API | false | No |
+| REACT_APP_SKIP_SESSION_VALIDATION | Skip session validation | false | No |
+| REACT_APP_VERBOSE_LOGGING | Enable verbose logging | false | No |
+| REACT_APP_USE_DEV_FALLBACKS | Use development fallbacks | false | No |
+
+**Note:** React environment variables must be prefixed with `REACT_APP_` to be accessible in the application.
 
 ---
 

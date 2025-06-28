@@ -10,7 +10,7 @@ def log_audit_event(event_type, user_uuid=None, details=None):
     Replace with DB or external logging as needed.
     """
     log_entry = {
-        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
         "event_type": event_type,
         "user_uuid": user_uuid,
         "details": details or {},

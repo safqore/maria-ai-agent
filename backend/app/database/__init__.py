@@ -10,8 +10,8 @@ from contextlib import contextmanager
 from typing import Generator
 
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import declarative_base
 
 # Create SQLAlchemy engine from environment variables
 def get_database_url():
@@ -57,6 +57,7 @@ engine = None
 SessionLocal = None
 
 # Base class for models
+# Using SQLAlchemy 2.0 syntax
 Base = declarative_base()
 
 @contextmanager

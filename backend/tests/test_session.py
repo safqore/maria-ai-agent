@@ -2,8 +2,8 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
-from app import create_app
-from app.routes.session import limiter
+from backend.app import create_app
+from backend.app.routes.session import limiter
 
 # Set rate limit for testing
 os.environ["SESSION_RATE_LIMIT"] = "1/minute"
@@ -17,14 +17,10 @@ def client():
         yield client
 
 
-@patch("app.services.session_service.get_db_connection")
-def test_generate_uuid_success(mock_db, client):
-    # Mock DB cursor for uniqueness check
-    mock_conn = MagicMock()
-    mock_cursor = MagicMock()
-    mock_conn.cursor.return_value = mock_cursor
-    mock_cursor.fetchone.return_value = [0]  # No collision
-    mock_db.return_value = mock_conn
+@patch("backend.app.services.session_service.SessionService.check_uuid_exists")
+def test_generate_uuid_success(mock_check_uuid_exists, client):
+    # Mock UUID existence check to always return False (no collision)
+    mock_check_uuid_exists.return_value = False
     response = client.post("/generate-uuid")
     try:
         data = response.get_json()
@@ -38,8 +34,8 @@ def test_generate_uuid_success(mock_db, client):
     assert data["message"] == "Generated unique UUID"
 
 
-@patch("app.services.session_service.get_db_connection")
-def test_validate_uuid_invalid(mock_db, client):
+@patch("backend.app.services.session_service.SessionService.check_uuid_exists")
+def test_validate_uuid_invalid(mock_check_uuid_exists, client):
     response = client.post("/validate-uuid", json={"uuid": "not-a-uuid"})
     data = response.get_json()
     assert response.status_code == 400
@@ -47,14 +43,10 @@ def test_validate_uuid_invalid(mock_db, client):
     assert data["uuid"] is None
 
 
-@patch("app.services.session_service.get_db_connection")
-def test_validate_uuid_success(mock_db, client):
-    # Mock DB cursor for uniqueness check
-    mock_conn = MagicMock()
-    mock_cursor = MagicMock()
-    mock_conn.cursor.return_value = mock_cursor
-    mock_cursor.fetchone.return_value = [0]  # No collision
-    mock_db.return_value = mock_conn
+@patch("backend.app.services.session_service.SessionService.check_uuid_exists")
+def test_validate_uuid_success(mock_check_uuid_exists, client):
+    # Mock UUID existence check to return False (no collision)
+    mock_check_uuid_exists.return_value = False
     # Generate a new UUID and validate it (should be unique)
     gen_response = client.post("/generate-uuid")
     try:
@@ -78,8 +70,8 @@ def test_validate_uuid_success(mock_db, client):
     assert data["uuid"] == uuid_val
 
 
-@patch("app.services.session_service.get_db_connection")
-def test_rate_limit(mock_db, client):
+@patch("backend.app.services.session_service.SessionService.check_uuid_exists")
+def test_rate_limit(mock_check_uuid_exists, client):
     # Defensive: skip if limiter storage is not initialized
     try:
         storage_type = str(type(limiter.storage))
@@ -90,11 +82,8 @@ def test_rate_limit(mock_db, client):
             "Rate limit test is unreliable with in-memory storage. "
             "Use Redis for integration testing."
         )
-    mock_conn = MagicMock()
-    mock_cursor = MagicMock()
-    mock_conn.cursor.return_value = mock_cursor
-    mock_cursor.fetchone.return_value = [0]
-    mock_db.return_value = mock_conn
+    # Mock UUID existence check to always return False (no collision)
+    mock_check_uuid_exists.return_value = False
     # Exceed the rate limit using the same IP
     for _ in range(10):
         response = client.post(

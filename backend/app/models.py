@@ -5,7 +5,7 @@ This module defines the database models using SQLAlchemy ORM.
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Optional
 
 from sqlalchemy import Column, String, DateTime, Boolean, Text
@@ -33,8 +33,8 @@ class UserSession(Base):
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(Text, nullable=False)
     email = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     completed_at = Column(DateTime, nullable=True)
     ip_address = Column(Text, nullable=True)
     consent_user_data = Column(Boolean, default=False)

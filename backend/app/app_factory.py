@@ -6,6 +6,7 @@ with all the necessary configuration and blueprint registrations.
 """
 
 import os
+import redis
 from pathlib import Path
 from dotenv import load_dotenv
 from flask import Flask, request
@@ -21,7 +22,13 @@ from backend.app.routes.session import session_bp
 from backend.app.routes.upload import upload_bp
 
 # Initialize rate limiter with remote address as the key function
-limiter = Limiter(key_func=get_remote_address)
+redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+limiter = Limiter(
+    key_func=get_remote_address,
+    storage_uri=redis_url,
+    storage_options={"socket_connect_timeout": 30},
+    strategy="fixed-window",
+)
 
 def read_frontend_env_file() -> dict[str, str]:
     """Read frontend .env file and return as dictionary.
@@ -110,6 +117,18 @@ def create_app(test_config=None):
     # Initialize rate limiter with config from env
     session_rate_limit = os.getenv("SESSION_RATE_LIMIT", "10/minute")
     limiter.default_limits = [session_rate_limit]
+    
+    # Handle Redis connection for rate limiter
+    if app.config.get("ENV") == "development" or app.config.get("TESTING"):
+        try:
+            # Test Redis connection
+            redis_client = redis.from_url(redis_url)
+            redis_client.ping()
+            print("Redis connection successful, using Redis for rate limiting")
+        except (redis.ConnectionError, redis.exceptions.ConnectionError):
+            print("Warning: Redis unavailable, falling back to in-memory storage")
+            limiter.storage_uri = "memory://"
+    
     limiter.init_app(app)
     
     # Load configuration
@@ -120,9 +139,19 @@ def create_app(test_config=None):
         # Load the test config if passed in
         app.config.from_mapping(test_config)
     
-    # Register blueprints with proper URL prefixes
-    app.register_blueprint(session_bp, url_prefix='')  # Keep root level for backward compatibility
+    # Get API version and prefix from environment
+    api_version = os.getenv("API_VERSION", "v1")
+    api_prefix = os.getenv("API_PREFIX", "/api")
+    versioned_prefix = f"{api_prefix}/{api_version}"
+    
+    # Register blueprints with proper API versioning
+    # First register with empty prefix for backward compatibility
+    app.register_blueprint(session_bp, url_prefix='')
     app.register_blueprint(upload_bp, url_prefix='')
+    
+    # Also register with versioned API prefix for new clients
+    app.register_blueprint(session_bp, url_prefix=versioned_prefix, name=f"session_{api_version}")
+    app.register_blueprint(upload_bp, url_prefix=versioned_prefix, name=f"upload_{api_version}")
     
     # Create instance directory if it doesn't exist
     try:
@@ -163,10 +192,11 @@ def register_error_handlers(app):
     Args:
         app: The Flask application instance
     """
+    # Import and use the centralized error handlers
     from backend.app.errors import register_error_handlers as reg_errors
     reg_errors(app)
-    """Register error handlers with the Flask application."""
-    # Add error handlers here
+    
+    # Add fallback error handlers if needed
     @app.errorhandler(404)
     def not_found(e):
         return {'error': 'Resource not found'}, 404
