@@ -59,6 +59,53 @@ This document outlines the comprehensive testing approach for the Maria AI Agent
    - Verify middleware functionality
    - Test authentication and authorization
 
+#### Authentication Middleware Integration ✅
+
+1. **Integration Tests**
+   - Implemented tests for protected routes requiring API keys
+   - Added tests for open routes with no authentication requirements
+   - Implemented API key validation tests (header and query parameter methods)
+   - Added tests for invalid, empty, and missing API keys
+   - Implemented correlation ID tracking tests for authenticated requests
+   - Added tests for the auth-info endpoint with proper response format validation
+   - Implemented tests for API version headers in responses
+
+2. **Example Authentication Test**
+
+```python
+# tests/integration/test_auth_api.py
+
+def test_protected_route_requires_key(self, client):
+    """Test that protected routes reject requests without API key."""
+    response = client.get('/api/test/protected')
+    assert response.status_code == 401
+    data = json.loads(response.data)
+    assert data["error"] == "Unauthorized"
+
+def test_protected_route_valid_key(self, client):
+    """Test that protected routes accept valid API key."""
+    response = client.get(
+        '/api/test/protected', 
+        headers={"X-API-Key": "test-key"}
+    )
+    assert response.status_code == 200
+    data = json.loads(response.data)
+    assert data["status"] == "success"
+
+def test_correlation_id_with_auth(self, client):
+    """Test that correlation ID is preserved with authentication."""
+    correlation_id = str(uuid.uuid4())
+    response = client.get(
+        '/api/test/protected', 
+        headers={
+            "X-API-Key": "test-key",
+            "X-Correlation-ID": correlation_id
+        }
+    )
+    assert response.status_code == 200
+    assert response.headers.get("X-Correlation-ID") == correlation_id
+```
+
 ### Phase 5: Context and Global State Refinements
 
 1. **Unit Tests**

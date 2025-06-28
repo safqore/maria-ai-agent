@@ -12,17 +12,19 @@ This document outlines the detailed tasks for the upcoming phases of the Maria A
    - ✅ Test versioned endpoints with correlation ID tracking
    - ✅ Verify correct error handling across all endpoints
 
-2. **Authentication Testing** ✅
+2. **Authentication Testing** ✅ (Completed June 28, 2025)
    - ✅ Test API endpoints with various authentication scenarios
    - ✅ Verify unauthorized access is properly rejected
    - ✅ Test authentication information endpoint
    - ✅ Ensure authentication middleware works with blueprints
+   - ✅ Fixed route conflict in auth_info endpoint
 
 3. **Add API Documentation Examples** (Medium Priority)
-   - Add example requests with curl commands
-   - Add example responses for successful and error cases
-   - Document authentication requirements clearly
-   - Provide correlation ID usage examples
+   - ✅ Add example requests with curl commands for authentication
+   - ✅ Add example responses for authentication success and error cases
+   - ✅ Document authentication requirements clearly
+   - ✅ Provide correlation ID usage examples for authentication
+   - Add more examples for session and upload endpoints
 
 ### Frontend API Integration (Medium-High Priority)
 
