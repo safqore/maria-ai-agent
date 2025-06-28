@@ -16,10 +16,6 @@ from flask_limiter.util import get_remote_address
 # Path constants
 FRONTEND_ENV_PATH = Path(__file__).parent.parent.parent / "frontend" / ".env"
 
-# Environment variables - read at module level
-CORS_HOSTS = os.getenv("CORS_HOSTS")
-FRONTEND_PORT_FALLBACK = os.getenv("FRONTEND_PORT_FALLBACK")
-
 # Import the blueprints
 from backend.app.routes.session import session_bp
 from backend.app.routes.upload import upload_bp
@@ -59,7 +55,8 @@ def get_frontend_port() -> str:
         return frontend_env['PORT']
     
     # If PORT not found in frontend .env, use backend fallback
-    return FRONTEND_PORT_FALLBACK
+    frontend_port_fallback = os.getenv("FRONTEND_PORT_FALLBACK", "3000")
+    return frontend_port_fallback
 
 def get_cors_origins() -> list[str]:
     """Build CORS origins list from environment configuration.
@@ -68,7 +65,8 @@ def get_cors_origins() -> list[str]:
         list[str]: List of allowed CORS origins
     """
     frontend_port = get_frontend_port()
-    cors_hosts = [host.strip() for host in CORS_HOSTS.split(",") if host.strip()]
+    cors_hosts_env = os.getenv("CORS_HOSTS", "localhost,127.0.0.1")
+    cors_hosts = [host.strip() for host in cors_hosts_env.split(",") if host.strip()]
     
     cors_origins_list = []
     for host in cors_hosts:
@@ -90,6 +88,13 @@ def create_app(test_config=None):
     load_dotenv(
         dotenv_path=os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
     )
+    
+    # Initialize database after environment is loaded
+    from backend.app.database import init_database, get_engine, get_session_local
+    import backend.app.database as database
+    init_database()
+    database.engine = get_engine()
+    database.SessionLocal = get_session_local()
     
     # Create and configure the app
     app = Flask(__name__, instance_relative_config=True)
