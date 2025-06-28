@@ -228,7 +228,8 @@ def create_app(test_config=None):
             "endpoints": {
                 "session": f"{versioned_prefix}/",
                 "upload": f"{versioned_prefix}/upload",
-                "legacy": "/"
+                "legacy": "/",
+                "auth-info": "/api/auth-info"
             },
             "documentation": "/docs/api_endpoints.md"
         })

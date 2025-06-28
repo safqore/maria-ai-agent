@@ -37,10 +37,17 @@ Authentication method: API Key
 - Header: `X-API-Key: your-api-key-here`
 - Query parameter: `?api_key=your-api-key-here`
 
+The API can be configured to either require authentication (production) or not (development) through the `REQUIRE_AUTH` environment variable.
+
 ### Authentication Information Endpoint
 
 - **URL**: `/api/auth-info`
 - **Method**: `GET`
+- **Authentication**: Not required (always accessible)
+- **Description**: Returns information about the API's authentication requirements
+- **Response Headers**:
+  - `X-Correlation-ID`: UUID for request tracking
+  - `X-API-Version`: Current API version
 - **Response**:
   ```json
   {
@@ -51,6 +58,35 @@ Authentication method: API Key
     "documentation": "Add your API key as either a header or query parameter"
   }
   ```
+
+### Authentication Examples
+
+**Example 1: Request with API Key in header**
+```bash
+curl -H "X-API-Key: your-api-key-here" -H "X-Correlation-ID: 550e8400-e29b-41d4-a716-446655440000" https://example.com/api/v1/session
+```
+
+**Example 2: Request with API Key as query parameter**
+```bash
+curl -H "X-Correlation-ID: 550e8400-e29b-41d4-a716-446655440000" https://example.com/api/v1/session?api_key=your-api-key-here
+```
+
+**Example 3: Checking authentication requirements**
+```bash
+curl https://example.com/api/auth-info
+```
+
+### Authentication Error Response
+
+When authentication fails, the API returns a 401 Unauthorized response:
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Valid API key required",
+  "correlation_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
 
 ## API Information Endpoint
 

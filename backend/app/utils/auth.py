@@ -90,10 +90,16 @@ def setup_auth_middleware(app):
     @app.route('/api/auth-info', methods=['GET'])
     def auth_info():
         """Return information about API authentication requirements."""
-        return jsonify({
+        response = jsonify({
             "authentication_required": REQUIRE_AUTH,
             "auth_type": "API Key",
             "header_name": "X-API-Key",
             "query_param": "api_key",
             "documentation": "Add your API key as either a header or query parameter"
         })
+        
+        # Add correlation ID to response if available
+        if hasattr(g, 'correlation_id'):
+            response.headers['X-Correlation-ID'] = g.correlation_id
+            
+        return response

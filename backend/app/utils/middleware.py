@@ -223,6 +223,12 @@ def setup_request_logging(app):
         app: Flask application object
     """
     before_request, after_request = log_request_middleware()
+    
+    # Add before_request handler for correlation ID extraction
+    @app.before_request
+    def extract_correlation_id_handler():
+        g.correlation_id = extract_correlation_id()
+    
     app.before_request(before_request)
     app.after_request(after_request)
 

@@ -8,15 +8,15 @@ This document outlines the detailed tasks for the upcoming phases of the Maria A
 
 1. **Integration Tests for API Endpoints** ⏳
    - Create comprehensive integration tests for session endpoints
-   - Create integration tests for upload endpoints
-   - Test versioned endpoints with correlation ID tracking
-   - Verify correct error handling across all endpoints
+   - Create integration tests for upload endpoints 
+   - ✅ Test versioned endpoints with correlation ID tracking
+   - ✅ Verify correct error handling across all endpoints
 
-2. **Authentication Testing** ⏳
-   - Test API endpoints with various authentication scenarios
-   - Verify unauthorized access is properly rejected
-   - Test authentication information endpoint
-   - Ensure authentication middleware works with blueprints
+2. **Authentication Testing** ✅
+   - ✅ Test API endpoints with various authentication scenarios
+   - ✅ Verify unauthorized access is properly rejected
+   - ✅ Test authentication information endpoint
+   - ✅ Ensure authentication middleware works with blueprints
 
 3. **Add API Documentation Examples** (Medium Priority)
    - Add example requests with curl commands
