@@ -7,12 +7,17 @@ with all the necessary configuration and blueprint registrations.
 
 import os
 import redis
+import logging
 from pathlib import Path
 from dotenv import load_dotenv
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+
+# Configure logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Path constants
 FRONTEND_ENV_PATH = Path(__file__).parent.parent.parent / "frontend" / ".env"
@@ -20,6 +25,8 @@ FRONTEND_ENV_PATH = Path(__file__).parent.parent.parent / "frontend" / ".env"
 # Import the blueprints
 from backend.app.routes.session import session_bp
 from backend.app.routes.upload import upload_bp
+from backend.app.utils.middleware import setup_request_logging
+from backend.app.utils.auth import setup_auth_middleware
 
 # Initialize rate limiter with remote address as the key function
 redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
@@ -45,41 +52,58 @@ def read_frontend_env_file() -> dict[str, str]:
                     key, value = line.split('=', 1)
                     env_vars[key.strip()] = value.strip()
     except FileNotFoundError:
-        pass
+        logger.warning(f"Frontend .env file not found at {FRONTEND_ENV_PATH}")
+    except Exception as e:
+        logger.error(f"Error reading frontend .env file: {e}")
     
     return env_vars
 
 def get_frontend_port() -> str:
-    """Read frontend port from frontend/.env file.
+    """Get the frontend port from environment or frontend .env file.
     
     Returns:
-        str: The frontend port number as a string
+        str: Frontend port number as string
     """
+    # Try to get from environment first
+    port = os.getenv("FRONTEND_PORT")
+    if port:
+        return port
+    
+    # Try to get from frontend .env file
     frontend_env = read_frontend_env_file()
+    port = frontend_env.get("PORT")
+    if port:
+        return port
     
-    # First try to get PORT from frontend .env
-    if 'PORT' in frontend_env:
-        return frontend_env['PORT']
-    
-    # If PORT not found in frontend .env, use backend fallback
-    frontend_port_fallback = os.getenv("FRONTEND_PORT_FALLBACK", "3000")
-    return frontend_port_fallback
+    # Default port for React applications
+    return "3000"
 
 def get_cors_origins() -> list[str]:
-    """Build CORS origins list from environment configuration.
+    """Get allowed CORS origins based on frontend port configuration.
+    
+    This dynamically creates the CORS origin list based on the frontend
+    port configuration, allowing for flexible development setups.
     
     Returns:
         list[str]: List of allowed CORS origins
     """
     frontend_port = get_frontend_port()
-    cors_hosts_env = os.getenv("CORS_HOSTS", "localhost,127.0.0.1")
-    cors_hosts = [host.strip() for host in cors_hosts_env.split(",") if host.strip()]
+    # Get allowed hosts from environment, default to localhost and 127.0.0.1
+    allowed_hosts = os.getenv("CORS_HOSTS", "localhost,127.0.0.1").split(",")
     
-    cors_origins_list = []
-    for host in cors_hosts:
-        cors_origins_list.append(f"http://{host}:{frontend_port}")
+    # Build origins list with protocol and port
+    origins = []
+    for host in allowed_hosts:
+        host = host.strip()
+        if host:
+            # Add both http and https for each host
+            origins.append(f"http://{host}:{frontend_port}")
+            origins.append(f"https://{host}:{frontend_port}")
     
-    return cors_origins_list
+    # Log the configured origins for debugging
+    logger.info(f"CORS configured with origins: {origins}")
+    
+    return origins
 
 def create_app(test_config=None):
     """
@@ -124,9 +148,9 @@ def create_app(test_config=None):
             # Test Redis connection
             redis_client = redis.from_url(redis_url)
             redis_client.ping()
-            print("Redis connection successful, using Redis for rate limiting")
+            logger.info("Redis connection successful, using Redis for rate limiting")
         except (redis.ConnectionError, redis.exceptions.ConnectionError):
-            print("Warning: Redis unavailable, falling back to in-memory storage")
+            logger.warning("Redis unavailable, falling back to in-memory storage")
             limiter.storage_uri = "memory://"
     
     limiter.init_app(app)
@@ -163,6 +187,12 @@ def create_app(test_config=None):
     from backend.app.errors import register_error_handlers
     register_error_handlers(app)
     
+    # Set up request logging middleware
+    setup_request_logging(app)
+    
+    # Set up authentication middleware
+    setup_auth_middleware(app)
+    
     # Add a general OPTIONS route to handle CORS preflight requests
     @app.route('/<path:path>', methods=['OPTIONS'])
     def options_handler(path):
@@ -172,16 +202,36 @@ def create_app(test_config=None):
     @app.after_request
     def after_request_func(response):
         """Add additional headers or process responses if needed"""
+        # Add API version header
+        response.headers['X-API-Version'] = api_version
         return response
     
-    # Create database tables if they don't exist
-    from backend.app.database import Base, engine
-    Base.metadata.create_all(bind=engine)
+    # Add API information endpoint
+    @app.route('/api/info')
+    def api_info():
+        """Return API information."""
+        return jsonify({
+            "name": "Maria AI Agent API",
+            "version": api_version,
+            "endpoints": {
+                "session": f"{versioned_prefix}/",
+                "upload": f"{versioned_prefix}/upload",
+                "legacy": "/"
+            },
+            "documentation": "/docs/api_endpoints.md"
+        })
     
     # Simple route for testing
     @app.route('/ping')
     def ping():
         return {'message': 'pong'}
+    
+    # Create database tables if they don't exist
+    from backend.app.database import Base, engine
+    Base.metadata.create_all(bind=engine)
+    
+    # Log successful app creation
+    logger.info(f"Flask app created with API version {api_version}")
     
     return app
 

@@ -1,45 +1,32 @@
 # Maria AI Agent Refactoring Next Steps
 
-This document outlines the detailed tasks for the upcoming phases of the Maria AI Agent refactoring project. Last updated on June 27, 2025.
+This document outlines the detailed tasks for the upcoming phases of the Maria AI Agent refactoring project. Last updated on June 28, 2025.
 
-## Immediate Next Steps (All Resolved ✅)
+## Immediate Next Steps
 
-### Fix Import Structure Issue (Highest Priority) ✅
-- Fix the ModuleNotFoundError for 'backend' module ✅
-- Update import statements throughout the codebase ✅
-- Test application startup and all key functionality ✅
+### Complete Blueprint Implementation (Highest Priority) ⏳
 
-### Configure Flask-Limiter Storage Backend (High Priority) ✅
-- Add Redis as a dependency in requirements.txt ✅
-- Configure Redis as the persistent storage backend for rate limiting ✅
-- Update app_factory.py with proper Redis configuration ✅
-- Add REDIS_URL environment variable to .env and .env.example ✅
-- Implement fallback for development environments ✅
-- Update tests to handle Redis dependency ✅
+1. **Complete API Documentation** ⏳
+   - Update documentation for any new endpoints
+   - Add authentication information to documentation
+   - Create example requests and responses for all endpoints
 
-### Phase 4: Backend Improvements - Higher Risk (Continue)
-
-#### Step 2: Complete Route Organization (By July 10, 2025)
-
-1. **Complete Blueprint Migration (In Progress)**
-   - Migrate all remaining routes to blueprints ✅
-   - Implement consistent error handling across blueprints ✅
-   - Add proper API versioning and URL prefix structure ✅
-   - Add proper documentation for all endpoints (Next)
-   
-2. **Middleware Enhancements**
-   - Complete request logging middleware
-   - Implement authentication middleware
-   - Add correlation ID for request tracking
-   - Ensure proper error propagation
-
-3. **API Documentation**
-   - Add OpenAPI specification
+2. **Add OpenAPI/Swagger Integration** (Optional)
+   - Add Flask-RESTx or similar library for automatic API documentation
    - Create Swagger UI integration
-   - Document all endpoints with examples
-   - Include error response documentation
+   - Document endpoints with appropriate tags and descriptions
 
-#### Step 3: Database Optimization (By July 15, 2025)
+3. **Middleware Enhancements** ⏳
+   - Add correlation ID validation between requests
+   - Implement additional logging for authentication events
+   - Enhance request validation middleware
+
+4. **API Testing** ⏳
+   - Create comprehensive integration tests for API endpoints
+   - Test with various authentication scenarios
+   - Verify rate limiting behavior
+
+### Database Optimization (Medium Priority)
 
 1. **Query Optimization**
    - Implement eager loading for relationships
@@ -50,30 +37,25 @@ This document outlines the detailed tasks for the upcoming phases of the Maria A
 2. **Transaction Management Integration**
    - Integrate TransactionContext with all services
    - Add proper error handling for transactions
-   - Implement retry logic for transient errors
    - Add transaction logging
 
 3. **Database Testing**
    - Create database fixtures for tests
    - Add isolation for test cases
    - Implement database migration testing
-   - Add performance benchmarks
 
-### Phase 5: Context and Global State Refinements (Continue)
+### Frontend API Integration (Medium-High Priority)
 
-#### Complete API Integration (By July 5, 2025)
-
-1. **Finalize API Service Layer**
-   - Complete API client implementation
+1. **API Client Implementation**
+   - Update API client to use versioned endpoints
    - Add proper error handling for network issues
    - Implement request retries
    - Add request/response logging
 
 2. **Context Integration**
-   - Complete ChatContext implementation
-   - Integrate with state machine
-   - Add proper error boundaries
-   - Implement loading states
+   - Ensure ChatContext properly handles API responses
+   - Add loading states for API requests
+   - Implement error boundaries for API failures
 
 ## Future Phases (Post July 15, 2025)
 
@@ -119,122 +101,86 @@ This document outlines the detailed tasks for the upcoming phases of the Maria A
    - Create monitoring dashboards
    - Set up threshold-based alerts
 
-## Specific Implementation Tasks
+## Completed Tasks (June 28, 2025) ✅
 
-### Blueprint Implementation
+### Fixed Import Structure Issue ✅
+- Fixed the ModuleNotFoundError for 'backend' module 
+- Updated import statements throughout the codebase
+- Tested application startup and all key functionality
+
+### Configured Flask-Limiter Storage Backend ✅
+- Added Redis as a dependency in requirements.txt
+- Configured Redis as the persistent storage backend for rate limiting
+- Updated app_factory.py with proper Redis configuration
+- Added REDIS_URL environment variable
+- Implemented fallback for development environments
+- Updated tests to handle Redis dependency
+
+### Enhanced Authentication Middleware ✅
+- Implemented simple token-based authentication
+- Added authorization handling for API routes
+- Created API endpoint for auth information
+- Improved error handling and logging for auth failures
+
+### Improved App Factory Configuration ✅
+- Added API information endpoint
+- Enhanced blueprint registration with proper versioning
+- Added version header to all responses
+- Improved CORS configuration with dynamic frontend port detection
+
+## Code Examples
+
+### Authentication Middleware
 
 ```python
-# app/routes/api/v1/session_bp.py
-from flask import Blueprint, request, jsonify
-from marshmallow import ValidationError
-from backend.app.services.session_service import SessionService
-from backend.app.schemas.session_schema import SessionSchema
-from flask_limiter.util import get_remote_address
-from flask_limiter import Limiter
-
-session_bp = Blueprint('session_bp', __name__)
-limiter = Limiter(key_func=get_remote_address)
-
-@session_bp.route('/sessions', methods=['POST'])
-@limiter.limit("10 per minute")
-def create_session():
-    try:
-        session_service = SessionService()
-        session_data = SessionSchema().load(request.json)
-        result = session_service.create_session(session_data)
-        return jsonify(SessionSchema().dump(result)), 201
-    except ValidationError as e:
-        return jsonify({"error": str(e)}), 400
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+@app.route('/api/auth-info', methods=['GET'])
+def auth_info():
+    """Return information about API authentication requirements."""
+    return jsonify({
+        "authentication_required": REQUIRE_AUTH,
+        "auth_type": "API Key",
+        "header_name": "X-API-Key",
+        "query_param": "api_key",
+        "documentation": "Add your API key as either a header or query parameter"
+    })
 ```
 
-### TransactionContext Integration
+### API Information Endpoint
 
 ```python
-# Using the TransactionContext with repositories
-from backend.app.database.transaction import TransactionContext
-from backend.app.repositories.user_session_repository import UserSessionRepository
-
-def update_user_data(user_id, new_data):
-    with TransactionContext() as tx:
-        # Get repositories with the transaction session
-        user_repo = UserSessionRepository(session=tx.session)
-        
-        # Operations within the transaction
-        user = user_repo.get_by_id(user_id)
-        user.update_data(new_data)
-        user_repo.update(user)
-        
-        # Transaction automatically commits if no exceptions are raised
-    return user
+@app.route('/api/info')
+def api_info():
+    """Return API information."""
+    return jsonify({
+        "name": "Maria AI Agent API",
+        "version": api_version,
+        "endpoints": {
+            "session": f"{versioned_prefix}/",
+            "upload": f"{versioned_prefix}/upload",
+            "legacy": "/"
+        },
+        "documentation": "/docs/api_endpoints.md"
+    })
 ```
 
-### ChatContext Integration
+### Port Configuration and Environment Variables
 
-```typescript
-// src/contexts/ChatContext.tsx
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { Message, ChatState, ChatAction } from '../types';
-import { chatReducer } from '../state/chatReducer';
-import { useChatApi } from '../api/chatApi';
-
-interface ChatContextValue {
-  state: ChatState;
-  dispatch: React.Dispatch<ChatAction>;
-  sendMessage: (content: string) => Promise<void>;
-  resetChat: () => void;
-  handleButtonClick: (action: string) => void;
-}
-
-const initialState: ChatState = {
-  messages: [],
-  isInputDisabled: false,
-  isLoading: false,
-  error: null,
-};
-
-const ChatContext = createContext<ChatContextValue | undefined>(undefined);
-
-export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(chatReducer, initialState);
-  const api = useChatApi();
-
-  // Implementation details...
-
-  return (
-    <ChatContext.Provider value={{ state, dispatch, sendMessage, resetChat, handleButtonClick }}>
-      {children}
-    </ChatContext.Provider>
-  );
-};
-```
-
-### Port Configuration and Environment Variables (High Priority)
-
-- Audit codebase to ensure no hardcoded port values exist anywhere in the code
-- Ensure dynamic CORS configuration correctly reads frontend port:
+- No hardcoded port values exist in the codebase
+- Dynamic CORS configuration correctly reads frontend port:
   ```python
-  # Dynamic CORS configuration in app_factory.py
-  def get_frontend_origin():
-      frontend_port = get_frontend_port()  # Read from frontend/.env or fallback
-      allowed_hosts = os.getenv("CORS_HOSTS", "localhost,127.0.0.1").split(",")
+  def get_frontend_port() -> str:
+      """Get the frontend port from environment or frontend .env file."""
+      # Try to get from environment first
+      port = os.getenv("FRONTEND_PORT")
+      if port:
+          return port
       
-      origins = []
-      for host in allowed_hosts:
-          origins.append(f"http://{host}:{frontend_port}")
-          origins.append(f"https://{host}:{frontend_port}")
+      # Try to get from frontend .env file
+      frontend_env = read_frontend_env_file()
+      port = frontend_env.get("PORT")
+      if port:
+          return port
       
-      return origins
+      # Default port for React applications
+      return "3000"
   ```
-- Update all environment variable documentation to emphasize:
-  - Port configuration flexibility
-  - No hardcoding of ports or URLs
-  - Configuration variable precedence
-- Ensure frontend API configuration correctly uses the configured backend URL:
-  ```typescript
-  // frontend/src/api/config.ts - example implementation
-  export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
-  ```
-- Add validation to ensure API URLs are correctly set before making API requests
-- Create thorough documentation for troubleshooting port conflicts

@@ -35,9 +35,34 @@ def upload_file():
     """
     Upload a file to the server.
     
+    This endpoint handles file uploads with session validation.
+    See API documentation at /docs/api_endpoints.md for details.
+    
     ---
     tags:
       - Upload
+    parameters:
+      - name: file
+        in: formData
+        type: file
+        required: true
+        description: The file to upload
+      - name: session_uuid
+        in: formData
+        type: string
+        required: true
+        description: Session UUID for authentication
+    responses:
+      200:
+        description: File uploaded successfully
+      400:
+        description: Invalid request data
+      404:
+        description: Session not found
+      413:
+        description: File too large
+      500:
+        description: Server error
     parameters:
       - name: file
         in: formData
