@@ -25,7 +25,9 @@ FRONTEND_ENV_PATH = Path(__file__).parent.parent.parent / "frontend" / ".env"
 # Import the blueprints
 from backend.app.routes.session import session_bp
 from backend.app.routes.upload import upload_bp
-from backend.app.utils.middleware import setup_request_logging, setup_request_validation
+from backend.app.utils.middleware import (
+    setup_request_logging, setup_request_validation, apply_middleware_to_blueprint
+)
 from backend.app.utils.auth import setup_auth_middleware
 
 # Initialize rate limiter with remote address as the key function
@@ -168,12 +170,19 @@ def create_app(test_config=None):
     api_prefix = os.getenv("API_PREFIX", "/api")
     versioned_prefix = f"{api_prefix}/{api_version}"
     
+    # Apply middleware to blueprints
+    logger.info("Applying middleware to blueprints")
+    apply_middleware_to_blueprint(session_bp)
+    apply_middleware_to_blueprint(upload_bp)
+    
     # Register blueprints with proper API versioning
     # First register with empty prefix for backward compatibility
     app.register_blueprint(session_bp, url_prefix='')
     app.register_blueprint(upload_bp, url_prefix='')
     
     # Also register with versioned API prefix for new clients
+    # Note: Flask doesn't allow registering the same blueprint twice with the same name
+    # So we use a different name for the versioned routes
     app.register_blueprint(session_bp, url_prefix=versioned_prefix, name=f"session_{api_version}")
     app.register_blueprint(upload_bp, url_prefix=versioned_prefix, name=f"upload_{api_version}")
     
