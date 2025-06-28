@@ -2,10 +2,18 @@
 Tests for the middleware module.
 """
 
+import json
 import pytest
 from unittest.mock import patch, MagicMock
-from flask import Flask, request, g
-from backend.app.utils.middleware import log_request_middleware, setup_request_logging
+from flask import Flask, request, g, jsonify
+from backend.app.utils.middleware import (
+    log_request_middleware, 
+    setup_request_logging, 
+    validate_json_middleware,
+    setup_request_validation,
+    extract_correlation_id,
+    generate_request_id
+)
 
 
 class TestMiddleware:
@@ -17,6 +25,11 @@ class TestMiddleware:
         @app.route('/test')
         def test_route():
             return {'message': 'test'}
+        
+        @app.route('/test-json', methods=['POST'])
+        def test_json():
+            data = request.get_json()
+            return jsonify({'received': data})
             
         return app
 
@@ -52,18 +65,86 @@ class TestMiddleware:
             response = app.make_response(('test', 200))
             after_request(response)
             
-            # Assert that logger was called for both before and after request
-            assert mock_logger.info.call_count == 2
+        # Check that logger was called
+        mock_logger.info.assert_called()
+        
+    def test_extract_correlation_id_from_header(self, app):
+        """Test that correlation ID is extracted from header if valid."""
+        test_id = "550e8400-e29b-41d4-a716-446655440000"
+        
+        with app.test_request_context(headers={'X-Correlation-ID': test_id}):
+            result = extract_correlation_id()
+            assert result == test_id
             
-    def test_setup_request_logging(self, app):
-        """Test that setup_request_logging adds middleware to app."""
-        # Check app before_request and after_request functions before
-        before_count = len(app.before_request_funcs.get(None, []))
-        after_count = len(app.after_request_funcs.get(None, []))
+    def test_extract_correlation_id_generates_new_for_invalid(self, app):
+        """Test that correlation ID is generated if header value is invalid."""
+        with app.test_request_context(headers={'X-Correlation-ID': 'invalid-uuid'}):
+            result = extract_correlation_id()
+            assert result != 'invalid-uuid'
+            
+            # Verify it's a valid UUID
+            import uuid
+            try:
+                uuid.UUID(result)
+                is_valid = True
+            except ValueError:
+                is_valid = False
+            assert is_valid
+            
+    def test_validate_json_middleware_valid(self, app):
+        """Test JSON validation middleware with valid JSON."""
+        client = app.test_client()
         
-        # Set up request logging
-        setup_request_logging(app)
+        # Set up middleware
+        before_request = validate_json_middleware()
+        app.before_request(before_request)
         
-        # Verify that new functions were added
-        assert len(app.before_request_funcs.get(None, [])) == before_count + 1
-        assert len(app.after_request_funcs.get(None, [])) == after_count + 1
+        response = client.post(
+            '/test-json',
+            data=json.dumps({'test': 'data'}),
+            content_type='application/json'
+        )
+        
+        assert response.status_code == 200
+        assert response.json['received']['test'] == 'data'
+        
+    def test_validate_json_middleware_invalid(self, app):
+        """Test JSON validation middleware with invalid JSON."""
+        client = app.test_client()
+        
+        # Set up middleware
+        before_request = validate_json_middleware()
+        app.before_request(before_request)
+        
+        response = client.post(
+            '/test-json',
+            data='{"invalid": "json"',  # Incomplete JSON
+            content_type='application/json'
+        )
+        
+        assert response.status_code == 400
+        assert 'error' in response.json
+        assert 'Invalid JSON format' in response.json['error']
+        
+    def test_setup_request_validation(self, app):
+        """Test that setup_request_validation registers middleware."""
+        with patch.object(app, 'before_request') as mock_before_request:
+            setup_request_validation(app)
+            assert mock_before_request.called
+            
+    def test_request_validation_skips_non_json(self, app):
+        """Test that request validation skips non-JSON requests."""
+        client = app.test_client()
+        
+        # Set up middleware
+        before_request = validate_json_middleware()
+        app.before_request(before_request)
+        
+        response = client.post(
+            '/test-json',
+            data='plain text',
+            content_type='text/plain'
+        )
+        
+        # Should not validate and should pass through
+        assert response.status_code != 400

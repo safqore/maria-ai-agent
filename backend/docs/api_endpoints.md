@@ -8,6 +8,68 @@ The API uses URL prefixes for versioning. All endpoints are available at:
 - Legacy (no prefix): `/endpoint`
 - Versioned: `/api/v1/endpoint`
 
+## Request and Response Headers
+
+### Correlation ID
+
+All requests can include a `X-Correlation-ID` header with a UUID value to track requests across systems. If not provided, the server will generate one.
+
+Example:
+```
+X-Correlation-ID: 550e8400-e29b-41d4-a716-446655440000
+```
+
+All responses will include the `X-Correlation-ID` header with either the client-provided value or the server-generated value.
+
+### API Version
+
+All responses include an `X-API-Version` header indicating the current API version:
+
+```
+X-API-Version: v1
+```
+
+## Authentication
+
+API endpoints under the `/api/` prefix may require authentication using an API key.
+
+Authentication method: API Key
+- Header: `X-API-Key: your-api-key-here`
+- Query parameter: `?api_key=your-api-key-here`
+
+### Authentication Information Endpoint
+
+- **URL**: `/api/auth-info`
+- **Method**: `GET`
+- **Response**:
+  ```json
+  {
+    "authentication_required": true,
+    "auth_type": "API Key",
+    "header_name": "X-API-Key",
+    "query_param": "api_key",
+    "documentation": "Add your API key as either a header or query parameter"
+  }
+  ```
+
+## API Information Endpoint
+
+- **URL**: `/api/info`
+- **Method**: `GET`
+- **Response**:
+  ```json
+  {
+    "name": "Maria AI Agent API",
+    "version": "v1",
+    "endpoints": {
+      "session": "/api/v1/",
+      "upload": "/api/v1/upload",
+      "legacy": "/"
+    },
+    "documentation": "/docs/api_endpoints.md"
+  }
+  ```
+
 ## Session Endpoints
 
 ### Generate UUID
@@ -98,17 +160,17 @@ The API uses URL prefixes for versioning. All endpoints are available at:
   - 400 Bad Request: If file or session_uuid is missing or invalid
   - 404 Not Found: If the specified UUID does not exist
   - 413 Payload Too Large: If the file exceeds the maximum allowed size
-  - 500 Internal Server Error: If upload process fails
 
-## Health Check
+## Error Responses
 
-### Ping
+All API endpoints return consistent error responses with the following structure:
 
-- **URL**: `/ping`
-- **Method**: `GET`
-- **Response**:
-  ```json
-  {
-    "message": "pong"
-  }
-  ```
+```json
+{
+  "error": "Error type",
+  "message": "Detailed error message",
+  "correlation_id": "correlation-uuid"
+}
+```
+
+The `correlation_id` field can be used for troubleshooting and tracking issues across systems.

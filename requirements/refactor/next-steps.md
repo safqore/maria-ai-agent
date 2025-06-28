@@ -4,24 +4,19 @@ This document outlines the detailed tasks for the upcoming phases of the Maria A
 
 ## Immediate Next Steps
 
-### Complete Blueprint Implementation (Highest Priority) ⏳
+### Complete Blueprint Integration (Highest Priority) ⏳
 
-1. **Complete API Documentation** ⏳
-   - Update documentation for any new endpoints
-   - Add authentication information to documentation
-   - Create example requests and responses for all endpoints
-
-2. **Add OpenAPI/Swagger Integration** (Optional)
+1. **Add OpenAPI/Swagger Integration** (Optional)
    - Add Flask-RESTx or similar library for automatic API documentation
    - Create Swagger UI integration
    - Document endpoints with appropriate tags and descriptions
 
-3. **Middleware Enhancements** ⏳
-   - Add correlation ID validation between requests
-   - Implement additional logging for authentication events
-   - Enhance request validation middleware
+2. **Complete Middleware Integration with Blueprints** ⏳
+   - Ensure middleware is properly applied to all blueprints
+   - Add consistent middleware for both root and versioned endpoints
+   - Test middleware interaction with blueprints
 
-4. **API Testing** ⏳
+3. **API Testing** ⏳
    - Create comprehensive integration tests for API endpoints
    - Test with various authentication scenarios
    - Verify rate limiting behavior
@@ -128,39 +123,63 @@ This document outlines the detailed tasks for the upcoming phases of the Maria A
 - Added version header to all responses
 - Improved CORS configuration with dynamic frontend port detection
 
+### Enhanced Request Validation and Correlation ID Tracking ✅
+- Implemented JSON request validation middleware
+- Added correlation ID tracking and propagation
+- Enhanced request logging with more detailed information
+- Added comprehensive tests for middleware functionality
+- Updated API documentation with correlation ID information
+
 ## Code Examples
 
-### Authentication Middleware
+### Request Validation Middleware
 
 ```python
-@app.route('/api/auth-info', methods=['GET'])
-def auth_info():
-    """Return information about API authentication requirements."""
-    return jsonify({
-        "authentication_required": REQUIRE_AUTH,
-        "auth_type": "API Key",
-        "header_name": "X-API-Key",
-        "query_param": "api_key",
-        "documentation": "Add your API key as either a header or query parameter"
-    })
+def validate_json_middleware():
+    """Middleware to validate JSON requests."""
+    def before_request():
+        # Skip validation for non-JSON content types
+        content_type = request.headers.get('Content-Type', '')
+        if not content_type.startswith('application/json'):
+            return None
+            
+        # Skip validation for GET, OPTIONS, HEAD requests
+        if request.method in ['GET', 'OPTIONS', 'HEAD']:
+            return None
+            
+        # Try to parse JSON content
+        try:
+            if request.data:
+                _ = request.get_json()
+        except Exception as e:
+            logger.warning(f"Invalid JSON in request: {str(e)}")
+            return jsonify({
+                "error": "Invalid JSON format",
+                "message": "The request body could not be parsed as JSON",
+                "correlation_id": getattr(g, 'correlation_id', 'unknown')
+            }), 400
+    
+    return before_request
 ```
 
-### API Information Endpoint
+### Correlation ID Handling
 
 ```python
-@app.route('/api/info')
-def api_info():
-    """Return API information."""
-    return jsonify({
-        "name": "Maria AI Agent API",
-        "version": api_version,
-        "endpoints": {
-            "session": f"{versioned_prefix}/",
-            "upload": f"{versioned_prefix}/upload",
-            "legacy": "/"
-        },
-        "documentation": "/docs/api_endpoints.md"
-    })
+def extract_correlation_id():
+    """Extract correlation ID from request headers or generate new one."""
+    # Check if client provided a correlation ID
+    client_correlation_id = request.headers.get('X-Correlation-ID')
+    
+    if client_correlation_id:
+        # Validate the format (assuming UUID format)
+        try:
+            uuid.UUID(client_correlation_id)
+            return client_correlation_id
+        except ValueError:
+            logger.warning(f"Invalid correlation ID format: {client_correlation_id}")
+    
+    # Generate a new correlation ID if none provided or invalid
+    return generate_request_id()
 ```
 
 ### Port Configuration and Environment Variables

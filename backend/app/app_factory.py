@@ -25,7 +25,7 @@ FRONTEND_ENV_PATH = Path(__file__).parent.parent.parent / "frontend" / ".env"
 # Import the blueprints
 from backend.app.routes.session import session_bp
 from backend.app.routes.upload import upload_bp
-from backend.app.utils.middleware import setup_request_logging
+from backend.app.utils.middleware import setup_request_logging, setup_request_validation
 from backend.app.utils.auth import setup_auth_middleware
 
 # Initialize rate limiter with remote address as the key function
@@ -189,6 +189,9 @@ def create_app(test_config=None):
     
     # Set up request logging middleware
     setup_request_logging(app)
+    
+    # Set up request validation middleware
+    setup_request_validation(app)
     
     # Set up authentication middleware
     setup_auth_middleware(app)

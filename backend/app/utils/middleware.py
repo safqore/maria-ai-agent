@@ -7,7 +7,8 @@ This module provides middleware functions for Flask request/response processing.
 import time
 import logging
 import uuid
-from flask import request, g, current_app
+import json
+from flask import request, g, current_app, jsonify
 from functools import wraps
 
 # Configure logger
@@ -17,6 +18,30 @@ logger = logging.getLogger(__name__)
 def generate_request_id():
     """Generate a unique request ID."""
     return str(uuid.uuid4())
+
+def extract_correlation_id():
+    """
+    Extract correlation ID from request headers.
+    
+    If the client provides a correlation ID, use it.
+    Otherwise, generate a new one.
+    
+    Returns:
+        str: The correlation ID for the request
+    """
+    # Check if client provided a correlation ID
+    client_correlation_id = request.headers.get('X-Correlation-ID')
+    
+    if client_correlation_id:
+        # Validate the format (assuming UUID format)
+        try:
+            uuid.UUID(client_correlation_id)
+            return client_correlation_id
+        except ValueError:
+            logger.warning(f"Invalid correlation ID format: {client_correlation_id}")
+    
+    # Generate a new correlation ID if none provided or invalid
+    return generate_request_id()
 
 def log_request_middleware():
     """
@@ -33,8 +58,21 @@ def log_request_middleware():
         # Add request start time to measure duration
         g.request_start_time = time.time()
         
-        # Generate correlation ID for request tracking
-        g.correlation_id = generate_request_id()
+        # Extract or generate correlation ID for request tracking
+        g.correlation_id = extract_correlation_id()
+        
+        # Capture request information for logging
+        request_info = {
+            "method": request.method,
+            "path": request.path,
+            "correlation_id": g.correlation_id,
+            "client_ip": request.remote_addr,
+            "user_agent": request.headers.get('User-Agent', 'Unknown'),
+            "content_type": request.headers.get('Content-Type', 'Unknown')
+        }
+        
+        # Store request info for later logging
+        g.request_info = request_info
         
         # Log request information
         logger.info(
@@ -49,13 +87,34 @@ def log_request_middleware():
         duration = time.time() - g.get('request_start_time', time.time())
         duration_ms = round(duration * 1000, 2)
         
-        # Log response information
-        logger.info(
-            f"Request completed: {request.method} {request.path} "
-            f"| Status: {response.status_code} "
-            f"| Time: {duration_ms}ms "
-            f"| Correlation ID: {g.get('correlation_id', 'unknown')}"
-        )
+        # Get stored request info
+        request_info = getattr(g, 'request_info', {})
+        
+        # Add response information
+        response_info = {
+            **request_info,
+            "status_code": response.status_code,
+            "duration_ms": duration_ms,
+            "response_size": len(response.get_data(as_text=True)) if hasattr(response, 'get_data') else 0
+        }
+        
+        # Log more detailed response information based on status code
+        if 400 <= response.status_code < 600:
+            log_level = logging.WARNING if response.status_code < 500 else logging.ERROR
+            logger.log(
+                log_level,
+                f"Request failed: {request.method} {request.path} "
+                f"| Status: {response.status_code} "
+                f"| Time: {duration_ms}ms "
+                f"| Correlation ID: {g.get('correlation_id', 'unknown')}"
+            )
+        else:
+            logger.info(
+                f"Request completed: {request.method} {request.path} "
+                f"| Status: {response.status_code} "
+                f"| Time: {duration_ms}ms "
+                f"| Correlation ID: {g.get('correlation_id', 'unknown')}"
+            )
         
         # Add correlation ID to response headers
         response.headers['X-Correlation-ID'] = g.get('correlation_id', 'unknown')
@@ -63,6 +122,41 @@ def log_request_middleware():
         return response
 
     return before_request, after_request
+
+def validate_json_middleware():
+    """
+    Middleware to validate JSON requests.
+    
+    This middleware checks if the request is a JSON request and validates that
+    it can be parsed correctly.
+    
+    Returns:
+        tuple: Functions for before_request
+    """
+    def before_request():
+        """Validate JSON content before handling the request."""
+        # Skip validation for non-JSON content types
+        content_type = request.headers.get('Content-Type', '')
+        if not content_type.startswith('application/json'):
+            return None
+            
+        # Skip validation for GET, OPTIONS, HEAD requests
+        if request.method in ['GET', 'OPTIONS', 'HEAD']:
+            return None
+            
+        # Try to parse JSON content
+        try:
+            if request.data:
+                _ = request.get_json()
+        except Exception as e:
+            logger.warning(f"Invalid JSON in request: {str(e)}")
+            return jsonify({
+                "error": "Invalid JSON format",
+                "message": "The request body could not be parsed as JSON",
+                "correlation_id": getattr(g, 'correlation_id', 'unknown')
+            }), 400
+    
+    return before_request
 
 def setup_request_logging(app):
     """
@@ -74,3 +168,13 @@ def setup_request_logging(app):
     before_request, after_request = log_request_middleware()
     app.before_request(before_request)
     app.after_request(after_request)
+
+def setup_request_validation(app):
+    """
+    Set up request validation for a Flask application.
+    
+    Args:
+        app: Flask application object
+    """
+    before_request = validate_json_middleware()
+    app.before_request(before_request)
