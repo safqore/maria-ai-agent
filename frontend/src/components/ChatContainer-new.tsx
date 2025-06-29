@@ -5,6 +5,7 @@ import TypingEffect from './TypingEffect';
 import FileUpload from './FileUpload';
 import { States, Transitions } from '../state/FiniteStateMachine';
 import useChatStateMachine from '../hooks/useChatStateMachine-new';
+import { useSessionUUID } from '../contexts/SessionContext';
 import { Message } from '../utils/chatUtils';
 import '../styles.css';
 
@@ -13,20 +14,21 @@ const welcomeMessage =
   "👋 Hi there! I'm Maria, your AI guide at Safqore. Ready to discover how we can help you grow?";
 const initialBotMessage: Message = { text: welcomeMessage, isUser: false, isTyping: true, id: 0 };
 
-interface ChatContainerProps {
-  sessionUUID: string; // The current session UUID, passed from App
-}
-
 /**
  * Main chat container component. Handles chat state, user input, and session enforcement.
  * All user actions (chat, button, file) enforce UUID checks before proceeding.
+ *
+ * Uses SessionContext for session management instead of requiring sessionUUID as a prop.
  */
-function ChatContainer({ sessionUUID }: ChatContainerProps) {
+function ChatContainer() {
   const [messages, setMessages] = useState<Message[]>([initialBotMessage]);
   const [userInput, setUserInput] = useState<string>('');
   const [isInputDisabled, setIsInputDisabled] = useState<boolean>(true);
   // State for session errors - will be used in future implementation
   const [isButtonGroupVisible, setIsButtonGroupVisible] = useState<boolean>(true);
+
+  // Get session UUID from context
+  const sessionUUID = useSessionUUID();
 
   const {
     fsm,

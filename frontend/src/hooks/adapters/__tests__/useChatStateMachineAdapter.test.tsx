@@ -11,7 +11,7 @@ const mockFsm = {
   transition: jest.fn(),
   canTransition: jest.fn().mockReturnValue(true),
   getResponseDisplayValue: jest.fn().mockImplementation(val => val),
-  getState: jest.fn().mockReturnValue(States.WELCOME_MSG)
+  getState: jest.fn().mockReturnValue(States.WELCOME_MSG),
 } as unknown as StateMachine;
 
 // Wrapper component to provide the ChatContext
@@ -26,7 +26,7 @@ describe('useChatStateMachineAdapter', () => {
 
   it('should initialize with the FSM state', () => {
     const { result } = renderHook(() => useChatStateMachineAdapter(mockFsm), {
-      wrapper: TestWrapper
+      wrapper: TestWrapper,
     });
 
     expect(result.current.fsm).toBe(mockFsm);
@@ -35,7 +35,7 @@ describe('useChatStateMachineAdapter', () => {
 
   it('should provide getCurrentState method', () => {
     const { result } = renderHook(() => useChatStateMachineAdapter(mockFsm), {
-      wrapper: TestWrapper
+      wrapper: TestWrapper,
     });
 
     expect(result.current.getCurrentState()).toBe(States.WELCOME_MSG);
@@ -44,7 +44,7 @@ describe('useChatStateMachineAdapter', () => {
 
   it('should provide performTransition method', () => {
     const { result } = renderHook(() => useChatStateMachineAdapter(mockFsm), {
-      wrapper: TestWrapper
+      wrapper: TestWrapper,
     });
 
     act(() => {
@@ -57,7 +57,7 @@ describe('useChatStateMachineAdapter', () => {
 
   it('should provide reset method', () => {
     const { result } = renderHook(() => useChatStateMachineAdapter(mockFsm), {
-      wrapper: TestWrapper
+      wrapper: TestWrapper,
     });
 
     act(() => {
@@ -69,7 +69,7 @@ describe('useChatStateMachineAdapter', () => {
 
   it('should provide canTransition method', () => {
     const { result } = renderHook(() => useChatStateMachineAdapter(mockFsm), {
-      wrapper: TestWrapper
+      wrapper: TestWrapper,
     });
 
     expect(result.current.canTransition(Transitions.WELCOME_MSG_COMPLETE)).toBe(true);

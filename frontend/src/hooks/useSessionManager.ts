@@ -1,6 +1,6 @@
 /**
  * Session Manager Hook
- * 
+ *
  * A custom React hook for managing user sessions, providing:
  * - Session restoration
  * - Session expiration handling
@@ -30,19 +30,19 @@ interface UseSessionManagerResult {
 
 /**
  * Custom hook for centralized session management
- * 
+ *
  * @returns Session management functions and state
- * 
+ *
  * @example
  * ```tsx
- * const { 
- *   sessionId, 
- *   isLoading, 
- *   error, 
- *   resetSession, 
- *   getSessionHeaders 
+ * const {
+ *   sessionId,
+ *   isLoading,
+ *   error,
+ *   resetSession,
+ *   getSessionHeaders
  * } = useSessionManager();
- * 
+ *
  * // Use in API calls
  * const headers = getSessionHeaders();
  * const response = await fetch('/api/data', { headers });
@@ -52,7 +52,7 @@ export function useSessionManager(): UseSessionManagerResult {
   // Use the existing session UUID hook
   const { sessionUUID, loading, error, resetSession } = useSessionUUID();
   const [isSessionValid, setIsSessionValid] = useState<boolean>(false);
-  
+
   // Check if the session is valid
   useEffect(() => {
     if (sessionUUID && !loading) {
@@ -74,11 +74,11 @@ export function useSessionManager(): UseSessionManagerResult {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-    
+
     if (sessionUUID) {
       headers['X-Session-ID'] = sessionUUID;
     }
-    
+
     return headers;
   }, [sessionUUID]);
 

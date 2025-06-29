@@ -1,6 +1,6 @@
 /**
  * Accessibility Hooks
- * 
+ *
  * Custom React hooks for improving accessibility, including:
  * - Focus management
  * - Keyboard navigation
@@ -24,25 +24,22 @@ interface UseFocusTrapOptions {
 
 /**
  * Hook to manage a focus trap within a container element
- * 
+ *
  * @param containerRef - Ref to the container element
  * @param options - Configuration options
  * @returns Object with function to activate/deactivate the focus trap
- * 
+ *
  * @example
  * ```tsx
  * const modalRef = useRef<HTMLDivElement>(null);
- * const { activate, deactivate } = useFocusTrap(modalRef, { 
+ * const { activate, deactivate } = useFocusTrap(modalRef, {
  *   active: isModalOpen,
  *   autoFocus: true,
  *   onEscape: closeModal
  * });
  * ```
  */
-export function useFocusTrap(
-  containerRef: RefObject<HTMLElement>,
-  options: UseFocusTrapOptions
-) {
+export function useFocusTrap(containerRef: RefObject<HTMLElement>, options: UseFocusTrapOptions) {
   const { active, autoFocus = true, onEscape } = options;
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
@@ -59,12 +56,10 @@ export function useFocusTrap(
       'select:not([disabled])',
       'textarea:not([disabled])',
       '[tabindex]:not([tabindex="-1"])',
-      '[contenteditable]'
+      '[contenteditable]',
     ];
 
-    const elements = containerRef.current.querySelectorAll(
-      focusableSelectors.join(',')
-    );
+    const elements = containerRef.current.querySelectorAll(focusableSelectors.join(','));
 
     return Array.from(elements) as HTMLElement[];
   }, [containerRef]);
@@ -160,7 +155,7 @@ export function useFocusTrap(
 
   return {
     activate: () => {},
-    deactivate: () => {}
+    deactivate: () => {},
   };
 }
 
@@ -176,19 +171,19 @@ interface UseAnnouncerOptions {
 
 /**
  * Hook to create an accessible screen reader announcer
- * 
+ *
  * @param options - Configuration options
  * @returns Functions to announce messages and the announcer element
- * 
+ *
  * @example
  * ```tsx
  * const { announce, announcer } = useAnnouncer();
- * 
+ *
  * const handleAction = () => {
  *   // Perform action
  *   announce('Action completed successfully');
  * };
- * 
+ *
  * return (
  *   <div>
  *     {announcer}
@@ -198,10 +193,7 @@ interface UseAnnouncerOptions {
  * ```
  */
 export function useAnnouncer(options: UseAnnouncerOptions = {}) {
-  const {
-    politeness = 'polite',
-    clearTimeout = 5000
-  } = options;
+  const { politeness = 'polite', clearTimeout = 5000 } = options;
 
   const [message, setMessage] = useState('');
   const timeoutRef = useRef<number | null>(null);
@@ -253,8 +245,8 @@ export function useAnnouncer(options: UseAnnouncerOptions = {}) {
         overflow: 'hidden',
         clip: 'rect(0, 0, 0, 0)',
         whiteSpace: 'nowrap',
-        borderWidth: 0
-      }
+        borderWidth: 0,
+      },
     },
     message
   );

@@ -25,17 +25,12 @@ console.error = (...args) => {
   ) {
     return;
   }
-  
+
   // Silence React act() warnings - these happen with async hooks and don't necessarily indicate problems
   // when tests are otherwise passing
-  if (
-    args.some(
-      arg =>
-        typeof arg === 'string' && arg.includes('was not wrapped in act')
-    )
-  ) {
+  if (args.some(arg => typeof arg === 'string' && arg.includes('was not wrapped in act'))) {
     return;
   }
-  
+
   originalError(...args);
 };

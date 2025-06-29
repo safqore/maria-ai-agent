@@ -1,6 +1,6 @@
 /**
  * useFetch Hook
- * 
+ *
  * A custom React hook for data fetching that provides:
  * - Type-safe API calls
  * - Loading states
@@ -40,7 +40,7 @@ interface UseFetchOptions<D = any> {
 
 /**
  * A custom hook for data fetching with built-in loading states, error handling, and retry capabilities.
- * 
+ *
  * @template T - The type of data returned from the API call
  * @template P - The parameters for the API function
  * @param apiFunction - The API function to call
@@ -51,7 +51,7 @@ interface UseFetchOptions<D = any> {
  * @param options.retryDelay - Delay between retry attempts in milliseconds (default: 1000)
  * @param options.retryErrorTypes - Types of errors that should trigger a retry (default: NETWORK and TIMEOUT)
  * @returns An object containing the data, loading state, error, execute function, cancel function, and retry function
- * 
+ *
  * @example
  * ```tsx
  * // Basic usage
@@ -59,23 +59,23 @@ interface UseFetchOptions<D = any> {
  *   UserApi.getProfile,
  *   { immediate: true }
  * );
- * 
+ *
  * // With retry configuration
  * const { data, isLoading, error, execute, retry } = useFetch(
  *   UserApi.getProfile,
- *   { 
+ *   {
  *     immediate: true,
  *     retryCount: 5,
  *     retryDelay: 500,
  *     retryErrorTypes: [ApiErrorType.NETWORK, ApiErrorType.TIMEOUT, ApiErrorType.SERVER]
  *   }
  * );
- * 
+ *
  * // To manually retry a failed request
  * const handleRetry = () => {
  *   retry();
  * };
- * 
+ *
  * // To cancel an in-flight request
  * const handleCancel = () => {
  *   cancel();
@@ -86,14 +86,14 @@ export function useFetch<T, P extends any[] = []>(
   apiFunction: (...args: P) => Promise<T>,
   options: UseFetchOptions<T> = {}
 ) {
-  const { 
-    immediate = false, 
+  const {
+    immediate = false,
     initialData = null,
     retryCount = 3,
     retryDelay = 1000,
-    retryErrorTypes = [ApiErrorType.NETWORK, ApiErrorType.TIMEOUT]
+    retryErrorTypes = [ApiErrorType.NETWORK, ApiErrorType.TIMEOUT],
   } = options;
-  
+
   const [state, setState] = useState<UseFetchState<T>>({
     data: initialData,
     isLoading: false, // Always start with false to avoid React warnings
@@ -128,70 +128,75 @@ export function useFetch<T, P extends any[] = []>(
     async (...args: P): Promise<T | null> => {
       // Reset retry counter on new execution
       retryAttemptsRef.current = 0;
-      
+
       // Cancel any in-flight request
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
-      
+
       // Create a new AbortController for this request
       abortControllerRef.current = new AbortController();
-      
+
       // For immediate execution, we already set isLoading in the initial state
       if (!immediate || didExecuteRef.current) {
         // Update state to indicate loading
         setState(prevState => ({ ...prevState, isLoading: true, error: null }));
       }
-      
+
       const executeWithRetry = async (retryAttempt: number): Promise<T | null> => {
         try {
           // Add signal to the last argument if it's an object (fetch options)
           const lastArg = args.length > 0 ? args[args.length - 1] : undefined;
-          if (lastArg && typeof lastArg === 'object' && !Array.isArray(lastArg) && abortControllerRef.current) {
+          if (
+            lastArg &&
+            typeof lastArg === 'object' &&
+            !Array.isArray(lastArg) &&
+            abortControllerRef.current
+          ) {
             (args[args.length - 1] as any).signal = abortControllerRef.current.signal;
           }
-          
+
           // Execute the API function
           const result = await apiFunction(...args);
-          
+
           // Update state with the result
           setState({
             data: result,
             isLoading: false,
             error: null,
           });
-          
+
           return result;
         } catch (error: unknown) {
           // Don't update state if the request was aborted
           if (error instanceof DOMException && error.name === 'AbortError') {
             return null;
           }
-          
+
           // Handle other errors using the createApiError utility
           const apiError = createApiError(error);
-          
+
           // Check if we should retry
           if (retryAttempt < retryCount && shouldRetry(apiError)) {
             // Wait before retrying (with exponential backoff)
             const delayTime = retryDelay * Math.pow(2, retryAttempt);
             await sleep(delayTime);
-            
+
             // Retry the request
             return executeWithRetry(retryAttempt + 1);
           }
-          
+
           // Max retries reached or not a retryable error
           setState({
             data: null,
             isLoading: false,
             error: apiError,
           });
-          
+
           return null;
         }
       };
-      
+
       return executeWithRetry(0);
     },
     [apiFunction, retryCount, retryDelay, shouldRetry]
@@ -209,22 +214,22 @@ export function useFetch<T, P extends any[] = []>(
 
   // Execute the request immediately if specified, but only once
   const didExecuteRef = useRef(false);
-  
+
   useEffect(() => {
     // Only run this effect once
     if (immediate && !didExecuteRef.current) {
       // Mark that we've executed to prevent infinite loops
       didExecuteRef.current = true;
-      
+
       // Set loading state first, synchronously
       setState(prevState => ({ ...prevState, isLoading: true }));
-      
+
       // Execute the fetch without setTimeout - simpler approach
       // React act() should handle this but there are edge cases especially with async operations
       // For testing, we silence act warnings in the specific test rather than making the code more complex
       (execute as Function)();
     }
-    
+
     // Clean up on unmount
     return () => {
       cancel();

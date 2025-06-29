@@ -1,6 +1,6 @@
 /**
  * Integration tests for data fetching, session management, logging, and accessibility features
- * 
+ *
  * This file contains integration tests for components and hooks related to data fetching,
  * session management, error logging, and accessibility features.
  */
@@ -22,18 +22,18 @@ jest.mock('../utils/logger', () => ({
     warn: jest.fn(),
     error: jest.fn(),
     group: jest.fn(),
-    logPerformance: jest.fn()
+    logPerformance: jest.fn(),
   },
-  measurePerformance: jest.fn((label, func) => func())
+  measurePerformance: jest.fn((label, func) => func()),
 }));
 
 // Test component for useFetch
-function TestFetchComponent({ 
-  apiFunction, 
-  immediate = false 
-}: { 
-  apiFunction: (...args: any[]) => Promise<any>, 
-  immediate?: boolean 
+function TestFetchComponent({
+  apiFunction,
+  immediate = false,
+}: {
+  apiFunction: (...args: any[]) => Promise<any>;
+  immediate?: boolean;
 }) {
   const { data, isLoading, error, execute } = useFetch(apiFunction, { immediate });
 
@@ -42,7 +42,9 @@ function TestFetchComponent({
       <div data-testid="loading">{isLoading ? 'Loading' : 'Not Loading'}</div>
       <div data-testid="data">{data ? JSON.stringify(data) : 'No Data'}</div>
       <div data-testid="error">{error ? error.message : 'No Error'}</div>
-      <button data-testid="execute" onClick={() => execute()}>Execute</button>
+      <button data-testid="execute" onClick={() => execute()}>
+        Execute
+      </button>
     </div>
   );
 }
@@ -74,10 +76,10 @@ describe('Frontend Core Features Integration Tests', () => {
   describe('useFetch hook', () => {
     it('should handle successful API calls', async () => {
       render(<TestFetchComponent apiFunction={successApi} />);
-      
+
       expect(screen.getByTestId('loading')).toHaveTextContent('Not Loading');
       screen.getByTestId('execute').click();
-      
+
       expect(await screen.findByTestId('loading')).toHaveTextContent('Loading');
       await waitFor(() => {
         expect(screen.getByTestId('data')).toHaveTextContent('{"success":true}');
@@ -86,9 +88,9 @@ describe('Frontend Core Features Integration Tests', () => {
 
     it('should handle API errors', async () => {
       render(<TestFetchComponent apiFunction={failureApi} />);
-      
+
       screen.getByTestId('execute').click();
-      
+
       await waitFor(() => {
         expect(screen.getByTestId('error')).toHaveTextContent('API Error');
       });
@@ -98,14 +100,17 @@ describe('Frontend Core Features Integration Tests', () => {
   describe('Error logging', () => {
     it('should log API errors with context', async () => {
       const errorContext = { operation: 'test' };
-      
+
       try {
         await withErrorLogging(() => failureApi(), errorContext);
       } catch (error) {
         // Expected error
       }
-      
-      expect(logger.error).toHaveBeenCalledWith(expect.any(ApiError), expect.objectContaining(errorContext));
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.any(ApiError),
+        expect.objectContaining(errorContext)
+      );
     });
   });
 

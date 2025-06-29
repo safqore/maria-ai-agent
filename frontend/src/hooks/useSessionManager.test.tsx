@@ -9,7 +9,7 @@ jest.mock('./useSessionUUID', () => ({
 
 describe('useSessionManager', () => {
   const mockUseSessionUUID = useSessionUUIDModule.useSessionUUID as jest.Mock;
-  
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -30,7 +30,7 @@ describe('useSessionManager', () => {
     expect(result.current.error).toBeNull();
     expect(result.current.isSessionValid).toBe(true);
     expect(typeof result.current.resetSession).toBe('function');
-    
+
     // Test session headers
     const headers = result.current.getSessionHeaders();
     expect(headers['X-Session-ID']).toBe('test-uuid');
@@ -51,7 +51,7 @@ describe('useSessionManager', () => {
     expect(result.current.sessionId).toBe('');
     expect(result.current.isLoading).toBe(false);
     expect(result.current.isSessionValid).toBe(false);
-    
+
     // Test session headers with no UUID
     const headers = result.current.getSessionHeaders();
     expect(headers['X-Session-ID']).toBeUndefined();
@@ -74,7 +74,7 @@ describe('useSessionManager', () => {
 
   it('should reflect error state from useSessionUUID', () => {
     const errorMessage = 'Session error';
-    
+
     // Set up the mock to return an error state
     mockUseSessionUUID.mockReturnValue({
       sessionUUID: '',
@@ -90,7 +90,7 @@ describe('useSessionManager', () => {
 
   it('should call resetSession from useSessionUUID', async () => {
     const mockReset = jest.fn().mockResolvedValue(undefined);
-    
+
     // Set up the mock to return a resetSession function
     mockUseSessionUUID.mockReturnValue({
       sessionUUID: 'test-uuid',
@@ -103,7 +103,7 @@ describe('useSessionManager', () => {
 
     // Call resetSession
     await result.current.resetSession();
-    
+
     // Verify it was called
     expect(mockReset).toHaveBeenCalledTimes(1);
   });

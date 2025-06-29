@@ -1,6 +1,6 @@
 /**
  * FSM State Machine Visualization
- * 
+ *
  * This file provides a visual representation of the FSM states and their transitions.
  * It's meant to be used for development and debugging purposes only.
  */
@@ -54,7 +54,7 @@ interface FsmVisualizerProps {
 
 /**
  * Component to visualize FSM states and valid transitions
- * 
+ *
  * This is a development tool to help understand the current state of the FSM
  * and what transitions are valid from that state.
  */
@@ -126,25 +126,25 @@ const FsmVisualizer: React.FC<FsmVisualizerProps> = ({ fsm }) => {
   return (
     <div style={styles.container}>
       <div style={styles.title}>FSM Visualization</div>
-      
+
       <div>Current State: {currentState}</div>
       <div>UI: {getUiStateDescription(currentState)}</div>
-      
+
       <div style={{ marginTop: '10px' }}>States:</div>
       {Object.keys(States).map(stateKey => {
         const state = stateKey as keyof typeof States;
         const isCurrentState = States[state] === currentState;
-        
+
         return (
-          <div 
-            key={stateKey} 
+          <div
+            key={stateKey}
             style={{
               ...styles.stateItem,
               ...(isCurrentState ? styles.currentState : {}),
             }}
           >
             {States[state]}
-            
+
             <div style={styles.transitionsList}>
               {stateTransitions[States[state]]?.map(transition => (
                 <div key={transition} style={styles.transitionItem}>

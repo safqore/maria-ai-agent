@@ -52,19 +52,21 @@ interface FsmVisualizerProps {
 /**
  * A component that visualizes the current state of the FSM for development purposes.
  * This component is intended for debugging and development use only.
- * 
+ *
  * @param {FsmVisualizerProps} props - Component props
  * @returns {React.ReactElement | null} The visualizer component or null if not visible
  */
-const FsmVisualizer: React.FC<FsmVisualizerProps> = ({ isVisible = process.env.NODE_ENV !== 'production' }) => {
+const FsmVisualizer: React.FC<FsmVisualizerProps> = ({
+  isVisible = process.env.NODE_ENV !== 'production',
+}) => {
   const { state } = useChat();
   const { currentFsmState } = state;
-  
+
   // Don't render in production unless explicitly enabled
   if (!isVisible) {
     return null;
   }
-  
+
   // Map that defines valid state transitions for visualization
   const stateTransitionMap: { [key in States]?: Transitions[] } = {
     [States.WELCOME_MSG]: [Transitions.WELCOME_MSG_COMPLETE],
@@ -77,20 +79,20 @@ const FsmVisualizer: React.FC<FsmVisualizerProps> = ({ isVisible = process.env.N
     [States.COLLECTING_EMAIL]: [Transitions.EMAIL_PROVIDED],
     [States.CREATE_BOT]: [Transitions.BOT_CREATION_INITIALISED],
   };
-  
+
   // Get available transitions for current state
   const availableTransitions = currentFsmState ? stateTransitionMap[currentFsmState] || [] : [];
-  
+
   return (
     <div style={styles.container}>
       <h3 style={styles.sectionHeading}>FSM Visualizer (Dev Only)</h3>
-      <div style={styles.stateDisplay}>
-        Current State: {currentFsmState || 'Unknown'}
-      </div>
+      <div style={styles.stateDisplay}>Current State: {currentFsmState || 'Unknown'}</div>
       <h3 style={styles.sectionHeading}>Available Transitions:</h3>
       <ul style={styles.transitionsList}>
-        {availableTransitions.map((transition) => (
-          <li style={styles.transitionItem} key={transition}>{transition}</li>
+        {availableTransitions.map(transition => (
+          <li style={styles.transitionItem} key={transition}>
+            {transition}
+          </li>
         ))}
         {availableTransitions.length === 0 && <li style={styles.transitionItem}>None</li>}
       </ul>

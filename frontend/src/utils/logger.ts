@@ -1,6 +1,6 @@
 /**
  * Logger Utility
- * 
+ *
  * A centralized logging system for the frontend application that:
  * - Provides consistent logging across the application
  * - Respects environment configuration for verbose logging
@@ -17,7 +17,7 @@ export enum LogLevel {
   DEBUG = 'debug',
   INFO = 'info',
   WARN = 'warn',
-  ERROR = 'error'
+  ERROR = 'error',
 }
 
 /**
@@ -39,7 +39,7 @@ interface LoggerConfig {
  * Default configuration
  */
 const defaultConfig: LoggerConfig = {
-  debugInProduction: false
+  debugInProduction: false,
 };
 
 /**
@@ -51,13 +51,13 @@ class Logger {
   constructor(config: Partial<LoggerConfig> = {}) {
     this.config = {
       ...defaultConfig,
-      ...config
+      ...config,
     };
   }
 
   /**
    * Log a debug message (only in development or when verbose logging is enabled)
-   * 
+   *
    * @param message - The message to log
    * @param data - Additional contextual data
    */
@@ -69,7 +69,7 @@ class Logger {
 
   /**
    * Log an info message
-   * 
+   *
    * @param message - The message to log
    * @param data - Additional contextual data
    */
@@ -81,7 +81,7 @@ class Logger {
 
   /**
    * Log a warning message
-   * 
+   *
    * @param message - The message to log
    * @param data - Additional contextual data
    */
@@ -93,7 +93,7 @@ class Logger {
 
   /**
    * Log an error message
-   * 
+   *
    * @param error - The error to log
    * @param context - Additional context for the error
    */
@@ -101,17 +101,17 @@ class Logger {
     if (this.shouldLog(LogLevel.ERROR)) {
       const errorMessage = error instanceof Error ? error.message : error;
       const errorStack = error instanceof Error ? error.stack : undefined;
-      
+
       console.error(`[ERROR] ${errorMessage}`, {
         stack: errorStack,
-        ...context
+        ...context,
       });
     }
   }
 
   /**
    * Group related log messages together
-   * 
+   *
    * @param groupName - Name for the log group
    * @param logFunc - Function that contains the logs to group
    */
@@ -130,7 +130,7 @@ class Logger {
 
   /**
    * Log performance measurement
-   * 
+   *
    * @param label - Label for the performance measurement
    * @param startTime - Start time from performance.now()
    */
@@ -155,9 +155,9 @@ class Logger {
 
     // Log debug messages only in development or when verbose logging is enabled
     if (level === LogLevel.DEBUG) {
-      return process.env.NODE_ENV !== 'production' || 
-             VERBOSE_LOGGING || 
-             this.config.debugInProduction;
+      return (
+        process.env.NODE_ENV !== 'production' || VERBOSE_LOGGING || this.config.debugInProduction
+      );
     }
 
     return false;
