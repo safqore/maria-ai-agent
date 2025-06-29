@@ -170,10 +170,16 @@ def create_app(test_config=None):
     api_prefix = os.getenv("API_PREFIX", "/api")
     versioned_prefix = f"{api_prefix}/{api_version}"
     
-    # Apply middleware to blueprints
-    logger.info("Applying middleware to blueprints")
-    apply_middleware_to_blueprint(session_bp)
-    apply_middleware_to_blueprint(upload_bp)
+    # Skip middleware application when testing to avoid multiple registration issues
+    skip_middleware = app.config.get("SKIP_MIDDLEWARE", False)
+    
+    if not skip_middleware:
+        # Apply middleware to blueprints
+        logger.info("Applying middleware to blueprints")
+        apply_middleware_to_blueprint(session_bp)
+        apply_middleware_to_blueprint(upload_bp)
+    else:
+        logger.info("Skipping middleware application due to SKIP_MIDDLEWARE flag")
     
     # Register blueprints with proper API versioning
     # First register with empty prefix for backward compatibility

@@ -16,9 +16,23 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 
 
+# Global variable to store a custom database URL (used for testing)
+_custom_database_url = None
+
+def set_database_url(url):
+    """Set a custom database URL, overriding environment variables."""
+    global _custom_database_url
+    _custom_database_url = url
+
 # Create SQLAlchemy engine from environment variables
 def get_database_url():
-    """Create database URL from environment variables."""
+    """Create database URL from environment variables or use custom URL."""
+    # If a custom URL has been set (for testing purposes), use that
+    global _custom_database_url
+    if _custom_database_url is not None:
+        return _custom_database_url
+        
+    # Otherwise build PostgreSQL URL from environment variables
     db_user = os.getenv("POSTGRES_USER")
     db_password = os.getenv("POSTGRES_PASSWORD")
     db_host = os.getenv("POSTGRES_HOST", "localhost")
