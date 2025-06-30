@@ -5,7 +5,8 @@
  * - Sending user messages
  * - Receiving bot responses
  */
-import { API_BASE_URL, DEFAULT_HEADERS, ApiError } from './config';
+import { ApiError } from './config';
+import { post } from './apiClient';
 
 /**
  * Message object representing a single chat message
@@ -24,6 +25,7 @@ export interface ChatResponse {
   status: 'success' | 'error';
   message?: Message;
   error?: string;
+  correlationId?: string;
 }
 
 /**
@@ -38,25 +40,20 @@ export const ChatApi = {
    */
   sendMessage: async (text: string, sessionUUID: string): Promise<ChatResponse> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/chat`, {
-        method: 'POST',
-        headers: DEFAULT_HEADERS,
-        body: JSON.stringify({
-          text,
-          session_uuid: sessionUUID,
-        }),
+      const response = await post<ChatResponse>('chat', {
+        text,
+        session_uuid: sessionUUID,
       });
-
-      if (!response.ok) {
-        throw new ApiError(`Failed to send message: ${response.statusText}`, response.status);
-      }
-
-      return await response.json();
+      
+      // Add correlation ID to the response
+      return {
+        ...response.data,
+        correlationId: response.correlationId
+      };
     } catch (error) {
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      throw new ApiError(`Failed to send message: ${(error as Error).message}`);
+      throw error instanceof ApiError 
+        ? error 
+        : new ApiError(`Failed to send message: ${(error as Error).message}`);
     }
   },
 };

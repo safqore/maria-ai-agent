@@ -6,7 +6,8 @@
  * - File deletions
  * - Progress tracking
  */
-import { API_BASE_URL, ApiError } from './config';
+import { ApiError } from './config';
+import { del, createApiUrl } from './apiClient';
 
 /**
  * File upload response from the backend API
@@ -14,6 +15,7 @@ import { API_BASE_URL, ApiError } from './config';
 export interface FileUploadResponse {
   status: 'success' | 'error';
   message: string;
+  correlationId?: string;
   files?: Array<{
     name: string;
     url: string;
@@ -27,6 +29,7 @@ export interface FileUploadResponse {
 export interface FileDeleteResponse {
   status: 'success' | 'error';
   message: string;
+  correlationId?: string;
 }
 
 /**
@@ -57,8 +60,11 @@ export const FileApi = {
         formData.append('session_uuid', sessionUUID);
 
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', `${API_BASE_URL}/upload`);
-
+        xhr.open('POST', createApiUrl('upload'));
+        
+        // Add API version header
+        xhr.setRequestHeader('Accept', 'application/json; version=v1');
+        
         // Set up progress tracking if callback provided
         if (onProgress) {
           xhr.upload.onprogress = e => {
@@ -73,6 +79,13 @@ export const FileApi = {
           if (xhr.status === 200) {
             try {
               const response = JSON.parse(xhr.response) as FileUploadResponse;
+              
+              // Extract correlation ID from response headers
+              const correlationId = xhr.getResponseHeader('X-Correlation-ID');
+              if (correlationId) {
+                response.correlationId = correlationId;
+              }
+              
               resolve(response);
             } catch (error) {
               reject(new ApiError(`Invalid response format: ${(error as Error).message}`));
@@ -101,25 +114,22 @@ export const FileApi = {
    */
   deleteFile: async (filename: string, sessionUUID: string): Promise<FileDeleteResponse> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/delete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await del<FileDeleteResponse>('delete', {
         body: JSON.stringify({
           filename,
           session_uuid: sessionUUID,
         }),
       });
-
-      if (!response.ok) {
-        throw new ApiError(`Failed to delete file: ${response.statusText}`, response.status);
-      }
-
-      return await response.json();
+      
+      // Add correlation ID to the response
+      return {
+        ...response.data,
+        correlationId: response.correlationId
+      };
     } catch (error) {
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      throw new ApiError(`Failed to delete file: ${(error as Error).message}`);
+      throw error instanceof ApiError 
+        ? error 
+        : new ApiError(`Failed to delete file: ${(error as Error).message}`);
     }
   },
 };

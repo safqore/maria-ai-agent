@@ -5,7 +5,16 @@
  */
 
 // Config exports
-export { API_BASE_URL, ApiError } from './config';
+export { ApiError, ApiErrorType } from './config';
+
+// API Client exports
+export { 
+  get, post, put, patch, del, 
+  apiClient,
+  createApiUrl,
+  extractCorrelationId
+} from './apiClient';
+export type { ApiRequestConfig, ApiResponse } from './apiClient';
 
 // Session API exports
 export { SessionApi } from './sessionApi';

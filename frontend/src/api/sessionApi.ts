@@ -6,7 +6,8 @@
  * - UUID validation
  * - Session persistence
  */
-import { API_BASE_URL, DEFAULT_HEADERS, ApiError } from './config';
+import { ApiError } from './config';
+import { post, get } from './apiClient';
 
 /**
  * UUID response from the backend API
@@ -16,6 +17,7 @@ export interface UUIDResponse {
   uuid: string | null;
   message: string;
   details?: Record<string, unknown>;
+  correlationId?: string;
 }
 
 /**
@@ -28,21 +30,17 @@ export const SessionApi = {
    */
   generateUUID: async (): Promise<UUIDResponse> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/generate-uuid`, {
-        method: 'POST',
-        headers: DEFAULT_HEADERS,
-      });
-
-      if (!response.ok) {
-        throw new ApiError(`Failed to generate UUID: ${response.statusText}`, response.status);
-      }
-
-      return await response.json();
+      const response = await post<UUIDResponse>('generate-uuid');
+      
+      // Add correlation ID to the response
+      return {
+        ...response.data,
+        correlationId: response.correlationId
+      };
     } catch (error) {
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      throw new ApiError(`Failed to generate UUID: ${(error as Error).message}`);
+      throw error instanceof ApiError 
+        ? error 
+        : new ApiError(`Failed to generate UUID: ${(error as Error).message}`);
     }
   },
 
@@ -53,22 +51,17 @@ export const SessionApi = {
    */
   validateUUID: async (uuid: string): Promise<UUIDResponse> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/validate-uuid`, {
-        method: 'POST',
-        headers: DEFAULT_HEADERS,
-        body: JSON.stringify({ uuid }),
-      });
-
-      if (!response.ok) {
-        throw new ApiError(`Failed to validate UUID: ${response.statusText}`, response.status);
-      }
-
-      return await response.json();
+      const response = await post<UUIDResponse>('validate-uuid', { uuid });
+      
+      // Add correlation ID to the response
+      return {
+        ...response.data,
+        correlationId: response.correlationId
+      };
     } catch (error) {
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      throw new ApiError(`Failed to validate UUID: ${(error as Error).message}`);
+      throw error instanceof ApiError 
+        ? error 
+        : new ApiError(`Failed to validate UUID: ${(error as Error).message}`);
     }
   },
 
@@ -80,25 +73,20 @@ export const SessionApi = {
    */
   persistSession: async (uuid: string, consentUserData = false): Promise<UUIDResponse> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/persist-session`, {
-        method: 'POST',
-        headers: DEFAULT_HEADERS,
-        body: JSON.stringify({
-          uuid,
-          consent_user_data: consentUserData,
-        }),
+      const response = await post<UUIDResponse>('persist-session', {
+        uuid,
+        consent_user_data: consentUserData,
       });
-
-      if (!response.ok) {
-        throw new ApiError(`Failed to persist session: ${response.statusText}`, response.status);
-      }
-
-      return await response.json();
+      
+      // Add correlation ID to the response
+      return {
+        ...response.data,
+        correlationId: response.correlationId
+      };
     } catch (error) {
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      throw new ApiError(`Failed to persist session: ${(error as Error).message}`);
+      throw error instanceof ApiError 
+        ? error 
+        : new ApiError(`Failed to persist session: ${(error as Error).message}`);
     }
   },
 };
