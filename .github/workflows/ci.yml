@@ -1,0 +1,76 @@
+name: CI Pipeline
+
+# Triggers the workflow on push or pull request events for the specified branches
+on:
+  push:
+    branches: ["main", "feature/safq/alpha"]
+  pull_request:
+    branches: ["main", "feature/safq/alpha"]
+
+jobs:
+  backend-ci:
+    name: Backend CI
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r ../requirements.txt
+
+      - name: Check formatting with Black
+        run: black --check .
+
+      - name: Lint with Flake8
+        run: flake8 .
+
+      - name: Run tests with Pytest
+        run: pytest
+
+  frontend-ci:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting with Prettier
+        # We run prettier directly with --check instead of using the "format" script
+        run: npx prettier --check "src/**/*.{ts,tsx}"
+
+      - name: Lint with ESLint
+        run: npm run lint
+
+      - name: Run tests with Jest
+        # Adding --watchAll=false is good practice for CI environments
+        run: npm test -- --watchAll=false
+
+      - name: Build application
+        run: npm run build
