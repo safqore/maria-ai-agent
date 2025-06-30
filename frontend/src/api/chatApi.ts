@@ -16,6 +16,8 @@ export interface Message {
   text: string;
   sender: 'user' | 'bot';
   timestamp: number;
+  nextState?: string; // State to transition to after processing this message
+  nextTransition?: string; // Transition to trigger after processing this message
 }
 
 /**

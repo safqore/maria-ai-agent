@@ -110,6 +110,7 @@ _Document key architectural decisions and design patterns used in the project._
 | 8   | What is the port configuration strategy?                    | Environment variables only, never hardcoded, with dynamic CORS configuration.                     | config.py, package.json               |
 | 9   | How are architectural decisions documented and maintained?  | In questions-and-assumptions.md with rationale and implementation notes.                          | This document                         |
 | 10  | What is the testing strategy for architectural components?  | Unit tests for individual components, integration tests for critical paths only.                  | testing.md, plan.md                   |
+| 11  | How should FSM state transitions be handled via API?        | Use nextTransition property in API responses, with legacy support for nextState.                  | ChatContext.tsx, chatApi.ts           |
 
 ### Assumptions
 
@@ -125,9 +126,4 @@ _Document key architectural decisions and design patterns used in the project._
 | 8   | Dynamic CORS configuration adapts to port changes automatically.                 | Validated         | config.py                                |
 | 9   | Documentation is maintained alongside code changes.                              | Validated         | This document, README.md                 |
 | 10  | Unit tests are prioritized over integration tests for most components.           | Validated         | testing.md, plan.md                      |
-
----
-
-## Other Features
-
-_Add new sections as new features are added to the project._
+| 11  | Using FSM transitions is more robust than directly setting FSM states.           | Validated         | ChatContext.tsx, FiniteStateMachine.ts   |

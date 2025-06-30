@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useReducer, useCallback, ReactNode } from 'react';
 import { Message } from '../utils/chatUtils';
 import { StateMachine, States, Transitions } from '../state/FiniteStateMachine';
+import { ChatApi, ChatResponse, ApiError, ApiErrorType } from '../api';
+import { useSessionUUID } from '../hooks/useSessionUUID';
 
 /**
  * Button interface for chat interactions
@@ -28,8 +30,14 @@ export interface ChatState {
   isLoading: boolean;
   /** Error message, if any */
   error: string | null;
+  /** Error type for more specific handling */
+  errorType?: ApiErrorType;
   /** Current finite state machine state */
   currentFsmState?: States;
+  /** Last correlation ID from API for tracking and debugging */
+  lastCorrelationId?: string;
+  /** API request in progress flag */
+  isApiRequestInProgress: boolean;
 }
 
 /**
@@ -57,6 +65,12 @@ export enum ChatActionTypes {
   SET_LOADING = 'SET_LOADING',
   /** Update FSM state */
   UPDATE_FSM_STATE = 'UPDATE_FSM_STATE',
+  /** Set API request in progress flag */
+  SET_API_REQUEST_STATUS = 'SET_API_REQUEST_STATUS',
+  /** Set correlation ID from API response */
+  SET_CORRELATION_ID = 'SET_CORRELATION_ID',
+  /** Set detailed error information */
+  SET_DETAILED_ERROR = 'SET_DETAILED_ERROR',
 }
 
 /**
@@ -76,7 +90,13 @@ export type ChatAction =
   | { type: ChatActionTypes.SET_ERROR; payload: { error: string } }
   | { type: ChatActionTypes.CLEAR_ERROR; payload: Record<string, never> }
   | { type: ChatActionTypes.SET_LOADING; payload: { isLoading: boolean } }
-  | { type: ChatActionTypes.UPDATE_FSM_STATE; payload: { state: States } };
+  | { type: ChatActionTypes.UPDATE_FSM_STATE; payload: { state: States } }
+  | { type: ChatActionTypes.SET_API_REQUEST_STATUS; payload: { isInProgress: boolean } }
+  | { type: ChatActionTypes.SET_CORRELATION_ID; payload: { correlationId?: string } }
+  | { 
+      type: ChatActionTypes.SET_DETAILED_ERROR; 
+      payload: { error: string; errorType: ApiErrorType; correlationId?: string } 
+    };
 
 /**
  * Initial welcome message
@@ -96,7 +116,10 @@ const initialState: ChatState = {
   isButtonGroupVisible: true,
   isLoading: false,
   error: null,
+  errorType: undefined,
   currentFsmState: States.WELCOME_MSG,
+  lastCorrelationId: undefined,
+  isApiRequestInProgress: false,
 };
 
 /**
@@ -186,6 +209,26 @@ const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
         currentFsmState: action.payload.state,
       };
 
+    case ChatActionTypes.SET_API_REQUEST_STATUS:
+      return {
+        ...state,
+        isApiRequestInProgress: action.payload.isInProgress,
+      };
+
+    case ChatActionTypes.SET_CORRELATION_ID:
+      return {
+        ...state,
+        lastCorrelationId: action.payload.correlationId,
+      };
+
+    case ChatActionTypes.SET_DETAILED_ERROR:
+      return {
+        ...state,
+        error: action.payload.error,
+        errorType: action.payload.errorType,
+        lastCorrelationId: action.payload.correlationId || state.lastCorrelationId,
+      };
+
     default:
       return state;
   }
@@ -224,6 +267,12 @@ interface ChatContextValue {
   sendMessage: (text: string) => Promise<void>;
   /** Function to reset the conversation */
   resetChat: () => void;
+  /** Function to set API request status */
+  setApiRequestStatus: (isInProgress: boolean) => void;
+  /** Function to set correlation ID */
+  setCorrelationId: (correlationId?: string) => void;
+  /** Function to set detailed error information */
+  setDetailedError: (error: string, errorType: ApiErrorType, correlationId?: string) => void;
 }
 
 /**
@@ -382,6 +431,42 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children, fsm }) => 
   }, []);
 
   /**
+   * Set API request status
+   * @param {boolean} isInProgress - Whether an API request is in progress
+   */
+  const setApiRequestStatus = useCallback((isInProgress: boolean): void => {
+    dispatch({ type: ChatActionTypes.SET_API_REQUEST_STATUS, payload: { isInProgress } });
+  }, []);
+
+  /**
+   * Set correlation ID from API response
+   * @param {string} correlationId - Correlation ID from API
+   */
+  const setCorrelationId = useCallback((correlationId?: string): void => {
+    dispatch({ type: ChatActionTypes.SET_CORRELATION_ID, payload: { correlationId } });
+  }, []);
+
+  /**
+   * Set detailed error information
+   * @param {string} error - Error message
+   * @param {ApiErrorType} errorType - Type of error
+   * @param {string} correlationId - Optional correlation ID associated with the error
+   */
+  const setDetailedError = useCallback((error: string, errorType: ApiErrorType, correlationId?: string): void => {
+    dispatch({ type: ChatActionTypes.SET_DETAILED_ERROR, payload: { error, errorType, correlationId } });
+  }, []);
+
+  /**
+   * Get the user's session UUID
+   * @returns {string|null} The session UUID or null if not available
+   */
+  const getSessionUuid = useCallback((): string | null => {
+    // This is a placeholder - in a real implementation, we would use useSessionUUID
+    // to get the actual UUID from the session context
+    return localStorage.getItem('sessionUuid');
+  }, []);
+
+  /**
    * Handle button click
    * @param {string} value - Button value
    */
@@ -476,13 +561,57 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children, fsm }) => 
       // Disable input while processing
       setInputDisabled(true);
       setLoading(true);
+      setApiRequestStatus(true);
 
       try {
         if (!fsm) {
           throw new Error('State machine not initialized');
         }
+        
+        // Get session UUID
+        const sessionUuid = getSessionUuid();
+        if (!sessionUuid && state.currentFsmState !== States.WELCOME_MSG && 
+            state.currentFsmState !== States.COLLECTING_NAME) {
+          throw new ApiError('No session UUID available', 401, { type: ApiErrorType.UNAUTHORIZED });
+        }
 
-        // Process user input based on current state
+        // For states that require API calls, use the ChatApi
+        if (state.currentFsmState === States.UPLOAD_DOCS || 
+            state.currentFsmState === States.CREATE_BOT) {
+          // Call the API with proper error handling and retry
+          const response = await ChatApi.sendMessage(text, sessionUuid || '');
+          
+          // Store correlation ID
+          if (response.correlationId) {
+            setCorrelationId(response.correlationId);
+          }
+          
+          // Process API response
+          if (response.status === 'success' && response.message) {
+            // Handle successful API response
+            addBotMessage(response.message.text);
+            
+            // Update FSM state based on API response if needed
+            if (response.message.nextTransition) {
+              const nextTransition = response.message.nextTransition as Transitions;
+              fsm.transition(nextTransition);
+              updateFsmState(fsm.getCurrentState());
+            } else if (response.message.nextState) {
+              // Legacy support for direct state updates
+              console.warn('Using deprecated nextState property. Please use nextTransition instead.');
+              // Handle the state update differently since we can't directly set the state
+              const nextState = response.message.nextState as States;
+              updateFsmState(nextState);
+            }
+          } else {
+            // Handle API error in response
+            throw new ApiError(response.error || 'Unknown API error', 400, { 
+              type: ApiErrorType.SERVER,
+              correlationId: response.correlationId
+            });
+          }
+        } else {
+          // Process user input based on current state for non-API states
         if (state.currentFsmState === States.COLLECTING_NAME) {
           if (/^[a-zA-Z\s]+$/.test(text)) {
             // Valid name provided
@@ -504,22 +633,55 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children, fsm }) => 
           }
         }
         // Add additional state handling here as needed
+        }
       } catch (error) {
         console.error('Error processing message:', error);
-        setError(error instanceof Error ? error.message : 'An unknown error occurred');
+        
+        if (error instanceof ApiError) {
+          // Handle API errors with detailed information
+          setDetailedError(
+            error.message, 
+            error.type || ApiErrorType.UNKNOWN, 
+            error.details?.correlationId as string | undefined
+          );
+          
+          // Show user-friendly error message based on error type
+          switch (error.type) {
+            case ApiErrorType.NETWORK:
+              addBotMessage("I'm having trouble connecting to our servers. Please check your internet connection and try again.");
+              break;
+            case ApiErrorType.TIMEOUT:
+              addBotMessage("Our servers are taking too long to respond. Please try again in a moment.");
+              break;
+            case ApiErrorType.UNAUTHORIZED:
+              addBotMessage("Your session has expired. Please refresh the page to continue.");
+              break;
+            default:
+              addBotMessage("I encountered an issue processing your request. Please try again or contact support if the problem persists.");
+          }
+        } else {
+          // Handle generic errors
+          setError(error instanceof Error ? error.message : 'An unknown error occurred');
+          addBotMessage("I'm sorry, something went wrong. Please try again later.");
+        }
       } finally {
         setLoading(false);
+        setApiRequestStatus(false);
       }
     },
     [
       addUserMessage,
       setInputDisabled,
       setLoading,
+      setApiRequestStatus,
       fsm,
       state.currentFsmState,
       updateFsmState,
       addBotMessage,
       setError,
+      setDetailedError,
+      setCorrelationId,
+      getSessionUuid
     ]
   );
 
@@ -563,6 +725,10 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children, fsm }) => 
     handleButtonClick,
     sendMessage,
     resetChat,
+    setApiRequestStatus,
+    setCorrelationId,
+    setDetailedError,
+    getSessionUuid
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

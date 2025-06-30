@@ -27,7 +27,14 @@ This document outlines the detailed tasks for the upcoming phases of the Maria A
      - ✅ Add performance tracking for slow requests
      - ✅ Include correlation IDs in logs
 
-2. **Context Integration**
+2. **Context Integration** ✅
+   - ✅ Update ChatContext to use ChatApi with new client
+     - ✅ Add new state fields for error tracking and API request status
+     - ✅ Track correlation IDs in state for debugging
+     - ✅ Handle API errors gracefully with proper user feedback
+   - ✅ Fix TypeScript errors in FSM integration
+     - ✅ Add support for both nextState and nextTransition in Message API response
+     - ✅ Update FSM integration to use correct transition method
    - Ensure ChatContext properly handles API responses
      - Update state machine transitions based on API responses
      - Add error states for API failures
