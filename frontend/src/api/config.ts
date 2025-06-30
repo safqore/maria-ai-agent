@@ -4,19 +4,9 @@
  * Centralized configuration for API endpoints and settings.
  * Re-exports variables from the main config to maintain consistency.
  */
-import { 
-  API_BASE_URL, 
-  API_TIMEOUT,
-  MOCK_API, 
-  SKIP_SESSION_VALIDATION 
-} from '../utils/config';
+import { API_BASE_URL, API_TIMEOUT, MOCK_API, SKIP_SESSION_VALIDATION } from '../utils/config';
 
-export { 
-  API_BASE_URL, 
-  API_TIMEOUT,
-  MOCK_API, 
-  SKIP_SESSION_VALIDATION
-};
+export { API_BASE_URL, API_TIMEOUT, MOCK_API, SKIP_SESSION_VALIDATION };
 
 /**
  * Error types for API requests
@@ -60,13 +50,13 @@ export class ApiError extends Error {
     this.name = 'ApiError';
     this.status = status;
     this.details = details;
-    this.type = this.determineErrorType(status);
+    this.type = ApiError.determineErrorType(status);
   }
 
   /**
    * Determines the error type based on the status code
    */
-  private determineErrorType(status: number): ApiErrorType {
+  static determineErrorType(status: number): ApiErrorType {
     if (status >= 500) return ApiErrorType.SERVER;
     if (status === 401 || status === 403) return ApiErrorType.UNAUTHORIZED;
     if (status === 404) return ApiErrorType.NOT_FOUND;
@@ -82,17 +72,17 @@ export function createApiError(error: unknown): ApiError {
   if (error instanceof ApiError) {
     return error;
   }
-  
+
   if (error instanceof TypeError && error.message.includes('fetch')) {
     return new ApiError('Network error: Could not connect to the server', 0);
   }
-  
+
   if (error instanceof Error) {
     if (error.message.includes('timeout')) {
       return new ApiError('Request timeout: The server took too long to respond', 408);
     }
     return new ApiError(error.message);
   }
-  
+
   return new ApiError('An unknown error occurred');
 }
