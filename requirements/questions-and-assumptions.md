@@ -17,6 +17,7 @@ This document is the single source of truth for all current, actively relevant q
 - [Session](#session)
 - [Email Verification](#email-verification)
 - [File Upload](#file-upload)
+- [Architecture](#architecture)
 - [Other Features](#other-features)
 
 ---
@@ -88,6 +89,42 @@ This document is the single source of truth for all current, actively relevant q
 | #   | Assumption | Status/Validation | Notes |
 | --- | ---------- | ----------------- | ----- |
 |     |            |                   |       |
+
+---
+
+## Architecture
+
+_Document key architectural decisions and design patterns used in the project._
+
+### Questions
+
+| #   | Question                                                    | Answer/Status                                                                                     | Notes                                 |
+| --- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| 1   | What is the approach for SQLAlchemy relationship loading?   | Default to lazy loading, with eager loading used selectively for performance-critical paths.      | plan.md, sqlalchemy.md                |
+| 2   | What strategy should be used for API retries?               | Linear backoff with a maximum of 3 retries, configurable by endpoint and error type.             | plan.md                               |
+| 3   | How should correlation IDs be generated and maintained?     | Server-side generation with each request, passed to all downstream services and response headers. | plan.md, tracking.md                  |
+| 4   | What error handling strategy should be implemented?         | Structured error responses with environment-based detail level and consistent error codes.        | errors.py, plan.md                    |
+| 5   | How should database transaction boundaries be managed?      | Explicit transaction boundaries at service layer with proper error handling and rollback.         | services/, database.py                |
+| 6   | What is the approach for frontend/backend integration?      | API-driven with clear contracts, separate deployment, and configuration-based endpoints.          | next-steps.md, plan.md                |
+| 7   | How should application configuration be managed?            | Environment variables with sensible defaults, separate for frontend and backend.                  | config.py, frontend/.env              |
+| 8   | What is the port configuration strategy?                    | Environment variables only, never hardcoded, with dynamic CORS configuration.                     | config.py, package.json               |
+| 9   | How are architectural decisions documented and maintained?  | In questions-and-assumptions.md with rationale and implementation notes.                          | This document                         |
+| 10  | What is the testing strategy for architectural components?  | Unit tests for individual components, integration tests for critical paths only.                  | testing.md, plan.md                   |
+
+### Assumptions
+
+| #   | Assumption                                                                       | Status/Validation | Notes                                    |
+| --- | -------------------------------------------------------------------------------- | ----------------- | ---------------------------------------- |
+| 1   | Lazy loading is appropriate for most database relationships in this application. | Validated         | sqlalchemy.md, plan.md                   |
+| 2   | API retry with linear backoff is sufficient for handling transient failures.     | Validated         | next-steps.md                            |
+| 3   | Server-side correlation ID generation provides better security and reliability.  | Validated         | tracking.md, plan.md                     |
+| 4   | Environment-based error detail protects sensitive information in production.     | Validated         | errors.py, plan.md                       |
+| 5   | Explicit transaction boundaries provide better control over database integrity.  | Validated         | services/, database.py                   |
+| 6   | Frontend and backend will be deployed independently.                             | Validated         | README.md, plan.md                       |
+| 7   | All configuration values should be overridable via environment variables.        | Validated         | config.py, frontend/.env                 |
+| 8   | Dynamic CORS configuration adapts to port changes automatically.                 | Validated         | config.py                                |
+| 9   | Documentation is maintained alongside code changes.                              | Validated         | This document, README.md                 |
+| 10  | Unit tests are prioritized over integration tests for most components.           | Validated         | testing.md, plan.md                      |
 
 ---
 

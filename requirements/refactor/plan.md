@@ -157,3 +157,88 @@ The environment configuration strategy follows these principles:
    - Clear instructions for developers on configuring their environments
 
 This strategy ensures developers can modify port settings on their machines without hardcoded limitations, allowing the application to run correctly across different environments with minimal manual adjustments.
+
+## Implementation Approach for Key Components
+
+### 1. SQLAlchemy Relationship Loading Strategy
+
+We have decided to implement lazy loading as the default strategy for SQLAlchemy relationships because:
+
+1. **Memory Efficiency**: Lazy loading only retrieves related objects when they are accessed, reducing memory usage
+2. **Query Efficiency**: Prevents loading unnecessary data when only the parent object is needed
+3. **Simplicity**: Simplifies the default data access pattern and is easier to reason about
+4. **Selective Optimization**: Allows selective use of eager loading for performance-critical paths
+
+Implementation details:
+- All relationships will use `lazy='select'` (the default) unless explicitly configured otherwise
+- For frequently accessed relationships or to avoid N+1 query problems, we'll use `joinedload()` selectively
+- Performance-critical paths will be identified and optimized with appropriate loading strategies
+
+### 2. Frontend API Retry Strategy
+
+We have decided to implement a linear backoff strategy for API retries because:
+
+1. **Predictability**: Linear backoff provides predictable retry timing, making the UX more consistent
+2. **Simplicity**: Easier to implement and reason about than exponential backoff
+3. **Adequate for Our Needs**: For our current scale and usage patterns, linear backoff provides sufficient spacing between retries
+4. **User Experience**: More consistent timing for retries creates a smoother user experience
+
+Implementation details:
+- Default retry count: 3 attempts
+- Initial retry delay: 500ms
+- Linear backoff: Add 500ms for each subsequent retry (500ms, 1000ms, 1500ms)
+- Skip retries for 4xx errors (except 429 rate limiting)
+- Log all retry attempts with correlation IDs
+
+### 3. Correlation ID Strategy
+
+We have decided to generate correlation IDs server-side and return them to clients because:
+
+1. **Consistency**: Server-side generation ensures consistent UUID format and quality
+2. **Compatibility**: Aligns with the existing middleware implementation that extracts correlation IDs from headers
+3. **Client Simplicity**: Reduces client-side complexity by not requiring UUID generation
+4. **Server Control**: Provides the server with control over correlation ID format and generation
+
+Implementation details:
+- If client provides a valid correlation ID in `X-Correlation-ID` header, use it
+- Otherwise, server generates a UUID v4 correlation ID
+- Return correlation ID in `X-Correlation-ID` response header
+- Include correlation ID in all error responses and logs
+
+### 4. Error Handling Strategy
+
+We have decided to implement a structured error response format with varying levels of detail based on environment:
+
+1. **Consistent Format**: All error responses will follow a standard format
+2. **Environment-Aware**: More detailed errors in development, sanitized errors in production
+3. **Correlation Support**: All errors include correlation IDs for tracking
+4. **Client-Friendly**: Error messages designed to be useful for frontend display
+
+Implementation details:
+```json
+{
+  "error": "ErrorType",
+  "message": "User-friendly error message",
+  "correlation_id": "uuid-v4-correlation-id",
+  "details": {
+    // Additional error details (development only)
+    "stackTrace": "...",
+    "context": "..."
+  }
+}
+```
+
+### 5. Transaction Management Strategy
+
+We have decided to use explicit transactions rather than automatic transactions because:
+
+1. **Control**: Explicit transactions provide clear control over transaction boundaries
+2. **Visibility**: Makes transaction scope obvious in the code
+3. **Performance**: Can optimize transaction duration for specific operations
+4. **Intentionality**: Forces developers to think about transaction requirements
+
+Implementation details:
+- Use TransactionContext as a context manager for explicit transactions
+- Define clear transaction boundaries around logical operations
+- Implement proper error handling and rollback logic
+- Log transaction completion status and duration

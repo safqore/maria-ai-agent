@@ -1,6 +1,6 @@
 # Maria AI Agent Refactoring Project
 
-This document serves as the central reference for the Maria AI Agent refactoring project. Last updated on June 27, 2025.
+This document serves as the central reference for the Maria AI Agent refactoring project. Last updated on June 30, 2025.
 
 ## Documentation Structure
 
@@ -51,6 +51,20 @@ This document serves as the central reference for the Maria AI Agent refactoring
 ### Phase 5: Context and Global State Refinements (June 26-30, 2025) ⏳
 - Finalize ChatContext and Adapters ✅
 - Consolidate Context Interfaces ✅
+- Frontend API Integration 🔄
+  - Update API clients to use versioned endpoints
+  - Add correlation ID tracking and error handling
+  - Implement request retries with linear backoff
+
+### Implementation Strategy Update (June 30, 2025) ⏳
+After team discussion, we have updated our implementation strategy to prioritize functional requirements over integration tests. This approach delivers more user-facing value sooner while still ensuring core infrastructure has good test coverage. Key decisions:
+
+- Implement frontend API integration before completing integration tests
+- Use lazy loading as default for SQLAlchemy relationships
+- Use linear backoff for API request retries
+- Generate correlation IDs server-side and return to clients
+- Implement structured error responses with correlation IDs
+- Use explicit transactions rather than automatic transactions
 
 ## Major Architectural Components
 

@@ -1,11 +1,14 @@
 # Maria AI Agent Refactoring Tracking
 
-This document serves as a real-time progress tracker for the Maria AI Agent refactoring project, documenting the latest status updates, blockers, and decisions. Last updated on June 28, 2025.
+This document serves as a real-time progress tracker for the Maria AI Agent refactoring project, documenting the latest status updates, blockers, and decisions. Last updated on June 30, 2025.
 
-## Latest Status (June 28, 2025)
+## Latest Status (June 30, 2025)
 
-### Current Phase: Phase 4 (Backend Improvements - Higher Risk)
+### Current Phase: Phase 4 (Backend Improvements - Higher Risk) and Phase 5 (Context and Global State Refinements)
 We have successfully completed Step 1 of Phase 4 (SQLAlchemy ORM Implementation) and have made significant progress on Step 2 (Improve Route Organization). We have resolved the two critical blockers identified previously, enhanced the authentication middleware, implemented improved request validation and correlation ID tracking, and integrated middleware consistently across all blueprints.
+
+### Implementation Strategy Update
+Based on team discussion, we have decided to prioritize functional requirements over integration tests. This means we will focus on implementing the Frontend API Integration and Database Optimization work before completing the remaining integration tests. This approach will deliver more user-facing value sooner while still ensuring the core infrastructure has good test coverage.
 
 ### Critical Blockers (Resolved ✅)
 
@@ -100,6 +103,14 @@ We've configured Redis as the persistent storage backend for rate limiting with 
 
 ## Key Decisions
 
+### June 30, 2025
+- Decision to prioritize functional requirements over integration tests
+- Decision to implement lazy loading as the default strategy for SQLAlchemy relationships
+- Decision to use linear backoff strategy for frontend API request retries
+- Decision to generate correlation IDs server-side and return to client
+- Decision to standardize error handling with structured error response format
+- Decision to wrap service operations in explicit transactions rather than automatic transactions
+
 ### June 28, 2025
 - Decision to implement blueprint-level middleware for more granular control
 - Decision to add consistent error handling across all blueprints
@@ -141,11 +152,15 @@ We've configured Redis as the persistent storage backend for rate limiting with 
 
 ## Open Questions
 
-1. Should we implement lazy loading for SQLAlchemy relationships?
+1. ✅ Should we implement lazy loading for SQLAlchemy relationships? - ANSWERED (Yes, lazy loading as default)
 2. What is the best strategy for handling database connection pooling?
 3. Should we add more granular rate limiting per endpoint or user?
 4. What approach should we take for handling database migrations in production?
-5. Should we use Redis or another storage backend for Flask-Limiter in production?
+5. ✅ Should we use Redis or another storage backend for Flask-Limiter in production? - ANSWERED (Yes, Redis with fallback)
+6. ✅ What strategy should we use for API retries? - ANSWERED (Linear backoff)
+7. ✅ How should correlation IDs be managed? - ANSWERED (Generated server-side and returned to client)
+8. ✅ How should error information be propagated between backend and frontend? - ANSWERED (Structured error responses)
+9. ✅ Should transactions be automatic or explicit? - ANSWERED (Explicit transactions)
 
 ## Risk Assessment
 

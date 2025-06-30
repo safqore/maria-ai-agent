@@ -1,10 +1,86 @@
 # Maria AI Agent Refactoring Next Steps
 
-This document outlines the detailed tasks for the upcoming phases of the Maria AI Agent refactoring project. Last updated on June 28, 2025.
+This document outlines the detailed tasks for the upcoming phases of the Maria AI Agent refactoring project. Last updated on June 30, 2025.
 
 ## Immediate Next Steps
 
-### Complete API Testing (Highest Priority) ⏳
+### Frontend API Integration (Highest Priority) 🔄
+
+1. **API Client Implementation**
+   - Update API client to use versioned endpoints
+     - Update all endpoint URLs to include `/api/v1/` prefix
+     - Implement version header checks
+   - Add correlation ID tracking in requests and responses
+     - Extract server-generated correlation IDs from responses
+     - Store correlation IDs for debugging and error tracking
+     - Include correlation IDs in error logs
+   - Add proper error handling for network issues
+     - Implement structured error response handling
+     - Use ApiError class with status code and message
+     - Add network error detection and recovery
+   - Implement request retries with linear backoff strategy
+     - Add configurable retry count (default: 3)
+     - Implement linear backoff between retries (initial: 500ms, increment: 500ms)
+     - Skip retries for 4xx errors (except 429)
+   - Add request/response logging
+     - Log request details and response times
+     - Add performance tracking for slow requests
+     - Include correlation IDs in logs
+
+2. **Context Integration**
+   - Ensure ChatContext properly handles API responses
+     - Update state machine transitions based on API responses
+     - Add error states for API failures
+   - Add loading states for API requests
+     - Create consistent loading indicators
+     - Implement request tracking mechanism
+   - Implement error boundaries for API failures
+     - Create error boundary components
+     - Implement fallback UI for failed requests
+   - Add correlation ID tracking for frontend debugging
+     - Store correlation IDs in context
+     - Include in error reports and logs
+
+### Database Optimization (High Priority) 🔄
+
+1. **Query Optimization**
+   - Configure lazy loading as default strategy for SQLAlchemy relationships
+     - Set `lazy='select'` on relationship attributes
+     - Use eager loading selectively with `joinedload()` for performance-critical operations
+   - Add indexes for common query patterns
+     - Focus on frequently filtered columns and foreign keys
+     - Add composite indexes for multi-column filters
+   - Optimize complex queries
+     - Review and optimize N+1 query patterns
+     - Use subqueries for improved performance
+   - Add database connection pooling
+     - Configure optimal pool size based on load testing
+     - Implement connection recycling (3600s recycle time)
+
+2. **Transaction Management Integration**
+   - Integrate TransactionContext with all services
+     - Use explicit transactions with context manager
+     - Establish clear transaction boundaries
+   - Add proper error handling for transactions
+     - Implement consistent rollback patterns
+     - Log transaction failures
+   - Add transaction logging
+     - Track transaction duration
+     - Audit sensitive transactions
+
+### Complete Endpoint Reorganization (Medium Priority) 🔄
+
+1. **Endpoint Standardization**
+   - Finalize API endpoint organization
+   - Ensure consistent error response formats
+   - Optimize endpoint response structures
+
+2. **API Documentation Updates**
+   - Add more examples for session and upload endpoints
+   - Complete documentation for error handling strategies
+   - Update documentation for frontend-backend integration
+
+### Complete API Testing (Lower Priority) ⏳
 
 1. **Integration Tests for API Endpoints** ⏳
    - Create comprehensive integration tests for session endpoints
@@ -18,28 +94,6 @@ This document outlines the detailed tasks for the upcoming phases of the Maria A
    - ✅ Test authentication information endpoint
    - ✅ Ensure authentication middleware works with blueprints
    - ✅ Fixed route conflict in auth_info endpoint
-
-3. **Add API Documentation Examples** (Medium Priority)
-   - ✅ Add example requests with curl commands for authentication
-   - ✅ Add example responses for authentication success and error cases
-   - ✅ Document authentication requirements clearly
-   - ✅ Provide correlation ID usage examples for authentication
-   - Add more examples for session and upload endpoints
-
-### Frontend API Integration (Medium-High Priority)
-
-1. **API Client Implementation**
-   - Update API client to use versioned endpoints
-   - Add correlation ID tracking in requests and responses
-   - Add proper error handling for network issues
-   - Implement request retries
-   - Add request/response logging
-
-2. **Context Integration**
-   - Ensure ChatContext properly handles API responses
-   - Add loading states for API requests
-   - Implement error boundaries for API failures
-   - Add correlation ID tracking for frontend debugging
 
 ### Database Optimization (Medium Priority)
 
