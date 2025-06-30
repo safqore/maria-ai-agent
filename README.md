@@ -11,6 +11,11 @@ Maria is an AI agent that autonomously creates and orchestrates other AI agents.
 
 ## Recent Updates
 
+- **Frontend API Integration**: Implemented robust API client with correlation ID tracking, retry logic, and structured error handling
+- **ChatContext API Integration**: Enhanced ChatContext with error handling, correlation ID tracking, and improved state transitions
+- **State Machine Integration**: Fixed TypeScript integration between API responses and FSM state transitions
+- **Type Safety Improvements**: Enhanced Message interface to properly support state transitions with nextState and nextTransition properties
+- **Regression Testing**: Fixed TypeScript errors and improved test file structure
 - **API Versioning**: All endpoints are now available at `/api/v1/` prefix while maintaining backward compatibility
 - **Rate Limiting**: Configured Redis-backed rate limiting with development environment fallback
 - **Import Structure**: Fixed import structure throughout the codebase
@@ -318,9 +323,14 @@ frontend/
 
 #### 1. Centralized API Service Layer
 
+- Robust API client with versioned endpoints (/api/v1/ prefix)
+- Structured error handling with specific error types
+- Request retries with linear backoff (configurable, default: 3 attempts)
+- Correlation ID tracking for request tracing and debugging
+- Performance monitoring and logging for slow requests
 - Separate modules for different API features (session, chat, file)
-- Consistent error handling with ApiError class
 - TypeScript interfaces for API requests and responses
+- Enhanced Message interface with nextState and nextTransition support
 
 #### 2. Component Architecture
 
@@ -331,14 +341,21 @@ frontend/
 #### 3. State Management
 
 - Context-based state management with useReducer
+- Finite State Machine integration with API responses
+- Support for both state and transition-based FSM updates
+- API state tracking (loading, errors, correlation IDs)
+- Type-safe FSM transitions with enhanced Typescript validation
 - Custom hooks for isolating logic
-- TypeScript for type safety
+- TypeScript for type safety throughout
 
 #### 4. Error Handling
 
+- Comprehensive API error handling with typed error responses
+- Network, timeout, server, and authorization error differentiation
+- Correlation ID tracking for error reporting and debugging
+- User-friendly error messages based on error types
 - ErrorBoundary component for catching and displaying errors
-- Consistent API error handling
-- User-friendly error messages and recovery options
+- Graceful degradation and recovery options
 
 #### 5. Testing
 
@@ -346,141 +363,58 @@ frontend/
 - Component tests with React Testing Library
 - Mock services for isolated testing
 
-#### 6. API Versioning
+### Architectural Decisions
 
-- Versioned API endpoints with `/api/v1/` prefix
-- Backward compatibility with legacy routes
-- Consistent URL structure across all endpoints
-- Environment variable configuration for version and prefix
+This section documents key architectural decisions made during the development of the Maria AI Agent project.
 
-#### 7. Rate Limiting
+#### API Client Architecture
 
-- Redis-backed rate limiting for production environments
-- In-memory fallback for development environments
-- Configurable rate limits via environment variables
-- Proper client notification for rate limit errors
+1. **Versioned API Endpoints**
+   - All endpoints are prefixed with `/api/v1/` for easier future versioning
+   - Version headers are included in requests to support API versioning
+   - Frontend configuration centralizes version information via environment variables
 
----
+2. **Error Handling Strategy**
+   - Structured `ApiError` class with type, status code, and details
+   - Error types categorized as NETWORK, TIMEOUT, UNAUTHORIZED, SERVER, or UNKNOWN
+   - User-friendly error messages based on error types
+   - Error correlation IDs tracked and displayed for backend troubleshooting
 
-## Local PostgreSQL Setup Guide
+3. **Request Retry Logic**
+   - Linear backoff strategy with configurable attempts (default: 3)
+   - Initial retry delay of 500ms with 500ms increments
+   - Skip retries for 4xx errors except 429 (Too Many Requests)
+   - Configurable timeout for long-running operations
 
-Follow these steps to set up a local PostgreSQL database and connect the application:
+4. **Correlation ID Tracking**
+   - Server-generated correlation IDs extracted from API responses
+   - Correlation IDs stored in context for debugging and support
+   - Included in error logs and error reporting
+   - Displayed to users when reporting issues
 
-### 1. Install PostgreSQL
+5. **Performance Monitoring**
+   - Request/response timing captured and logged
+   - Slow requests flagged for investigation
+   - Performance metrics accessible via React DevTools
 
-On Ubuntu/Debian:
-```bash
-sudo apt update
-sudo apt install postgresql postgresql-contrib
-```
+#### FSM Integration with API
 
-Start and enable the PostgreSQL service:
-```bash
-sudo systemctl start postgresql
-sudo systemctl enable postgresql
-```
+1. **State Transition Approach**
+   - API responses can include `nextTransition` (preferred) or `nextState` (legacy)
+   - Transitions are type-safe with TypeScript validation
+   - Direct state manipulation avoided to maintain FSM integrity
+   - Centralized error handling for API-triggered transitions
 
-### 2. Set the `postgres` User Password
-Switch to the `postgres` user and set a password (if not already set):
-```bash
-sudo -i -u postgres
-psql
-\password postgres
-# Enter a secure password (e.g., 123456 for local dev)
-\q
-exit
-```
+2. **Message Interface Design**
+   - Enhanced Message interface supports both direct state and transition-based updates
+   - Type safety enforced for all state transitions
+   - Legacy support maintained for backward compatibility
 
-### 3. Create Application Database and User
-Connect to PostgreSQL as the `postgres` user:
-```bash
-psql -U postgres -h localhost
-# Enter the password you set above
-```
-Then run:
-```sql
-CREATE DATABASE maria_db;
-CREATE USER maria_user WITH PASSWORD 'your_secure_password';
-GRANT ALL PRIVILEGES ON DATABASE maria_db TO maria_user;
-GRANT ALL ON SCHEMA public TO maria_user;
-```
-Replace `'your_secure_password'` with a strong password.
-
-### 4. Configure Environment Variables
-Edit the `.env` file in the project root:
-```
-POSTGRES_DB=maria_db
-POSTGRES_USER=maria_user
-POSTGRES_PASSWORD=your_secure_password
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-```
-
-### 5. Run Database Migrations
-Run the migration script to create required tables:
-```bash
-psql -U maria_user -h localhost -d maria_db -f backend/migrations/001_create_user_sessions.sql
-# Enter the password for maria_user
-```
-
-### 6. Troubleshooting
-- If you do not see the database in DBeaver, ensure "Show all databases" is enabled and refresh the connection.
-- If you get permission errors, ensure you have granted privileges on both the database and the `public` schema.
-- To list all databases:
-  ```bash
-  psql -U postgres -h localhost -l
-  ```
-- To grant connect privilege:
-  ```sql
-  GRANT CONNECT ON DATABASE maria_db TO maria_user;
-  ```
-
----
-
-## Orphaned File Cleanup Utility
-
-The backend includes a utility script to clean up orphaned files and folders in the S3 `uploads/` bucket. This script:
-
-- Deletes folders under `uploads/{uuid}/` that are older than 30 minutes and have no matching session in the `user_sessions` table.
-- Deletes legacy files directly under `uploads/` (not in a UUID folder) if they are older than 30 minutes.
-- Supports a dry-run mode for safe testing (default: enabled).
-- Logs all actions for audit and recovery.
-
-### Configuration
-
-Set the following environment variables in your `.env` file:
-
-```
-ORPHANED_CLEANUP_DRY_RUN=true   # Set to 'false' to actually delete files
-ORPHANED_CLEANUP_AGE_MINUTES=30 # Age threshold in minutes
-S3_BUCKET_NAME=safqores-maria   # S3 bucket name
-```
-
-### Running the Script
-
-From the project root:
-
-```bash
-python backend/app/utils/orphaned_file_cleanup.py
-```
-
-- In dry-run mode, the script will only log what would be deleted.
-- To perform actual deletions, set `ORPHANED_CLEANUP_DRY_RUN=false` in your `.env` file.
-
-### Scheduling Cleanup
-
-To automate cleanup every 30 minutes, add a cron job or use a task scheduler (e.g., APScheduler, Celery beat). Example cron entry:
-
-```
-*/30 * * * * cd /path/to/maria-ai-agent && /path/to/venv/bin/python backend/app/utils/orphaned_file_cleanup.py >> /path/to/cleanup.log 2>&1
-```
-
-### Safety & Troubleshooting
-
-- Always test in dry-run mode before enabling actual deletions.
-- Review logs for any errors or unexpected deletions.
-- The script double-checks UUIDs against the database before deleting folders.
-- Legacy files in the base of `uploads/` are also cleaned up if old.
+3. **Error Recovery**
+   - FSM state preserved during API errors
+   - User-friendly error messages provided based on error type
+   - Automatic retry for transient errors
+   - Manual retry options for persistent errors
 
 ---
 
