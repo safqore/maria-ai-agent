@@ -49,15 +49,6 @@ This document outlines the detailed tasks for the upcoming phases of the Maria A
    - Add correlation ID tracking for frontend debugging
      - Store correlation IDs in context
      - Include in error reports and logs
-     - Add error states for API failures
-   - Add loading states for API requests
-     - Create consistent loading indicators
-     - Implement request tracking mechanism
-   - Implement error boundaries for API failures
-     - Create error boundary components
-     - Implement fallback UI for failed requests
-   - Add correlation ID tracking for frontend debugging
-     - Store correlation IDs in context
      - Include in error reports and logs
 
 ### Database Optimization (High Priority) 🔄
