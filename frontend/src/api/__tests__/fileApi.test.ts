@@ -1,5 +1,15 @@
 import { FileApi } from '../fileApi';
 import { API_BASE_URL } from '../config';
+import { ApiResponse } from '../apiClient';
+
+// Mock the API client module for deleteFile tests
+jest.mock('../apiClient', () => ({
+  del: jest.fn(),
+  createApiUrl: (endpoint: string) => `http://localhost:5000/api/v1/${endpoint}`,
+}));
+
+// Import the mocked functions
+import { del } from '../apiClient';
 
 // Mock XMLHttpRequest
 class MockXMLHttpRequest {
@@ -151,23 +161,30 @@ describe('FileApi', () => {
   });
 
   describe('deleteFile', () => {
-    it('should make a POST request with the correct payload', async () => {
-      // Setup mock fetch response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValueOnce({
-          status: 'success',
-          message: 'File deleted successfully',
-        }),
-      });
+    it('should make a DELETE request with the correct payload', async () => {
+      // Mock response data
+      const mockDeleteResponse = {
+        status: 'success' as const,
+        message: 'File deleted successfully',
+      };
+
+      // Mock API response wrapper
+      const mockApiResponse: ApiResponse<typeof mockDeleteResponse> = {
+        data: mockDeleteResponse,
+        status: 200,
+        headers: new Headers(),
+        correlationId: 'test-correlation-id',
+        requestTime: 100,
+      };
+
+      // Setup mock API client response
+      (del as jest.Mock).mockResolvedValueOnce(mockApiResponse);
 
       // Call the API method
       const response = await FileApi.deleteFile('test.pdf', 'test-uuid');
 
       // Assertions
-      expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/delete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      expect(del).toHaveBeenCalledWith('delete', {
         body: JSON.stringify({
           filename: 'test.pdf',
           session_uuid: 'test-uuid',
@@ -175,18 +192,15 @@ describe('FileApi', () => {
       });
 
       expect(response).toEqual({
-        status: 'success',
-        message: 'File deleted successfully',
+        ...mockDeleteResponse,
+        correlationId: 'test-correlation-id',
       });
     });
 
-    it('should throw ApiError when response is not ok', async () => {
-      // Setup mock fetch response for error
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-      });
+    it('should throw ApiError when API client throws', async () => {
+      // Setup mock API client to throw an error
+      const mockError = new Error('Not Found');
+      (del as jest.Mock).mockRejectedValueOnce(mockError);
 
       // Call the API method and expect it to throw
       await expect(FileApi.deleteFile('test.pdf', 'test-uuid')).rejects.toThrow(

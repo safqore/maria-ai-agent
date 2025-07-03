@@ -1,8 +1,14 @@
 import { SessionApi, UUIDResponse } from '../sessionApi';
-import { API_BASE_URL } from '../config';
+import { ApiResponse } from '../apiClient';
 
-// Mock the fetch function
-global.fetch = jest.fn();
+// Mock the API client module
+jest.mock('../apiClient', () => ({
+  post: jest.fn(),
+  get: jest.fn(),
+}));
+
+// Import the mocked functions
+import { post } from '../apiClient';
 
 describe('SessionApi', () => {
   // Mock response data
@@ -12,6 +18,15 @@ describe('SessionApi', () => {
     message: 'UUID generated successfully',
   };
 
+  // Mock API response wrapper
+  const mockApiResponse: ApiResponse<UUIDResponse> = {
+    data: mockUUIDResponse,
+    status: 200,
+    headers: new Headers(),
+    correlationId: 'test-correlation-id',
+    requestTime: 100,
+  };
+
   // Reset mocks before each test
   beforeEach(() => {
     jest.resetAllMocks();
@@ -19,30 +34,24 @@ describe('SessionApi', () => {
 
   describe('generateUUID', () => {
     it('should make a POST request to the correct endpoint', async () => {
-      // Setup mock fetch response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValueOnce(mockUUIDResponse),
-      });
+      // Setup mock API client response
+      (post as jest.Mock).mockResolvedValueOnce(mockApiResponse);
 
       // Call the API method
       const response = await SessionApi.generateUUID();
 
       // Assertions
-      expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/generate-uuid`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      expect(post).toHaveBeenCalledWith('generate-uuid');
+      expect(response).toEqual({
+        ...mockUUIDResponse,
+        correlationId: 'test-correlation-id',
       });
-      expect(response).toEqual(mockUUIDResponse);
     });
 
-    it('should throw ApiError when response is not ok', async () => {
-      // Setup mock fetch response for error
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        statusText: 'Server Error',
-      });
+    it('should throw ApiError when API client throws', async () => {
+      // Setup mock API client to throw an error
+      const mockError = new Error('Server Error');
+      (post as jest.Mock).mockRejectedValueOnce(mockError);
 
       // Call the API method and expect it to throw
       await expect(SessionApi.generateUUID()).rejects.toThrow(
@@ -50,9 +59,9 @@ describe('SessionApi', () => {
       );
     });
 
-    it('should throw ApiError when fetch fails', async () => {
-      // Setup mock fetch to throw an error
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+    it('should throw ApiError when network fails', async () => {
+      // Setup mock API client to throw network error
+      (post as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
       // Call the API method and expect it to throw
       await expect(SessionApi.generateUUID()).rejects.toThrow(
@@ -63,31 +72,24 @@ describe('SessionApi', () => {
 
   describe('validateUUID', () => {
     it('should make a POST request with the correct payload', async () => {
-      // Setup mock fetch response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValueOnce(mockUUIDResponse),
-      });
+      // Setup mock API client response
+      (post as jest.Mock).mockResolvedValueOnce(mockApiResponse);
 
       // Call the API method
       const response = await SessionApi.validateUUID('test-uuid');
 
       // Assertions
-      expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/validate-uuid`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uuid: 'test-uuid' }),
+      expect(post).toHaveBeenCalledWith('validate-uuid', { uuid: 'test-uuid' });
+      expect(response).toEqual({
+        ...mockUUIDResponse,
+        correlationId: 'test-correlation-id',
       });
-      expect(response).toEqual(mockUUIDResponse);
     });
 
-    it('should throw ApiError when response is not ok', async () => {
-      // Setup mock fetch response for error
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        status: 400,
-        statusText: 'Bad Request',
-      });
+    it('should throw ApiError when API client throws', async () => {
+      // Setup mock API client to throw an error
+      const mockError = new Error('Bad Request');
+      (post as jest.Mock).mockRejectedValueOnce(mockError);
 
       // Call the API method and expect it to throw
       await expect(SessionApi.validateUUID('test-uuid')).rejects.toThrow(
@@ -98,45 +100,34 @@ describe('SessionApi', () => {
 
   describe('persistSession', () => {
     it('should make a POST request with the correct payload', async () => {
-      // Setup mock fetch response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValueOnce(mockUUIDResponse),
-      });
+      // Setup mock API client response
+      (post as jest.Mock).mockResolvedValueOnce(mockApiResponse);
 
       // Call the API method
       const response = await SessionApi.persistSession('test-uuid', true);
 
       // Assertions
-      expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/persist_session`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uuid: 'test-uuid',
-          consent_user_data: true,
-        }),
+      expect(post).toHaveBeenCalledWith('persist_session', {
+        uuid: 'test-uuid',
+        consent_user_data: true,
       });
-      expect(response).toEqual(mockUUIDResponse);
+      expect(response).toEqual({
+        ...mockUUIDResponse,
+        correlationId: 'test-correlation-id',
+      });
     });
 
     it('should use default consentUserData value when not provided', async () => {
-      // Setup mock fetch response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: jest.fn().mockResolvedValueOnce(mockUUIDResponse),
-      });
+      // Setup mock API client response
+      (post as jest.Mock).mockResolvedValueOnce(mockApiResponse);
 
       // Call the API method without the consentUserData parameter
       await SessionApi.persistSession('test-uuid');
 
       // Assertions
-      expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/persist_session`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uuid: 'test-uuid',
-          consent_user_data: false, // Default value should be false
-        }),
+      expect(post).toHaveBeenCalledWith('persist_session', {
+        uuid: 'test-uuid',
+        consent_user_data: false, // Default value should be false
       });
     });
   });
