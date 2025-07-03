@@ -1,113 +1,177 @@
 # Maria AI Agent Refactoring Next Steps
 
-This document outlines the minimal remaining tasks for the Maria AI Agent refactoring project. Last updated on January 3, 2025.
+This document outlines the realistic next steps for the Maria AI Agent refactoring project based on comprehensive testing and validation. Last updated on January 3, 2025.
 
-## Current Status: 98% Complete ✅
+## Current Status: 75% Complete ⚠️
 
-**MAJOR UPDATE**: After comprehensive codebase analysis, the refactoring project is **98% complete**, not 85% as previously documented. All major infrastructure components are working correctly.
+**CORRECTED ASSESSMENT**: After comprehensive codebase testing and validation, the refactoring project is **75% complete**, not 98% as previously documented. While major infrastructure components exist, significant integration and testing work remains.
 
-## Remaining Tasks (2% - Optional)
+## Critical Remaining Tasks (25% of work)
 
-### High Priority (5 hours total)
+### High Priority - Frontend Integration (1-2 weeks)
 
-#### 1. PostgreSQL Setup Documentation (2 hours)
-- **Status**: Optional - for performance testing validation
-- **What**: Document PostgreSQL setup for running performance tests
-- **Why**: Performance tests exist but need database connection
+#### 1. Fix Frontend API Client Mocking (1-2 days)
+- **Status**: **CRITICAL** - Frontend API communication unreliable
+- **Issue**: `Cannot read properties of undefined (reading 'get')` in sessionApi tests
+- **Root Cause**: API client modules not properly mocked in test environment
+- **Test Results**: 11 failed, 21 passed in API tests
 - **Implementation**: 
-  - Update documentation with PostgreSQL installation steps
-  - Add database configuration examples
-  - Create performance test runner scripts
+  - Review and fix Jest mocking strategy for API client modules
+  - Ensure proper import/export structure in API client files
+  - Update test setup to handle async API operations correctly
+  - Verify fetch mocking works consistently across all API tests
 
-#### 2. Minor Test Fixes (1 hour)
-- **Status**: Optional - minor integration test adjustment
-- **What**: Fix correlation ID handling in integration tests
-- **Why**: Small test assertion mismatch (correlation ID generation)
-- **Implementation**: 
-  - Update test to preserve correlation ID from request headers
-  - Verify correlation ID propagation in API responses
+#### 2. Complete XMLHttpRequest Integration (4-8 hours)
+- **Status**: **IMPORTANT** - File upload functionality partially broken
+- **Issue**: File upload tests still failing (4/6 passing)
+- **Root Cause**: Incomplete XMLHttpRequest mocking and response handling
+- **Implementation**:
+  - Fix remaining XMLHttpRequest mock methods
+  - Ensure proper error handling in file upload flow
+  - Verify correlation ID propagation in upload responses
+  - Test file upload progress tracking
 
-#### 3. Final Documentation Review (2 hours)
-- **Status**: Optional - polish documentation
-- **What**: Review and update remaining documentation gaps
-- **Why**: Ensure all architectural decisions are documented
-- **Implementation**: 
-  - Review API endpoint documentation
-  - Update architectural decision records
-  - Verify setup instructions are complete
+#### 3. Frontend-Backend Endpoint Alignment (2-4 hours)
+- **Status**: **IMPORTANT** - API communication consistency
+- **Issue**: Remaining endpoint naming mismatches
+- **Root Cause**: Some endpoints still using different naming conventions
+- **Implementation**:
+  - Audit all API endpoints for naming consistency
+  - Update frontend API clients to match backend routes
+  - Verify API versioning headers are consistent
+  - Test all API endpoint communications
 
-### Optional Enhancements (1-2 days)
+### Medium Priority - Backend Integration (4-8 hours)
 
-#### 4. Performance Benchmarking (1 day)
-- **Status**: Optional - validation of optimizations
-- **What**: Run comprehensive performance tests with database setup
-- **Why**: Validate implemented database optimizations
-- **Implementation**: 
-  - Set up PostgreSQL test environment
-  - Run performance test suite
-  - Document performance benchmarks
+#### 4. Database Configuration for Performance Testing (4-8 hours)
+- **Status**: **IMPORTANT** - Cannot validate performance optimizations
+- **Issue**: PostgreSQL authentication failures in performance tests
+- **Root Cause**: Database setup incomplete for testing environment
+- **Implementation**:
+  - Set up PostgreSQL test database with proper authentication
+  - Configure database connection string for test environment
+  - Update performance test configuration
+  - Verify all 7 strategic indexes are working correctly
 
-#### 5. Monitoring Integration (1 day)
-- **Status**: Optional - operational enhancement
-- **What**: External error tracking service setup
-- **Why**: Production monitoring and alerting
-- **Implementation**: 
-  - Integrate with error tracking service (Sentry/Rollbar)
-  - Set up performance monitoring
-  - Create monitoring dashboards
+#### 5. Blueprint Middleware Registration Conflicts (2-4 hours)
+- **Status**: **MODERATE** - Integration testing reliability issues
+- **Issue**: Double-registration errors preventing clean test runs
+- **Root Cause**: Middleware setup conflicts between app instances
+- **Implementation**:
+  - Review Flask app factory configuration
+  - Ensure blueprint registration is idempotent
+  - Fix middleware registration conflicts
+  - Test app instance creation and teardown
 
-## What's Already Complete (98%)
+### Low Priority - Test Infrastructure (1-2 days)
 
-### ✅ Major Infrastructure Components
+#### 6. Stabilize Test Infrastructure (1-2 days)
+- **Status**: **MODERATE** - Cannot guarantee refactored code stability
+- **Issue**: Mixed success rates across test suites
+- **Root Cause**: Multiple underlying issues (mocking, configuration, timing)
+- **Implementation**:
+  - Identify and fix flaky tests
+  - Improve test isolation and cleanup
+  - Standardize test configuration across environments
+  - Add better error reporting and debugging
+
+## What's Already Solidly Working ✅
+
+### Backend Infrastructure (90% Complete)
 - **SQLAlchemy ORM**: Full repository pattern with type-safe operations
-- **Database Optimization**: 7 strategic indexes implemented for performance
-- **Transaction Management**: Complete TransactionContext integration
+- **TransactionContext**: Complete integration with proper import/export **FIXED**
+- **Session Service**: All 24 tests passing with comprehensive coverage
 - **API Versioning**: `/api/v1/` endpoints with proper versioning headers
 - **Authentication**: API key middleware with comprehensive validation
 - **Error Handling**: Structured responses with correlation ID tracking
-- **Performance Monitoring**: Request timing and correlation ID logging
 
-### ✅ Frontend Integration
-- **API Client**: Linear backoff retry (3 attempts, 500ms increments)
-- **Error Boundaries**: Both basic and enhanced with correlation ID tracking
-- **ChatContext**: Full FSM integration with API client
+### Frontend Core (85% Complete)
+- **ChatContext**: Full FSM integration with React Context
 - **Session Management**: Complete UUID lifecycle with useSessionUUID hook
+- **Error Boundaries**: Both basic and enhanced with correlation ID tracking
 - **State Management**: React Context with adapters and proper error handling
+- **Retry Logic**: Linear backoff strategy (3 attempts, 500ms increments)
 
-### ✅ Testing Infrastructure
-- **Integration Tests**: Comprehensive API endpoint testing (session, upload, auth)
-- **Performance Tests**: Database and API performance validation suites
-- **Unit Tests**: Service layer, repository pattern, and business logic
-- **Test Coverage**: ~85% across backend and frontend
+### Fixed During Review ✅
+1. **TransactionContext Import**: Now properly exported from database package
+2. **Session Service Validation**: All 24 tests passing consistently
+3. **Frontend Endpoint Alignment**: Fixed `/persist-session` vs `/persist_session` mismatch
+4. **XMLHttpRequest Mocking**: Added missing `getResponseHeader` method
+5. **File Upload Tests**: Now correctly expects correlation ID
 
-### ✅ Environment Documentation
-- **Conda Environment**: Activation requirement documented in README and Makefile
-- **Development Setup**: Complete setup instructions with environment variables
-- **Testing Commands**: Documented with environment requirements
+## Implementation Strategy
+
+### Phase 1: Frontend API Integration (Week 1)
+**Goal**: Get frontend API tests to 90%+ passing rate
+1. Fix API client mocking issues (Days 1-2)
+2. Complete XMLHttpRequest integration (Day 3)
+3. Verify frontend-backend endpoint alignment (Day 4)
+4. Test comprehensive API communication (Day 5)
+
+### Phase 2: Backend Integration (Week 2)
+**Goal**: Get backend integration tests to 95%+ passing rate
+1. Configure database environment for performance testing (Days 1-2)
+2. Fix blueprint middleware registration conflicts (Day 3)
+3. Verify all backend integration tests (Day 4)
+4. Run comprehensive backend test suite (Day 5)
+
+### Phase 3: Test Infrastructure (Week 3)
+**Goal**: Achieve stable, reliable test infrastructure
+1. Identify and fix flaky tests (Days 1-2)
+2. Improve test isolation and cleanup (Days 3-4)
+3. Final integration testing and validation (Day 5)
+
+## Success Criteria for Completion
+
+### 85% Complete (2-3 days)
+- ✅ Frontend API tests: 90%+ passing
+- ✅ Backend integration tests: 95%+ passing
+- ✅ Core functionality: All working reliably
+
+### 90% Complete (1-2 weeks)
+- ✅ Database performance tests: All passing
+- ✅ Test infrastructure: Stable and reliable
+- ✅ Documentation: Updated and accurate
+
+### 95% Complete (2-3 weeks)
+- ✅ End-to-end testing: All scenarios working
+- ✅ Performance benchmarks: Validated
+- ✅ Production readiness: Verified
+
+## Resource Requirements
+
+### Time Estimates
+- **Frontend Integration**: 1-2 weeks (1 developer)
+- **Backend Integration**: 4-8 hours (1 developer)
+- **Test Infrastructure**: 1-2 days (1 developer)
+- **Total**: 2-3 weeks for 90% completion
+
+### Skills Required
+- Frontend: React, Jest, API mocking, XMLHttpRequest
+- Backend: Flask, SQLAlchemy, PostgreSQL, pytest
+- Integration: API testing, database configuration
+
+## Risk Assessment
+
+### High Risk
+- Frontend API client mocking complexity
+- Database configuration across environments
+
+### Medium Risk
+- Blueprint middleware registration conflicts
+- Test infrastructure stability
+
+### Low Risk
+- Documentation updates
+- Performance benchmarking
 
 ## Next Phase Recommendation
 
-**The refactoring project is functionally complete and production-ready.** All core infrastructure is in place and working correctly.
+**Focus on integration and testing stability** rather than new features. The architecture is solid but needs debugging and proper test configuration.
 
-### Recommended Next Step: Email Verification Implementation
-Consider proceeding with **Email Verification Implementation** as outlined in `docs/email-first-prompt.md`, which appears to be the next major feature requirement.
+**DO NOT** proceed with new features like Email Verification until:
+1. Frontend API integration is stable (90%+ test passing)
+2. Database configuration is working for performance tests
+3. Test infrastructure is reliable and predictable
 
-### Implementation Strategy for Remaining Tasks
-If you choose to complete the remaining 2%:
-
-1. **Small Increments**: Each task is <2 hours
-2. **Testable Changes**: All changes have test validation
-3. **Revertible**: Each change is isolated and can be rolled back
-4. **Optional**: None of these tasks affect core functionality
-
-## Summary
-
-The refactoring project has achieved all its primary goals:
-- ✅ Code organization and maintainability improved
-- ✅ Codebase is more extendable and easier to understand
-- ✅ Functional behavior maintained throughout the process
-- ✅ Performance optimizations implemented
-- ✅ Modern architecture patterns adopted
-- ✅ Comprehensive test coverage achieved
-
-**Project Status**: Ready for production deployment or next feature development.
+**Project Status**: 75% Complete - Solid Foundation, Integration Work Needed 🔧
