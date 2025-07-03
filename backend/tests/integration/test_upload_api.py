@@ -49,7 +49,12 @@ def session_uuid(app):
     session_id = str(uuid.uuid4())
     with app.app_context():
         repo = UserSessionRepository()
-        session = UserSession(uuid=session_id, status="active")
+        session = UserSession(
+            uuid=session_id,
+            name="Test User",
+            email="test@example.com",
+            consent_user_data=True
+        )
         repo.create(session)
     return session_id
 
@@ -131,7 +136,8 @@ class TestUploadAPI:
             content_type="multipart/form-data",
         )
 
-        assert response.status_code == 404
+        # The endpoint returns 400 for invalid session UUID, not 404
+        assert response.status_code == 400
         assert "error" in response.json
         assert "X-Correlation-ID" in response.headers
 

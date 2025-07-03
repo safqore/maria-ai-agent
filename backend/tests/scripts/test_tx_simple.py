@@ -20,10 +20,10 @@ try:
     # Import the dependencies explicitly to avoid other imports
     from backend.app.database.transaction import (
         TransactionContext,
-        _engine,
-        _SessionLocal,
-        get_database_url,
+        get_engine,
+        get_session_local,
     )
+    from backend.app.database_core import get_database_url
 
     # Print database URL (with password masked)
     db_url = get_database_url()
@@ -33,7 +33,8 @@ try:
     print("Creating test session...")
     # Create a session and test TransactionContext
     try:
-        session = _SessionLocal()
+        session_factory = get_session_local()
+        session = session_factory()
         print("Session created successfully")
 
         # Test basic transaction operations

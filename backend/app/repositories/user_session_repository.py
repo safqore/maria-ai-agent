@@ -42,7 +42,9 @@ class UserSessionRepository(BaseRepository[UserSession]):
         Raises:
             ServerError: If a database error occurs
         """
-        return self.get_by_id(session_uuid)
+        # Convert string UUID to UUID object
+        uuid_obj = uuid.UUID(session_uuid)
+        return self.get_by_id(uuid_obj)
 
     def exists(self, session_uuid: str) -> bool:
         """
@@ -57,7 +59,9 @@ class UserSessionRepository(BaseRepository[UserSession]):
         Raises:
             ServerError: If a database error occurs
         """
-        return super().exists(session_uuid)
+        # Convert string UUID to UUID object
+        uuid_obj = uuid.UUID(session_uuid)
+        return super().exists(uuid_obj)
 
     def create_session(
         self,
@@ -111,7 +115,9 @@ class UserSessionRepository(BaseRepository[UserSession]):
             NotFoundError: If the session does not exist
         """
         try:
-            return self.update(session_uuid, data)
+            # Convert string UUID to UUID object
+            uuid_obj = uuid.UUID(session_uuid)
+            return self.update(uuid_obj, data)
         except Exception as e:
             # Return None for NotFoundError to maintain backward compatibility
             if hasattr(e, "name") and e.name == "NotFoundError":
@@ -131,4 +137,6 @@ class UserSessionRepository(BaseRepository[UserSession]):
         Raises:
             ServerError: If a database error occurs
         """
-        return self.delete(session_uuid)
+        # Convert string UUID to UUID object
+        uuid_obj = uuid.UUID(session_uuid)
+        return self.delete(uuid_obj)

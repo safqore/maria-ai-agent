@@ -22,6 +22,7 @@ os.environ["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
 def test_database_url():
     """Set up SQLite database URL for all tests."""
     import os
+    import tempfile
     
     # Set environment variables to force SQLite for testing
     # This will cause get_database_url() to return None, which we can handle
@@ -31,14 +32,26 @@ def test_database_url():
     os.environ["POSTGRES_PORT"] = ""
     os.environ["POSTGRES_DB"] = ""
     
-    # Set a custom database URL using the global variable directly
-    sqlite_url = "sqlite:///:memory:"
+    # Create a temporary file-based SQLite database
+    temp_db = tempfile.NamedTemporaryFile(suffix='.db', delete=False)
+    temp_db.close()
+    sqlite_url = f"sqlite:///{temp_db.name}"
     
     # Import and set the database URL after environment is configured
     import backend.app.database_core
     backend.app.database_core._custom_database_url = sqlite_url
     
+    # Force re-initialization of the database engine
+    backend.app.database_core._engine = None
+    backend.app.database_core._SessionLocal = None
+    
     yield sqlite_url
+    
+    # Clean up the temporary database file
+    try:
+        os.unlink(temp_db.name)
+    except OSError:
+        pass
     
     # Reset to None to allow normal operation
     backend.app.database_core._custom_database_url = None
@@ -49,9 +62,16 @@ def initialize_test_database(test_database_url):
     """Initialize the test database with tables."""
     from backend.app.database_core import get_engine, Base
     
+    # Import models to ensure SQLAlchemy knows about all tables
+    from backend.app import models
+    
+    print("DEBUG: Initializing test database with tables...")
+    
     # Get engine and create tables
     engine = get_engine()
     Base.metadata.create_all(bind=engine)
+    
+    print("DEBUG: Database tables created successfully")
     
     yield
     
@@ -107,6 +127,10 @@ def session_uuid(client):
     After the test completes, it cleans up by deleting the session.
     """
     from backend.app.repositories.factory import get_user_session_repository
+    from backend.app.database_core import Base, get_engine
+    
+    # Ensure tables exist in the current database session
+    Base.metadata.create_all(bind=get_engine())
     
     # Generate a unique UUID for this test
     test_uuid = str(uuid.uuid4())
