@@ -64,15 +64,34 @@ This document is the single source of truth for all current, actively relevant q
 
 ### Questions
 
-| #   | Question | Answer/Status | Notes |
-| --- | -------- | ------------- | ----- |
-|     |          |               |       |
+| #   | Question                                                   | Answer/Status                                                                                  | Notes                                 |
+| --- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------- |
+| 1   | What email service provider will be used?                  | Gmail SMTP with App Password (smtp.gmail.com:587)                                              | Company email hosted on Google        |
+| 2   | Should email templates be HTML or plain text?              | HTML templates with branding                                                                   | User preference                       |
+| 3   | What should be the sender email address?                   | noreply@safqore.com (Maria sender name)                                                        | User specified                        |
+| 4   | What is the user flow after successful email verification? | Show success message with automatic progression to next chat state (no manual continue button) | User confirmed automatic progression  |
+| 5   | How should session reset integrate with verification?      | Use same mechanism as UUID deletion - clear localStorage, generate new UUID, show reset modal  | Reuse existing session reset logic    |
+| 6   | Are proposed rate limits appropriate?                      | 30-second cooldown and 3 resend attempts are acceptable                                        | User confirmed, updated to 30 seconds |
+| 7   | How long should verification records be retained?          | Indefinitely with 1:1 relationship to user record, clean up expired codes only                 | For audit/compliance purposes         |
+| 8   | Should verification codes be numeric or alphanumeric?      | 6-digit numeric confirmed for better UX (easier typing, less confusion)                        | User confirmed recommendation         |
+| 9   | What tone should error messages use?                       | User-friendly with "please" and "thanks" for polite, helpful messaging                         | More courteous user experience        |
 
 ### Assumptions
 
-| #   | Assumption | Status/Validation | Notes |
-| --- | ---------- | ----------------- | ----- |
-|     |            |                   |       |
+| #   | Assumption                                                         | Status/Validation | Notes                                         |
+| --- | ------------------------------------------------------------------ | ----------------- | --------------------------------------------- |
+| 1   | 6-digit numeric codes are preferred over alphanumeric              | Validated         | User confirmed: easier typing, less confusion |
+| 2   | 10-minute code expiration is appropriate                           | Validated         | User confirmed: brilliant, industry standard  |
+| 3   | 3 verification attempts before session reset is sufficient         | Validated         | User confirmed                                |
+| 4   | 30-second resend cooldown is appropriate                           | Validated         | User confirmed: better UX than 1 minute       |
+| 5   | Existing session reset mechanism can be reused                     | Validated         | User confirmed 100%                           |
+| 6   | Real-time email validation provides better user experience         | Validated         | Immediate feedback as user types              |
+| 7   | Continuous prompting for correct email format is acceptable        | Validated         | User confirmed                                |
+| 8   | Moving "done and continue" button to bottom won't conflict with UI | Validated         | User confirmed                                |
+| 9   | Message text changes align with brand voice                        | Validated         | User confirmed                                |
+| 10  | FSM integration can be added without major refactoring             | Validated         | User confirmed 100%                           |
+| 11  | Database migration can be approved and deployed                    | Validated         | Vanilla database, user confirmed              |
+| 12  | Backend/frontend deployment can be coordinated                     | Validated         | User referenced ci/cd folder                  |
 
 ---
 
@@ -98,32 +117,32 @@ _Document key architectural decisions and design patterns used in the project._
 
 ### Questions
 
-| #   | Question                                                    | Answer/Status                                                                                     | Notes                                 |
-| --- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| 1   | What is the approach for SQLAlchemy relationship loading?   | Default to lazy loading, with eager loading used selectively for performance-critical paths.      | plan.md, sqlalchemy.md                |
-| 2   | What strategy should be used for API retries?               | Linear backoff with a maximum of 3 retries, configurable by endpoint and error type.             | plan.md                               |
-| 3   | How should correlation IDs be generated and maintained?     | Server-side generation with each request, passed to all downstream services and response headers. | plan.md, tracking.md                  |
-| 4   | What error handling strategy should be implemented?         | Structured error responses with environment-based detail level and consistent error codes.        | errors.py, plan.md                    |
-| 5   | How should database transaction boundaries be managed?      | Explicit transaction boundaries at service layer with proper error handling and rollback.         | services/, database.py                |
-| 6   | What is the approach for frontend/backend integration?      | API-driven with clear contracts, separate deployment, and configuration-based endpoints.          | next-steps.md, plan.md                |
-| 7   | How should application configuration be managed?            | Environment variables with sensible defaults, separate for frontend and backend.                  | config.py, frontend/.env              |
-| 8   | What is the port configuration strategy?                    | Environment variables only, never hardcoded, with dynamic CORS configuration.                     | config.py, package.json               |
-| 9   | How are architectural decisions documented and maintained?  | In questions-and-assumptions.md with rationale and implementation notes.                          | This document                         |
-| 10  | What is the testing strategy for architectural components?  | Unit tests for individual components, integration tests for critical paths only.                  | testing.md, plan.md                   |
-| 11  | How should FSM state transitions be handled via API?        | Use nextTransition property in API responses, with legacy support for nextState.                  | ChatContext.tsx, chatApi.ts           |
+| #   | Question                                                   | Answer/Status                                                                                     | Notes                       |
+| --- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------- |
+| 1   | What is the approach for SQLAlchemy relationship loading?  | Default to lazy loading, with eager loading used selectively for performance-critical paths.      | plan.md, sqlalchemy.md      |
+| 2   | What strategy should be used for API retries?              | Linear backoff with a maximum of 3 retries, configurable by endpoint and error type.              | plan.md                     |
+| 3   | How should correlation IDs be generated and maintained?    | Server-side generation with each request, passed to all downstream services and response headers. | plan.md, tracking.md        |
+| 4   | What error handling strategy should be implemented?        | Structured error responses with environment-based detail level and consistent error codes.        | errors.py, plan.md          |
+| 5   | How should database transaction boundaries be managed?     | Explicit transaction boundaries at service layer with proper error handling and rollback.         | services/, database.py      |
+| 6   | What is the approach for frontend/backend integration?     | API-driven with clear contracts, separate deployment, and configuration-based endpoints.          | next-steps.md, plan.md      |
+| 7   | How should application configuration be managed?           | Environment variables with sensible defaults, separate for frontend and backend.                  | config.py, frontend/.env    |
+| 8   | What is the port configuration strategy?                   | Environment variables only, never hardcoded, with dynamic CORS configuration.                     | config.py, package.json     |
+| 9   | How are architectural decisions documented and maintained? | In questions-and-assumptions.md with rationale and implementation notes.                          | This document               |
+| 10  | What is the testing strategy for architectural components? | Unit tests for individual components, integration tests for critical paths only.                  | testing.md, plan.md         |
+| 11  | How should FSM state transitions be handled via API?       | Use nextTransition property in API responses, with legacy support for nextState.                  | ChatContext.tsx, chatApi.ts |
 
 ### Assumptions
 
-| #   | Assumption                                                                       | Status/Validation | Notes                                    |
-| --- | -------------------------------------------------------------------------------- | ----------------- | ---------------------------------------- |
-| 1   | Lazy loading is appropriate for most database relationships in this application. | Validated         | sqlalchemy.md, plan.md                   |
-| 2   | API retry with linear backoff is sufficient for handling transient failures.     | Validated         | next-steps.md                            |
-| 3   | Server-side correlation ID generation provides better security and reliability.  | Validated         | tracking.md, plan.md                     |
-| 4   | Environment-based error detail protects sensitive information in production.     | Validated         | errors.py, plan.md                       |
-| 5   | Explicit transaction boundaries provide better control over database integrity.  | Validated         | services/, database.py                   |
-| 6   | Frontend and backend will be deployed independently.                             | Validated         | README.md, plan.md                       |
-| 7   | All configuration values should be overridable via environment variables.        | Validated         | config.py, frontend/.env                 |
-| 8   | Dynamic CORS configuration adapts to port changes automatically.                 | Validated         | config.py                                |
-| 9   | Documentation is maintained alongside code changes.                              | Validated         | This document, README.md                 |
-| 10  | Unit tests are prioritized over integration tests for most components.           | Validated         | testing.md, plan.md                      |
-| 11  | Using FSM transitions is more robust than directly setting FSM states.           | Validated         | ChatContext.tsx, FiniteStateMachine.ts   |
+| #   | Assumption                                                                       | Status/Validation | Notes                                  |
+| --- | -------------------------------------------------------------------------------- | ----------------- | -------------------------------------- |
+| 1   | Lazy loading is appropriate for most database relationships in this application. | Validated         | sqlalchemy.md, plan.md                 |
+| 2   | API retry with linear backoff is sufficient for handling transient failures.     | Validated         | next-steps.md                          |
+| 3   | Server-side correlation ID generation provides better security and reliability.  | Validated         | tracking.md, plan.md                   |
+| 4   | Environment-based error detail protects sensitive information in production.     | Validated         | errors.py, plan.md                     |
+| 5   | Explicit transaction boundaries provide better control over database integrity.  | Validated         | services/, database.py                 |
+| 6   | Frontend and backend will be deployed independently.                             | Validated         | README.md, plan.md                     |
+| 7   | All configuration values should be overridable via environment variables.        | Validated         | config.py, frontend/.env               |
+| 8   | Dynamic CORS configuration adapts to port changes automatically.                 | Validated         | config.py                              |
+| 9   | Documentation is maintained alongside code changes.                              | Validated         | This document, README.md               |
+| 10  | Unit tests are prioritized over integration tests for most components.           | Validated         | testing.md, plan.md                    |
+| 11  | Using FSM transitions is more robust than directly setting FSM states.           | Validated         | ChatContext.tsx, FiniteStateMachine.ts |
