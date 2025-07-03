@@ -17,12 +17,12 @@ print("Starting transaction test...")
 
 try:
     print("Importing directly from database.py...")
-    from backend.app.database import Base, SessionLocal, engine, get_db_session
+    from backend.app.database_core import Base, get_engine, get_session_local, get_db_session
 
     print("Importing TransactionContext...")
     from sqlalchemy import text
 
-    from backend.app.database import TransactionContext
+    from backend.app.database.transaction import TransactionContext
 
     print("Imports successful!")
 except ImportError as e:
@@ -46,7 +46,7 @@ def test_transaction_context():
 
         # Test with existing session
         print("Creating a session manually...")
-        manual_session = SessionLocal()
+        manual_session = get_session_local()
         with TransactionContext(manual_session) as session:
             print("  - Created TransactionContext with provided session")
             # Execute a simple query to verify connection
@@ -79,7 +79,7 @@ def test_transaction_context():
         print("Testing TransactionContext...")
 
         # Test with explicit session
-        session = SessionLocal()
+        session = get_session_local()
         print("Session created successfully.")
 
         with TransactionContext(session) as tx_session:

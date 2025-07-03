@@ -15,7 +15,7 @@ def create_database_tables():
     """Create database tables using SQLAlchemy models."""
     try:
         # Import database components
-        from app.database import get_engine, Base
+        from app.database_core import get_engine, Base
         from app import models  # This ensures models are registered
         
         # Get engine
@@ -38,7 +38,7 @@ def create_database_tables():
 
 def set_sqlite_fallback():
     """Set up SQLite fallback for testing."""
-    from app.database import set_database_url
+    from app.database_core import set_database_url
     
     # Use SQLite for testing
     sqlite_path = Path(__file__).parent / "maria_ai_test.db"

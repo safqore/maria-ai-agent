@@ -20,12 +20,12 @@ app = Flask(__name__)
 # Set up SQLAlchemy in the app context
 with app.app_context():
     # Import after app creation to avoid circular imports
-    from backend.app.database import Base, engine
+    from backend.app.database_core import Base, get_engine
     from backend.app.models import UserSession
     from backend.app.repositories.factory import get_user_session_repository
 
     # Create tables
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=get_engine())
 
     # Get repository instance
     user_repo = get_user_session_repository()

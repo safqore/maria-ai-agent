@@ -13,25 +13,19 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
 
 
-# Create engine and session factory directly to avoid circular imports
-def get_database_url():
-    """Create database URL from environment variables."""
-    db_user = os.getenv("POSTGRES_USER", "postgres")
-    db_password = os.getenv("POSTGRES_PASSWORD", "postgres")
-    db_host = os.getenv("POSTGRES_HOST", "localhost")
-    db_port = os.getenv("POSTGRES_PORT", "5432")
-    db_name = os.getenv("POSTGRES_DB", "maria_ai")
+# Remove the local get_database_url function and always use the one from backend.app.database
 
-    return f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+def get_engine():
+    """Lazily create and return the SQLAlchemy engine using the correct database URL."""
+    from backend.app.database_core import get_database_url
+    return create_engine(
+        get_database_url(), pool_pre_ping=True, pool_recycle=3600, echo=False
+    )
 
 
-# Create session factory - we need this for the TransactionContext
-_engine = create_engine(
-    get_database_url(), pool_pre_ping=True, pool_recycle=3600, echo=False
-)
-
-# Create session factory directly here
-_SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
+def get_session_local():
+    """Lazily create and return the session factory using the correct engine."""
+    return sessionmaker(autocommit=False, autoflush=False, bind=get_engine())
 
 
 class TransactionContext:
@@ -63,7 +57,7 @@ class TransactionContext:
         Args:
             session: SQLAlchemy session to use. If None, a new session is created.
         """
-        self.session = session or _SessionLocal()
+        self.session = session or get_session_local()()
         self.should_close = session is None
 
     def __enter__(self) -> Session:

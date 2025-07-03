@@ -23,13 +23,13 @@ def main():
     print("Starting ORM test...")
 
     # Import models and repository after sys.path is set
-    from backend.app.database import Base, engine
+    from backend.app.database_core import Base, get_engine
     from backend.app.models import UserSession
     from backend.app.repositories.user_session_repository import UserSessionRepository
 
     # Create tables
     print("Creating tables...")
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=get_engine())
 
     # Create repository
     print("Creating repository...")

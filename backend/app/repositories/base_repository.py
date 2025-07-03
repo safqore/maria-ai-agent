@@ -13,7 +13,7 @@ from sqlalchemy import inspect
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from backend.app.database import Base, get_db_session
+from backend.app.database_core import Base, get_db_session
 from backend.app.database.transaction import TransactionContext
 from backend.app.errors import ResourceNotFoundError as NotFoundError
 from backend.app.errors import ServerError

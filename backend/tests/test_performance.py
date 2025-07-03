@@ -14,7 +14,7 @@ from contextlib import contextmanager
 import pytest
 
 from backend.app import create_app
-from backend.app.database import get_db_session
+from backend.app.database_core import get_db_session
 from backend.app.database.transaction import TransactionContext
 from backend.app.models import UserSession
 from backend.app.repositories.user_session_repository import UserSessionRepository

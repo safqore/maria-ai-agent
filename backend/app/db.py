@@ -13,7 +13,7 @@ import os
 
 import psycopg2
 
-from backend.app.database import engine, get_db_session
+from backend.app.database_core import get_engine, get_db_session
 
 
 def get_db_connection():

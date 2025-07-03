@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from backend.app.database import get_db_session
+from backend.app.database_core import get_db_session
 from backend.app.errors import ServerError
 from backend.app.models import UserSession
 from backend.app.repositories.base_repository import BaseRepository
@@ -83,8 +83,10 @@ class UserSessionRepository(BaseRepository[UserSession]):
         Raises:
             ServerError: If a database error occurs
         """
+        # Convert string UUID to UUID object
+        uuid_obj = uuid.UUID(session_uuid)
         return self.create(
-            uuid=session_uuid,
+            uuid=uuid_obj,
             name=name,
             email=email,
             ip_address=ip_address,

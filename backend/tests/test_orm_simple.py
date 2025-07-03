@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from backend.app.database import Base, get_engine, init_database
+from backend.app.database_core import Base, get_engine, init_database
 
 # Import the repository components
 from backend.app.models import UserSession
@@ -35,6 +35,7 @@ def test_repository():
     # Initialize database first
     print("Initializing database...")
     init_database()
+    # Get engine lazily to allow test fixtures to override database URL
     engine = get_engine()
 
     # Create database tables

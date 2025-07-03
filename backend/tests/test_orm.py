@@ -23,13 +23,16 @@ from pathlib import Path
 project_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(project_dir))
 
-from backend.app.database import Base, engine, get_db_session
+from backend.app.database_core import Base, get_engine, get_db_session
 from backend.app.models import UserSession
 from backend.app.repositories.factory import get_user_session_repository
 
 
 def test_create_session():
     """Test creating a new user session."""
+    from backend.app.database_core import Base, get_engine
+    # Ensure tables are created for in-memory SQLite
+    Base.metadata.create_all(bind=get_engine())
     repo = get_user_session_repository()
     session_uuid = str(uuid.uuid4())
 
@@ -42,10 +45,11 @@ def test_create_session():
         consent_user_data=True,
     )
 
-    print(f"Created session: {user_session}")
-    print(f"Session dict: {user_session.to_dict()}")
-
-    return session_uuid
+    assert user_session is not None
+    assert user_session.uuid == uuid.UUID(session_uuid)
+    assert user_session.name == "Test User"
+    assert user_session.email == "test@example.com"
+    assert user_session.consent_user_data is True
 
 
 def test_get_by_uuid(session_uuid):
@@ -104,7 +108,7 @@ def run_tests():
     """Run all tests."""
     try:
         # Create tables if they don't exist
-        Base.metadata.create_all(bind=engine)
+        Base.metadata.create_all(bind=get_engine())
 
         # Run tests
         session_uuid = test_create_session()

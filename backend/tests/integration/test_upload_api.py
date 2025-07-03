@@ -14,6 +14,7 @@ from flask import Flask, jsonify
 from backend.app import create_app
 from backend.app.models import UserSession
 from backend.app.repositories.user_session_repository import UserSessionRepository
+from backend.app.database_core import Base, get_engine
 
 
 @pytest.fixture
@@ -31,9 +32,7 @@ def app():
 
     # Create database tables
     with app.app_context():
-        from backend.app.database import Base, engine
-
-        Base.metadata.create_all(bind=engine)
+        Base.metadata.create_all(bind=get_engine())
 
     return app
 

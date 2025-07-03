@@ -13,9 +13,54 @@ from flask import Flask
 # This adds the project root to sys.path if it's not already there
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 
+# Set the SQLALCHEMY_DATABASE_URI environment variable to SQLite at the very top of the file, before any other imports, to ensure all tests use SQLite and not PostgreSQL. This should be the first line in the file.
+import os
+os.environ["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
+
+
+@pytest.fixture(scope="session", autouse=True)
+def test_database_url():
+    """Set up SQLite database URL for all tests."""
+    import os
+    
+    # Set environment variables to force SQLite for testing
+    # This will cause get_database_url() to return None, which we can handle
+    os.environ["POSTGRES_USER"] = ""
+    os.environ["POSTGRES_PASSWORD"] = ""
+    os.environ["POSTGRES_HOST"] = ""
+    os.environ["POSTGRES_PORT"] = ""
+    os.environ["POSTGRES_DB"] = ""
+    
+    # Set a custom database URL using the global variable directly
+    sqlite_url = "sqlite:///:memory:"
+    
+    # Import and set the database URL after environment is configured
+    import backend.app.database_core
+    backend.app.database_core._custom_database_url = sqlite_url
+    
+    yield sqlite_url
+    
+    # Reset to None to allow normal operation
+    backend.app.database_core._custom_database_url = None
+
+
+@pytest.fixture(scope="session", autouse=True)
+def initialize_test_database(test_database_url):
+    """Initialize the test database with tables."""
+    from backend.app.database_core import get_engine, Base
+    
+    # Get engine and create tables
+    engine = get_engine()
+    Base.metadata.create_all(bind=engine)
+    
+    yield
+    
+    # Cleanup if needed
+    pass
+
 
 @pytest.fixture
-def test_app(request):
+def test_app(test_database_url):
     """
     Create a test-specific Flask app with minimal configuration.
 
@@ -24,34 +69,37 @@ def test_app(request):
     """
     app = Flask("test_app")
     app.config["TESTING"] = True
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
+    app.config["SQLALCHEMY_DATABASE_URI"] = test_database_url
     app.config["REQUIRE_AUTH"] = False  # Disable auth for testing
-
-    # Set the database URL to use SQLite in-memory database for testing
-    try:
-        # Patch the get_database_url function to return SQLite URL
-        import backend.app.database
-
-        original_get_database_url = backend.app.database.get_database_url
-        backend.app.database.get_database_url = lambda: "sqlite:///:memory:"
-
-        # Keep track of the original function to restore later
-        app.original_get_database_url = original_get_database_url
-    except ImportError:
-        # If database module is not imported yet, that's okay
-        pass
+    app.config["SKIP_MIDDLEWARE"] = True  # Skip middleware to avoid conflicts
 
     yield app
 
-    # Clean up - restore the original get_database_url function if it was patched
-    if hasattr(app, "original_get_database_url"):
-        import backend.app.database
 
-        backend.app.database.get_database_url = app.original_get_database_url
+@pytest.fixture
+def client(test_database_url):
+    """
+    Create a test client using the create_app function.
+    
+    This fixture creates a proper Flask app using the application factory
+    and returns a test client for making requests.
+    """
+    from backend.app.app_factory import create_app
+    
+    # Create test configuration
+    test_config = {
+        "TESTING": True,
+        "SKIP_MIDDLEWARE": True,  # Skip middleware to avoid conflicts
+    }
+    
+    app = create_app(test_config)
+    
+    with app.test_client() as client:
+        yield client
 
 
 @pytest.fixture
-def session_uuid():
+def session_uuid(client):
     """
     Create a test user session and return its UUID.
     

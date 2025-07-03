@@ -130,12 +130,10 @@ def create_app(test_config=None):
     )
 
     # Initialize database after environment is loaded
-    import backend.app.database as database
-    from backend.app.database import get_engine, get_session_local, init_database
+    from backend.app.database_core import get_engine, get_session_local, init_database, Base
 
-    init_database()
-    database.engine = get_engine()
-    database.SessionLocal = get_session_local()
+    # Don't initialize database here - let it be initialized lazily when needed
+    # This allows test fixtures to override the database URL before any engine is created
 
     # Create and configure the app
     app = Flask(__name__, instance_relative_config=True)
@@ -258,8 +256,10 @@ def create_app(test_config=None):
         return {"message": "pong"}
 
     # Create database tables if they don't exist
-    from backend.app.database import Base, engine
+    from backend.app.database_core import Base, get_engine
 
+    # Get engine lazily to allow test fixtures to override database URL
+    engine = get_engine()
     Base.metadata.create_all(bind=engine)
 
     # Log successful app creation
