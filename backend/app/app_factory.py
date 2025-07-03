@@ -187,13 +187,13 @@ def create_app(test_config=None):
     else:
         logger.info("Skipping middleware application due to SKIP_MIDDLEWARE flag")
 
-    # Register blueprints 
-    # Register with both legacy (empty prefix) and versioned prefixes
-    app.register_blueprint(session_bp, url_prefix="")
-    app.register_blueprint(upload_bp, url_prefix="")
+    # Register blueprints with API prefix
+    app.register_blueprint(session_bp, url_prefix=versioned_prefix, name="session_v1")
+    app.register_blueprint(upload_bp, url_prefix=versioned_prefix, name="upload_v1")
     
-    # Note: For versioned routes, we'll handle them within the blueprint routes
-    # to avoid blueprint registration conflicts in tests
+    # Also register legacy routes without prefix for backward compatibility
+    app.register_blueprint(session_bp, url_prefix="", name="session_legacy")
+    app.register_blueprint(upload_bp, url_prefix="", name="upload_legacy")
 
     # Set up session service for requests after blueprints are registered
     from backend.app.routes.session import setup_session_service
@@ -230,6 +230,8 @@ def create_app(test_config=None):
         """Add additional headers or process responses if needed"""
         # Add API version header
         response.headers["X-API-Version"] = api_version
+        # Expose custom headers to the browser
+        response.headers["Access-Control-Expose-Headers"] = "X-Correlation-ID, X-API-Version"
         return response
 
     # Add API information endpoint

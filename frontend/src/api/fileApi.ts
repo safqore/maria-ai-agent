@@ -13,14 +13,20 @@ import { del, createApiUrl } from './apiClient';
  * File upload response from the backend API
  */
 export interface FileUploadResponse {
-  status: 'success' | 'error';
-  message: string;
+  // Backend response format
+  filename?: string;
+  url?: string;
+  // Legacy format (for backward compatibility)
+  status?: 'success' | 'error';
+  message?: string;
   correlationId?: string;
   files?: Array<{
     name: string;
     url: string;
     size: number;
   }>;
+  // Error format
+  error?: string;
 }
 
 /**
@@ -97,6 +103,10 @@ export const FileApi = {
 
         xhr.onerror = () => {
           reject(new ApiError('Network error occurred during upload'));
+        };
+
+        xhr.ontimeout = () => {
+          reject(new ApiError('Upload timeout'));
         };
 
         xhr.send(formData);

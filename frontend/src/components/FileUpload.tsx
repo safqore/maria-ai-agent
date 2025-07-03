@@ -92,7 +92,24 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone }) => {
         }
       );
       
-      if (response.status === 'success') {
+      // Check if response has the expected format from backend
+      if (response.filename && response.url) {
+        // Backend returned successful upload format: {filename, url}
+        setFiles(prev =>
+          prev.map(f =>
+            f.file === file
+              ? {
+                  ...f,
+                  status: 'uploaded',
+                  progress: 100,
+                  url: response.url,
+                }
+              : f
+          )
+        );
+        onFileUploaded(file);
+      } else if (response.status === 'success') {
+        // Legacy format: {status, message, files}
         setFiles(prev =>
           prev.map(f =>
             f.file === file
@@ -109,7 +126,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone }) => {
       } else {
         setFiles(prev =>
           prev.map(f =>
-            f.file === file ? { ...f, status: 'error', error: response.message || 'Upload failed' } : f
+            f.file === file ? { ...f, status: 'error', error: response.message || response.error || 'Upload failed' } : f
           )
         );
       }
