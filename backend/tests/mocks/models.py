@@ -39,6 +39,7 @@ class UserSession(Base):
     """
 
     __tablename__ = "user_sessions"
+    __table_args__ = {'extend_existing': True}
 
     uuid = Column(GUID(), primary_key=True, default=uuid.uuid4)
     name = Column(Text, nullable=False)

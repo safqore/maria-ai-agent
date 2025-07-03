@@ -109,26 +109,3 @@ def get_db_session() -> Generator[Session, None, None]:
         raise
     finally:
         session.close()
-    """
-    Context manager for database sessions.
-    
-    This function provides a database session that is automatically
-    closed after use, and handles committing changes or rolling back
-    on exceptions.
-    
-    Example:
-        with get_db_session() as session:
-            user = session.query(User).filter(User.id == 1).first()
-            
-    Returns:
-        SQLAlchemy session object
-    """
-    session = SessionLocal()
-    try:
-        yield session
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()
