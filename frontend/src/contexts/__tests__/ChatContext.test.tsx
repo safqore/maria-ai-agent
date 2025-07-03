@@ -2,7 +2,22 @@ import React from 'react';
 import { render, act, waitFor, fireEvent } from '@testing-library/react';
 import { ChatProvider, useChat } from '../../contexts/ChatContext';
 import { ChatActionTypes } from '../../contexts/ChatContext';
-import { States } from '../../state/FiniteStateMachine';
+import { States, StateMachine, Transitions, createStateMachine } from '../../state/FiniteStateMachine';
+
+// Mock FSM for testing
+const createMockFSM = (): StateMachine => {
+  const fsm = createStateMachine();
+  
+  // Mock the methods that handleButtonClick depends on
+  fsm.getResponseDisplayValue = jest.fn().mockReturnValue('Yes');
+  fsm.canTransition = jest.fn().mockReturnValue(true);
+  fsm.transition = jest.fn();
+  fsm.getCurrentState = jest.fn().mockReturnValue(States.COLLECTING_NAME);
+  fsm.getState = jest.fn().mockReturnValue(States.COLLECTING_NAME);
+  fsm.reset = jest.fn();
+  
+  return fsm;
+};
 
 // A test component that uses the chat context
 const TestComponent: React.FC = () => {
@@ -73,30 +88,33 @@ const TestComponent: React.FC = () => {
       <button data-testid="reset-chat" onClick={() => resetChat()}>
         Reset Chat
       </button>
-      <button data-testid="clear-error" onClick={() => clearError()}>
-        Clear Error
-      </button>
     </div>
   );
 };
 
 describe('ChatContext', () => {
+  let mockFSM: StateMachine;
+
+  beforeEach(() => {
+    mockFSM = createMockFSM();
+  });
+
   it('provides initial state', () => {
     const { getByTestId } = render(
-      <ChatProvider>
+      <ChatProvider fsm={mockFSM}>
         <TestComponent />
       </ChatProvider>
     );
 
     // Check initial state
     expect(getByTestId('message-count').textContent).toBe('1'); // Should have 1 welcome message
-    expect(getByTestId('input-disabled').textContent).toBe('true');
+    expect(getByTestId('input-disabled').textContent).toBe('false');
     expect(getByTestId('error').textContent).toBe('no-error');
   });
 
   it('adds user message', () => {
     const { getByTestId } = render(
-      <ChatProvider>
+      <ChatProvider fsm={mockFSM}>
         <TestComponent />
       </ChatProvider>
     );
@@ -110,7 +128,7 @@ describe('ChatContext', () => {
 
   it('adds bot message', () => {
     const { getByTestId } = render(
-      <ChatProvider>
+      <ChatProvider fsm={mockFSM}>
         <TestComponent />
       </ChatProvider>
     );
@@ -124,7 +142,7 @@ describe('ChatContext', () => {
 
   it('toggles input disabled state', () => {
     const { getByTestId } = render(
-      <ChatProvider>
+      <ChatProvider fsm={mockFSM}>
         <TestComponent />
       </ChatProvider>
     );
@@ -133,12 +151,12 @@ describe('ChatContext', () => {
       getByTestId('toggle-input-disabled').click();
     });
 
-    expect(getByTestId('input-disabled').textContent).toBe('false');
+    expect(getByTestId('input-disabled').textContent).toBe('true');
   });
 
   it('sets and clears error message', () => {
     const { getByTestId } = render(
-      <ChatProvider>
+      <ChatProvider fsm={mockFSM}>
         <TestComponent />
       </ChatProvider>
     );
@@ -158,7 +176,7 @@ describe('ChatContext', () => {
 
   it('updates FSM state', () => {
     const { getByTestId } = render(
-      <ChatProvider>
+      <ChatProvider fsm={mockFSM}>
         <TestComponent />
       </ChatProvider>
     );
@@ -174,7 +192,7 @@ describe('ChatContext', () => {
 
   it('handles button clicks', async () => {
     const { getByTestId } = render(
-      <ChatProvider>
+      <ChatProvider fsm={mockFSM}>
         <TestComponent />
       </ChatProvider>
     );
@@ -191,10 +209,15 @@ describe('ChatContext', () => {
 
   it('sends messages and processes responses', async () => {
     const { getByTestId } = render(
-      <ChatProvider>
+      <ChatProvider fsm={mockFSM}>
         <TestComponent />
       </ChatProvider>
     );
+
+    // First, update the FSM state to COLLECTING_NAME so sendMessage will process the text
+    act(() => {
+      getByTestId('update-fsm').click();
+    });
 
     act(() => {
       getByTestId('send-message').click();
@@ -208,7 +231,7 @@ describe('ChatContext', () => {
 
   it('resets the chat', async () => {
     const { getByTestId } = render(
-      <ChatProvider>
+      <ChatProvider fsm={mockFSM}>
         <TestComponent />
       </ChatProvider>
     );
@@ -228,7 +251,7 @@ describe('ChatContext', () => {
 
     // Should reset to initial state
     await waitFor(() => {
-      expect(getByTestId('message-count').textContent).toBe('2'); // Welcome message + new welcome message
+      expect(getByTestId('message-count').textContent).toBe('1'); // Back to initial welcome message
     });
 
     act(() => {

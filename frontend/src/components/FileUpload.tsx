@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { API_BASE_URL } from '../utils/config';
+import { FileApi } from '../api/fileApi';
 import { getOrCreateSessionUUID } from '../utils/sessionUtils';
 
 interface FileUploadProps {
@@ -70,7 +70,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone }) => {
   };
 
   /**
-   * Uploads a file to the backend. Enforces UUID check before upload.
+   * Uploads a file using the FileApi service. Enforces UUID check before upload.
    */
   const uploadFile = async (file: File) => {
     setFiles(prev =>
@@ -78,86 +78,85 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone }) => {
         f.file === file ? { ...f, status: 'uploading', progress: 0, error: undefined } : f
       )
     );
+    
     try {
-      const formData = new FormData();
-      formData.append('file', file);
       // Always ensure a valid UUID is present before upload
       const uuid = await getOrCreateSessionUUID();
-      formData.append('session_uuid', uuid);
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', `${API_BASE_URL}/upload`);
-      xhr.upload.onprogress = e => {
-        if (e.lengthComputable) {
-          const percent = Math.round((e.loaded / e.total) * 100);
+      
+      // Use FileApi service with progress callback
+      const response = await FileApi.uploadFile(
+        file,
+        uuid,
+        (percent) => {
           setFiles(prev => prev.map(f => (f.file === file ? { ...f, progress: percent } : f)));
         }
-      };
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          setFiles(prev =>
-            prev.map(f =>
-              f.file === file
-                ? {
-                    ...f,
-                    status: 'uploaded',
-                    progress: 100,
-                    url: JSON.parse(xhr.response).files?.[0]?.url,
-                  }
-                : f
-            )
-          );
-          onFileUploaded(file);
-        } else if (xhr.status === 400 && xhr.responseText.includes('invalid session')) {
-          // Handle backend invalid/tampered UUID error
-          window.location.reload(); // Optionally, trigger a full reload to reset session
-        } else {
-          setFiles(prev =>
-            prev.map(f =>
-              f.file === file ? { ...f, status: 'error', error: 'Failed to upload' } : f
-            )
-          );
-        }
-      };
-      xhr.onerror = () => {
+      );
+      
+      if (response.status === 'success') {
         setFiles(prev =>
-          prev.map(f => (f.file === file ? { ...f, status: 'error', error: 'Network error' } : f))
+          prev.map(f =>
+            f.file === file
+              ? {
+                  ...f,
+                  status: 'uploaded',
+                  progress: 100,
+                  url: response.files?.[0]?.url,
+                }
+              : f
+          )
         );
-      };
-      xhr.send(formData);
-    } catch (error) {
+        onFileUploaded(file);
+      } else {
+        setFiles(prev =>
+          prev.map(f =>
+            f.file === file ? { ...f, status: 'error', error: response.message || 'Upload failed' } : f
+          )
+        );
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Network error';
+      
+      // Handle backend invalid/tampered UUID error
+      if (errorMessage.includes('invalid session')) {
+        window.location.reload(); // Optionally, trigger a full reload to reset session
+        return;
+      }
+      
       setFiles(prev =>
-        prev.map(f => (f.file === file ? { ...f, status: 'error', error: 'Upload failed' } : f))
+        prev.map(f => (f.file === file ? { ...f, status: 'error', error: errorMessage } : f))
       );
     }
   };
 
   /**
-   * Handles file removal. Enforces UUID check before removal.
+   * Handles file removal using the FileApi service. Enforces UUID check before removal.
    */
   const handleRemove = async (file: File) => {
     // Enforce UUID check before any file remove action
     await getOrCreateSessionUUID();
     const fileObj = files.find(f => f.file === file);
+    
     if (fileObj?.status === 'uploaded' && fileObj.url) {
-      // Backend delete request
+      // Use FileApi service for deletion
       try {
         const uuid = await getOrCreateSessionUUID();
-        const response = await fetch(`${API_BASE_URL}/delete`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: fileObj.file.name, session_uuid: uuid }),
-        });
-        if (response.status === 400) {
-          const text = await response.text();
-          if (text.includes('invalid session')) {
-            window.location.reload(); // Reset session on invalid UUID
-            return;
-          }
+        const response = await FileApi.deleteFile(fileObj.file.name, uuid);
+        
+        if (response.status !== 'success') {
+          // Handle deletion error, but still remove from UI
+          console.warn('File deletion failed:', response.message);
         }
-      } catch (e) {
-        // Optionally show error
+      } catch (error: any) {
+        const errorMessage = error?.message || '';
+        if (errorMessage.includes('invalid session')) {
+          window.location.reload(); // Reset session on invalid UUID
+          return;
+        }
+        // Log error but continue with removal from UI
+        console.warn('File deletion error:', error);
       }
     }
+    
     setFiles(prev => prev.filter(f => f.file !== file));
   };
 

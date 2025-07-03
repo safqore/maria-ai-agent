@@ -3,9 +3,11 @@ import { render, screen } from '@testing-library/react';
 import ChatActions from '../ChatActions';
 
 // Mock the FileUpload component
-jest.mock('../../fileUpload', () => ({
-  FileUpload: () => <div data-testid="mock-file-upload">Mock File Upload</div>,
-}));
+jest.mock('../../fileUpload/FileUpload', () => {
+  const MockFileUpload = () => <div data-testid="mock-file-upload">Mock File Upload</div>;
+  MockFileUpload.displayName = 'MockFileUpload';
+  return MockFileUpload;
+});
 
 describe('ChatActions', () => {
   const mockSessionUUID = '12345-67890';

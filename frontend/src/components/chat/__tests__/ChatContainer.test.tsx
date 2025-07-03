@@ -16,6 +16,7 @@ jest.mock('../../../contexts/ChatContext', () => ({
     addUserMessage: jest.fn(),
     addBotMessage: jest.fn(),
     setInputDisabled: jest.fn(),
+    setButtonGroupVisible: jest.fn(),
     removeMessageButtons: jest.fn(),
     setError: jest.fn(),
   }),

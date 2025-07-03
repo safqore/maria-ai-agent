@@ -71,6 +71,8 @@ export enum ChatActionTypes {
   SET_CORRELATION_ID = 'SET_CORRELATION_ID',
   /** Set detailed error information */
   SET_DETAILED_ERROR = 'SET_DETAILED_ERROR',
+  /** Reset chat to initial state */
+  RESET_CHAT = 'RESET_CHAT',
 }
 
 /**
@@ -96,7 +98,8 @@ export type ChatAction =
   | {
       type: ChatActionTypes.SET_DETAILED_ERROR;
       payload: { error: string; errorType: ApiErrorType; correlationId?: string };
-    };
+    }
+  | { type: ChatActionTypes.RESET_CHAT; payload: Record<string, never> };
 
 /**
  * Initial welcome message
@@ -227,6 +230,11 @@ const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
         error: action.payload.error,
         errorType: action.payload.errorType,
         lastCorrelationId: action.payload.correlationId || state.lastCorrelationId,
+      };
+
+    case ChatActionTypes.RESET_CHAT:
+      return {
+        ...initialState,
       };
 
     default:
@@ -703,22 +711,19 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children, fsm }) => 
     // Reset the FSM if available
     if (fsm) {
       fsm.reset();
-      updateFsmState(fsm.getCurrentState());
     }
 
-    // Reset UI state
-    setInputDisabled(false);
-    setButtonGroupVisible(true);
-    clearError();
-
-    // Reset messages to initial welcome message
+    // Reset entire chat state to initial state
     dispatch({
-      type: ChatActionTypes.ADD_BOT_MESSAGE,
-      payload: {
-        text: welcomeMessage,
-      },
+      type: ChatActionTypes.RESET_CHAT,
+      payload: {},
     });
-  }, [fsm, setInputDisabled, setButtonGroupVisible, clearError, updateFsmState]);
+
+    // Update FSM state after reset
+    if (fsm) {
+      updateFsmState(fsm.getCurrentState());
+    }
+  }, [fsm, updateFsmState]);
 
   // Create the context value with all methods
   const value = {

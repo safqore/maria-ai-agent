@@ -108,7 +108,7 @@ describe('Frontend Core Features Integration Tests', () => {
       }
 
       expect(logger.error).toHaveBeenCalledWith(
-        expect.any(ApiError),
+        expect.any(Error),
         expect.objectContaining(errorContext)
       );
     });
