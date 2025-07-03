@@ -165,7 +165,7 @@ def validate_json_middleware():
                 jsonify(
                     {
                         "error": "Invalid JSON format",
-                        "message": "The request body could not be parsed as JSON",
+                        "message": "Invalid JSON format",
                         "correlation_id": getattr(g, "correlation_id", "unknown"),
                     }
                 ),
@@ -212,8 +212,13 @@ def error_handling_middleware(blueprint_name):
         """Handle errors consistently."""
         status_code = getattr(error, "code", 500)
 
-        # Get error message
-        if hasattr(error, "description"):
+        # Get the original exception if it's wrapped
+        original_error = getattr(error, "original_exception", error)
+
+        # Get error message from original exception first
+        if original_error != error:
+            message = str(original_error)
+        elif hasattr(error, "description"):
             message = error.description
         else:
             message = str(error)
@@ -230,7 +235,7 @@ def error_handling_middleware(blueprint_name):
         return (
             jsonify(
                 {
-                    "error": error.__class__.__name__,
+                    "error": original_error.__class__.__name__,
                     "message": message,
                     "correlation_id": getattr(g, "correlation_id", "unknown"),
                 }
@@ -281,6 +286,11 @@ def apply_middleware_to_blueprint(blueprint, api_version=None):
         blueprint: The Flask blueprint to apply middleware to
         api_version: Optional API version for versioning middleware
     """
+    # Check if middleware has already been applied to this blueprint
+    if hasattr(blueprint, '_middleware_applied'):
+        logger.debug(f"Middleware already applied to blueprint: {blueprint.name}")
+        return blueprint
+
     # Add request logging
     before_request, after_request = log_request_middleware()
     blueprint.before_request(before_request)
@@ -298,6 +308,8 @@ def apply_middleware_to_blueprint(blueprint, api_version=None):
     for err in [400, 401, 403, 404, 405, 429, 500]:
         blueprint.errorhandler(err)(error_handler)
 
+    # Mark middleware as applied
+    blueprint._middleware_applied = True
     logger.info(f"Applied middleware to blueprint: {blueprint.name}")
 
     return blueprint

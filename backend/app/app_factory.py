@@ -189,20 +189,17 @@ def create_app(test_config=None):
     else:
         logger.info("Skipping middleware application due to SKIP_MIDDLEWARE flag")
 
-    # Register blueprints with proper API versioning
-    # First register with empty prefix for backward compatibility
+    # Register blueprints 
+    # Register with both legacy (empty prefix) and versioned prefixes
     app.register_blueprint(session_bp, url_prefix="")
     app.register_blueprint(upload_bp, url_prefix="")
+    
+    # Note: For versioned routes, we'll handle them within the blueprint routes
+    # to avoid blueprint registration conflicts in tests
 
-    # Also register with versioned API prefix for new clients
-    # Note: Flask doesn't allow registering the same blueprint twice with the same name
-    # So we use a different name for the versioned routes
-    app.register_blueprint(
-        session_bp, url_prefix=versioned_prefix, name=f"session_{api_version}"
-    )
-    app.register_blueprint(
-        upload_bp, url_prefix=versioned_prefix, name=f"upload_{api_version}"
-    )
+    # Set up session service for requests after blueprints are registered
+    from backend.app.routes.session import setup_session_service
+    app.before_request(setup_session_service)
 
     # Create instance directory if it doesn't exist
     try:

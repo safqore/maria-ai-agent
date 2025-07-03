@@ -39,8 +39,9 @@ def with_session_service(f):
     return wrapper
 
 
-# Apply the with_session_service decorator to all route handlers in this blueprint
-session_bp.before_request(lambda: setattr(g, "session_service", SessionService()))
+def setup_session_service():
+    """Set up session service for requests. Called by app factory."""
+    g.session_service = SessionService()
 
 
 @session_bp.route("/validate-uuid", methods=["POST", "OPTIONS"])
