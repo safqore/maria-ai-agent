@@ -2,6 +2,87 @@
 
 Maria is an AI agent that autonomously creates and orchestrates other AI agents. The system features a modern React + TypeScript frontend and a modular Flask backend, enabling collaborative, multi-agent workflows through an interactive web interface.
 
+## 🚨 Important Environment Setup
+
+**CRITICAL**: Before running any backend commands, tests, or development tasks, you MUST activate the conda environment:
+
+```bash
+conda activate maria-ai-agent
+```
+
+This is required for:
+- Running tests (`pytest`)
+- Running the backend server
+- Database operations
+- Any Python-related development tasks
+
+**Note for developers/AI assistants**: Always activate the conda environment before executing any backend commands.
+
+## Quick Start
+
+### Prerequisites
+- Python 3.9+ with conda
+- Node.js 16+ with npm
+- Git
+
+### 1. Environment Setup
+```bash
+# Clone the repository
+git clone <repository-url>
+cd maria-ai-agent
+
+# Create and activate conda environment
+conda create -n maria-ai-agent python=3.9
+conda activate maria-ai-agent  # ← REQUIRED for all backend operations
+
+# Install dependencies
+make setup
+```
+
+### 2. Development Server
+```bash
+# Terminal 1 - Backend (ensure conda env is active)
+conda activate maria-ai-agent
+make run-backend
+
+# Terminal 2 - Frontend
+make run-frontend
+```
+
+### 3. Running Tests
+```bash
+# Backend tests (ensure conda env is active)
+conda activate maria-ai-agent
+make test-backend
+
+# Frontend tests
+make test-frontend
+
+# Performance tests (requires PostgreSQL database setup)
+# Configure your database in backend/.env first
+make test-performance
+```
+
+### 4. Database Setup for Performance Testing
+For running performance tests, you need a PostgreSQL database:
+
+```bash
+# Install PostgreSQL (Ubuntu/Debian)
+sudo apt-get install postgresql postgresql-contrib
+
+# Create database and user
+sudo -u postgres psql
+CREATE DATABASE maria_ai;
+CREATE USER postgres WITH PASSWORD 'postgres';
+GRANT ALL PRIVILEGES ON DATABASE maria_ai TO postgres;
+\q
+
+# Configure database URL in backend/.env
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/maria_ai
+```
+
+**Note**: Regular integration tests use SQLite and don't require PostgreSQL setup.
+
 ## Project Structure
 
 - **backend/**: Modular Flask backend (see `backend/app/` for routes, utils, and db logic)

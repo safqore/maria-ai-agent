@@ -1,17 +1,19 @@
+# Maria AI Agent Makefile
+# 
+# IMPORTANT: Activate conda environment before running backend commands:
+#   conda activate maria-ai-agent
+#
+# This is required for all backend operations (tests, server, database, etc.)
+
 .PHONY: help install-dev format lint test run-backend run-frontend clean git-commit git-status git-add
 
-help:
+help: ## Show help message
+	@echo "Maria AI Agent - Development Commands"
+	@echo ""
+	@echo "⚠️  IMPORTANT: Run 'conda activate maria-ai-agent' before backend commands"
+	@echo ""
 	@echo "Available commands:"
-	@echo "  install-dev   - Install development dependencies"
-	@echo "  format        - Format code (Python and JavaScript/TypeScript)"
-	@echo "  lint          - Run linters (Python and JavaScript/TypeScript)"
-	@echo "  test          - Run tests (Python and JavaScript/TypeScript)"
-	@echo "  run-backend   - Run the Flask backend server"
-	@echo "  run-frontend  - Run the React frontend development server"
-	@echo "  clean         - Clean temporary files and caches"
-	@echo "  git-status    - Run git status with correct locale settings"
-	@echo "  git-add       - Run git add with correct locale settings (use: make git-add FILES='file1 file2')"
-	@echo "  git-commit    - Run git commit with correct locale settings (use: make git-commit MESSAGE='commit message')"
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 install-dev:
 	pip install -r requirements.txt
@@ -30,14 +32,14 @@ lint:
 	mypy backend/
 	cd frontend && npm run lint
 
-test:
+test: ## Run all tests (requires: conda activate maria-ai-agent)
 	pytest backend/
 	cd frontend && npm test
 
-run-backend:
+run-backend: ## Run Flask backend server (requires: conda activate maria-ai-agent)
 	cd backend && python wsgi.py
 
-run-frontend:
+run-frontend: ## Run React frontend development server
 	cd frontend && npm start
 
 clean:
