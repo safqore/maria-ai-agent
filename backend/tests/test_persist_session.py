@@ -2,7 +2,7 @@ import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
-from app import create_app
+from backend.app.app_factory import create_app
 
 
 @pytest.fixture
@@ -16,7 +16,7 @@ def client():
 def test_persist_session_unique_uuid(client):
     test_uuid = str(uuid.uuid4())
     data = {"session_uuid": test_uuid, "name": "Test User", "email": "test@example.com"}
-    with patch("app.services.session_service.get_db_connection") as mock_conn:
+    with patch("backend.app.services.session_service.get_db_connection") as mock_conn:
         mock_cursor = MagicMock()
         mock_cursor.fetchone.return_value = [0]
         mock_conn.return_value.cursor.return_value = mock_cursor
@@ -30,8 +30,8 @@ def test_persist_session_collision(client):
     test_uuid = str(uuid.uuid4())
     data = {"session_uuid": test_uuid, "name": "Test User", "email": "test@example.com"}
     with (
-        patch("app.services.session_service.get_db_connection") as mock_conn,
-        patch("app.services.session_service.migrate_s3_files") as mock_migrate,
+        patch("backend.app.services.session_service.get_db_connection") as mock_conn,
+        patch("backend.app.utils.s3_utils.migrate_s3_files") as mock_migrate,
     ):
         mock_cursor = MagicMock()
         mock_cursor.fetchone.return_value = [1]

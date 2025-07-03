@@ -108,7 +108,7 @@ describe('SessionApi', () => {
       const response = await SessionApi.persistSession('test-uuid', true);
 
       // Assertions
-      expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/persist-session`, {
+      expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/persist_session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -130,7 +130,7 @@ describe('SessionApi', () => {
       await SessionApi.persistSession('test-uuid');
 
       // Assertions
-      expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/persist-session`, {
+      expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/persist_session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -248,9 +248,9 @@ class TestSessionService:
         
         response, status_code = self.session_service.persist_session(test_uuid, test_name, test_email)
         
-        assert status_code == 200
-        assert response["message"] == "Session persisted"
-        assert response["session_uuid"] == test_uuid
+        assert status_code == 201
+        assert response["message"] == "Session created successfully"
+        assert response["uuid"] == test_uuid
         
         self.mock_repository.exists.assert_called_once_with(test_uuid)
         self.mock_repository.create_session.assert_called_once_with(

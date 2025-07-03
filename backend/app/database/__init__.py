@@ -12,6 +12,9 @@ from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
+# Import TransactionContext from the transaction module
+from backend.app.database.transaction import TransactionContext
+
 
 # Create SQLAlchemy engine from environment variables
 def get_database_url():
@@ -102,7 +105,7 @@ def get_db_session() -> Generator[Session, None, None]:
 
 # Export modules and functions
 __all__ = [
-    "transaction",
+    "TransactionContext",
     "get_db_session",
     "Base",
     "SessionLocal",

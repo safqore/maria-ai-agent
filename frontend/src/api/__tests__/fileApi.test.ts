@@ -6,6 +6,7 @@ class MockXMLHttpRequest {
   open = jest.fn();
   send = jest.fn();
   setRequestHeader = jest.fn();
+  getResponseHeader = jest.fn(() => 'test-correlation-id');
   upload = {
     onprogress: null as any,
     addEventListener: jest.fn(),
@@ -63,12 +64,15 @@ describe('FileApi', () => {
       const uploadPromise = FileApi.uploadFile(file, sessionUUID);
 
       // Assert FormData creation
-      expect(mockXhr.open).toHaveBeenCalledWith('POST', `${API_BASE_URL}/upload`);
+      expect(mockXhr.open).toHaveBeenCalledWith('POST', `${API_BASE_URL}/api/v1/upload`);
       expect(mockXhr.send).toHaveBeenCalled();
 
       // Wait for "response"
       const result = await uploadPromise;
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual({
+        ...mockResponse,
+        correlationId: 'test-correlation-id'
+      });
     });
 
     it('should call progress callback when provided', async () => {

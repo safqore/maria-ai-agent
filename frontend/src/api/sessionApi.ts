@@ -73,7 +73,7 @@ export const SessionApi = {
    */
   persistSession: async (uuid: string, consentUserData = false): Promise<UUIDResponse> => {
     try {
-      const response = await post<UUIDResponse>('persist-session', {
+      const response = await post<UUIDResponse>('persist_session', {
         uuid,
         consent_user_data: consentUserData,
       });
