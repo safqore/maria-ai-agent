@@ -5,11 +5,17 @@ This module provides services for:
 - UUID validation and generation
 - Session persistence
 - User consent management
+
+Architecture Note:
+- Uses explicit transaction boundaries with TransactionContext
+- All database operations are wrapped in proper transactions
+- Provides clear transaction scope for atomic operations
 """
 
 import uuid
-from typing import Any, Dict, Tuple, Optional
+from typing import Any, Dict, Optional, Tuple
 
+from backend.app.database.transaction import TransactionContext
 from backend.app.repositories.factory import get_user_session_repository
 from backend.app.utils.audit_utils import log_audit_event
 from backend.app.utils.s3_utils import migrate_s3_files
@@ -21,8 +27,12 @@ class SessionService:
 
     This class handles all business logic related to user sessions including
     UUID validation, generation, and session persistence.
+
+    Architecture Note:
+    - Uses explicit transactions for all database operations
+    - Transaction boundaries are clearly defined for atomic operations
     """
-    
+
     def __init__(self):
         """Initialize with a repository instance."""
         self.user_session_repository = get_user_session_repository()
@@ -153,14 +163,15 @@ class SessionService:
             }, 500
 
     def persist_session(
-        self,
-        session_uuid: str, name: str, email: str
+        self, session_uuid: str, name: str, email: str
     ) -> Tuple[Dict[str, Any], int]:
         """
         Persist a user session with name, email, and session_uuid.
 
         This method checks UUID uniqueness in the database. If there is a collision,
         it generates a new UUID and migrates files in S3.
+
+        Uses explicit transaction boundary for atomic session creation.
 
         Args:
             session_uuid: The session UUID
@@ -178,27 +189,51 @@ class SessionService:
                 "code": "invalid session",
             }, 400
 
-        # Check if session UUID already exists
-        if self.user_session_repository.exists(session_uuid):
-            new_uuid = str(uuid.uuid4())
-            migrate_s3_files(session_uuid, new_uuid)
-            session_uuid = new_uuid
+        try:
+            # Use explicit transaction for atomic session creation
+            with TransactionContext():
+                # Check if session UUID already exists
+                if self.user_session_repository.exists(session_uuid):
+                    new_uuid = str(uuid.uuid4())
+                    migrate_s3_files(session_uuid, new_uuid)
+                    session_uuid = new_uuid
+                    return {
+                        "new_uuid": new_uuid,
+                        "message": "UUID collision, new UUID assigned",
+                    }, 200
+
+                # Create the user session within the transaction
+                user_session = self.user_session_repository.create_session(
+                    session_uuid=session_uuid, name=name, email=email
+                )
+
+                log_audit_event(
+                    "session_persisted",
+                    user_uuid=str(user_session.uuid),
+                    details={"name": name, "email": email},
+                )
+
+                return {
+                    "message": "Session created successfully",
+                    "uuid": str(user_session.uuid),
+                    "user_data": {
+                        "name": user_session.name,
+                        "email": user_session.email,
+                        "created_at": (
+                            user_session.created_at.isoformat()
+                            if user_session.created_at
+                            else None
+                        ),
+                    },
+                }, 201
+
+        except Exception as e:
+            log_audit_event(
+                "session_persistence_failed",
+                user_uuid=session_uuid,
+                details={"error": str(e), "name": name, "email": email},
+            )
             return {
-                "new_uuid": new_uuid,
-                "message": "UUID collision, new UUID assigned",
-            }, 200
-
-        # Create the user session
-        user_session = self.user_session_repository.create_session(
-            session_uuid=session_uuid,
-            name=name,
-            email=email
-        )
-
-        log_audit_event(
-            "session_persisted",
-            user_uuid=str(user_session.uuid),
-            details={"name": name, "email": email}
-        )
-        
-        return {"message": "Session persisted", "session_uuid": str(user_session.uuid)}, 200
+                "error": "Failed to create session",
+                "details": str(e),
+            }, 500

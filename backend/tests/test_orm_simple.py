@@ -18,29 +18,36 @@ sys.path.append(str(project_root))
 
 # Load environment variables
 from dotenv import load_dotenv
+
 load_dotenv()
+
+from backend.app.database import Base, get_engine, init_database
 
 # Import the repository components
 from backend.app.models import UserSession
 from backend.app.repositories.factory import get_user_session_repository
-from backend.app.database import Base, engine
 
 
 def test_repository():
     """Test basic repository operations."""
     print("Starting repository test...")
-    
+
+    # Initialize database first
+    print("Initializing database...")
+    init_database()
+    engine = get_engine()
+
     # Create database tables
     print("Creating database tables...")
     Base.metadata.create_all(bind=engine)
-    
+
     # Get repository
     repo = get_user_session_repository()
-    
+
     # Generate test UUID
     session_uuid = str(uuid.uuid4())
     print(f"Generated UUID: {session_uuid}")
-    
+
     # Test create
     print("\nTesting create operation...")
     try:
@@ -48,14 +55,14 @@ def test_repository():
             session_uuid=session_uuid,
             name="Test User",
             email="test@example.com",
-            consent_user_data=True
+            consent_user_data=True,
         )
         print(f"Created session: {user_session}")
         print(f"Session data: {user_session.to_dict()}")
     except Exception as e:
         print(f"Error creating session: {str(e)}")
         raise
-    
+
     # Test get
     print("\nTesting get operation...")
     try:
@@ -69,13 +76,12 @@ def test_repository():
     except Exception as e:
         print(f"Error retrieving session: {str(e)}")
         raise
-    
+
     # Test update
     print("\nTesting update operation...")
     try:
         updated = repo.update_session(
-            session_uuid,
-            {"name": "Updated User", "email": "updated@example.com"}
+            session_uuid, {"name": "Updated User", "email": "updated@example.com"}
         )
         if updated:
             print(f"Updated session: {updated}")
@@ -86,7 +92,7 @@ def test_repository():
     except Exception as e:
         print(f"Error updating session: {str(e)}")
         raise
-    
+
     # Test delete
     print("\nTesting delete operation...")
     try:
@@ -99,7 +105,7 @@ def test_repository():
     except Exception as e:
         print(f"Error deleting session: {str(e)}")
         raise
-    
+
     print("\nAll tests completed successfully!")
 
 

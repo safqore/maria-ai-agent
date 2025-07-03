@@ -93,9 +93,9 @@ export type ChatAction =
   | { type: ChatActionTypes.UPDATE_FSM_STATE; payload: { state: States } }
   | { type: ChatActionTypes.SET_API_REQUEST_STATUS; payload: { isInProgress: boolean } }
   | { type: ChatActionTypes.SET_CORRELATION_ID; payload: { correlationId?: string } }
-  | { 
-      type: ChatActionTypes.SET_DETAILED_ERROR; 
-      payload: { error: string; errorType: ApiErrorType; correlationId?: string } 
+  | {
+      type: ChatActionTypes.SET_DETAILED_ERROR;
+      payload: { error: string; errorType: ApiErrorType; correlationId?: string };
     };
 
 /**
@@ -300,6 +300,9 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children, fsm }) => 
   // Use the reducer to manage state
   const [state, dispatch] = useReducer(chatReducer, initialState);
 
+  // Use the session UUID hook
+  const { sessionUUID } = useSessionUUID();
+
   /**
    * Enable or disable user input
    * @param {boolean} isDisabled - Whether input should be disabled
@@ -452,19 +455,15 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children, fsm }) => 
    * @param {ApiErrorType} errorType - Type of error
    * @param {string} correlationId - Optional correlation ID associated with the error
    */
-  const setDetailedError = useCallback((error: string, errorType: ApiErrorType, correlationId?: string): void => {
-    dispatch({ type: ChatActionTypes.SET_DETAILED_ERROR, payload: { error, errorType, correlationId } });
-  }, []);
-
-  /**
-   * Get the user's session UUID
-   * @returns {string|null} The session UUID or null if not available
-   */
-  const getSessionUuid = useCallback((): string | null => {
-    // This is a placeholder - in a real implementation, we would use useSessionUUID
-    // to get the actual UUID from the session context
-    return localStorage.getItem('sessionUuid');
-  }, []);
+  const setDetailedError = useCallback(
+    (error: string, errorType: ApiErrorType, correlationId?: string): void => {
+      dispatch({
+        type: ChatActionTypes.SET_DETAILED_ERROR,
+        payload: { error, errorType, correlationId },
+      });
+    },
+    []
+  );
 
   /**
    * Handle button click
@@ -567,30 +566,34 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children, fsm }) => 
         if (!fsm) {
           throw new Error('State machine not initialized');
         }
-        
-        // Get session UUID
-        const sessionUuid = getSessionUuid();
-        if (!sessionUuid && state.currentFsmState !== States.WELCOME_MSG && 
-            state.currentFsmState !== States.COLLECTING_NAME) {
+
+        // Use session UUID from hook
+        if (
+          !sessionUUID &&
+          state.currentFsmState !== States.WELCOME_MSG &&
+          state.currentFsmState !== States.COLLECTING_NAME
+        ) {
           throw new ApiError('No session UUID available', 401, { type: ApiErrorType.UNAUTHORIZED });
         }
 
         // For states that require API calls, use the ChatApi
-        if (state.currentFsmState === States.UPLOAD_DOCS || 
-            state.currentFsmState === States.CREATE_BOT) {
+        if (
+          state.currentFsmState === States.UPLOAD_DOCS ||
+          state.currentFsmState === States.CREATE_BOT
+        ) {
           // Call the API with proper error handling and retry
-          const response = await ChatApi.sendMessage(text, sessionUuid || '');
-          
+          const response = await ChatApi.sendMessage(text, sessionUUID || '');
+
           // Store correlation ID
           if (response.correlationId) {
             setCorrelationId(response.correlationId);
           }
-          
+
           // Process API response
           if (response.status === 'success' && response.message) {
             // Handle successful API response
             addBotMessage(response.message.text);
-            
+
             // Update FSM state based on API response if needed
             if (response.message.nextTransition) {
               const nextTransition = response.message.nextTransition as Transitions;
@@ -598,66 +601,74 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children, fsm }) => 
               updateFsmState(fsm.getCurrentState());
             } else if (response.message.nextState) {
               // Legacy support for direct state updates
-              console.warn('Using deprecated nextState property. Please use nextTransition instead.');
+              console.warn(
+                'Using deprecated nextState property. Please use nextTransition instead.'
+              );
               // Handle the state update differently since we can't directly set the state
               const nextState = response.message.nextState as States;
               updateFsmState(nextState);
             }
           } else {
             // Handle API error in response
-            throw new ApiError(response.error || 'Unknown API error', 400, { 
+            throw new ApiError(response.error || 'Unknown API error', 400, {
               type: ApiErrorType.SERVER,
-              correlationId: response.correlationId
+              correlationId: response.correlationId,
             });
           }
         } else {
           // Process user input based on current state for non-API states
-        if (state.currentFsmState === States.COLLECTING_NAME) {
-          if (/^[a-zA-Z\s]+$/.test(text)) {
-            // Valid name provided
-            fsm.transition(Transitions.NAME_PROVIDED);
-            updateFsmState(fsm.getCurrentState());
+          if (state.currentFsmState === States.COLLECTING_NAME) {
+            if (/^[a-zA-Z\s]+$/.test(text)) {
+              // Valid name provided
+              fsm.transition(Transitions.NAME_PROVIDED);
+              updateFsmState(fsm.getCurrentState());
 
-            // Add bot response for name provided
-            addBotMessage(
-              `Nice to meet you, ${text}! Let's build your personalized AI agent.\n\n` +
-                `To get started, I'll need a document to train on—like a PDF of your ` +
-                `business materials, process guides, or product details. This helps ` +
-                `me tailor insights just for you!`
-            );
-          } else {
-            // Invalid name provided
-            addBotMessage(
-              'Please provide a valid name. Names can only contain letters and spaces.'
-            );
+              // Add bot response for name provided
+              addBotMessage(
+                `Nice to meet you, ${text}! Let's build your personalized AI agent.\n\n` +
+                  `To get started, I'll need a document to train on—like a PDF of your ` +
+                  `business materials, process guides, or product details. This helps ` +
+                  `me tailor insights just for you!`
+              );
+            } else {
+              // Invalid name provided
+              addBotMessage(
+                'Please provide a valid name. Names can only contain letters and spaces.'
+              );
+            }
           }
-        }
-        // Add additional state handling here as needed
+          // Add additional state handling here as needed
         }
       } catch (error) {
         console.error('Error processing message:', error);
-        
+
         if (error instanceof ApiError) {
           // Handle API errors with detailed information
           setDetailedError(
-            error.message, 
-            error.type || ApiErrorType.UNKNOWN, 
+            error.message,
+            error.type || ApiErrorType.UNKNOWN,
             error.details?.correlationId as string | undefined
           );
-          
+
           // Show user-friendly error message based on error type
           switch (error.type) {
             case ApiErrorType.NETWORK:
-              addBotMessage("I'm having trouble connecting to our servers. Please check your internet connection and try again.");
+              addBotMessage(
+                "I'm having trouble connecting to our servers. Please check your internet connection and try again."
+              );
               break;
             case ApiErrorType.TIMEOUT:
-              addBotMessage("Our servers are taking too long to respond. Please try again in a moment.");
+              addBotMessage(
+                'Our servers are taking too long to respond. Please try again in a moment.'
+              );
               break;
             case ApiErrorType.UNAUTHORIZED:
-              addBotMessage("Your session has expired. Please refresh the page to continue.");
+              addBotMessage('Your session has expired. Please refresh the page to continue.');
               break;
             default:
-              addBotMessage("I encountered an issue processing your request. Please try again or contact support if the problem persists.");
+              addBotMessage(
+                'I encountered an issue processing your request. Please try again or contact support if the problem persists.'
+              );
           }
         } else {
           // Handle generic errors
@@ -681,7 +692,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children, fsm }) => 
       setError,
       setDetailedError,
       setCorrelationId,
-      getSessionUuid
+      sessionUUID,
     ]
   );
 
@@ -728,7 +739,6 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children, fsm }) => 
     setApiRequestStatus,
     setCorrelationId,
     setDetailedError,
-    getSessionUuid
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

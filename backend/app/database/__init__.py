@@ -10,8 +10,8 @@ from contextlib import contextmanager
 from typing import Generator
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import Session, declarative_base, sessionmaker
+
 
 # Create SQLAlchemy engine from environment variables
 def get_database_url():
@@ -21,12 +21,14 @@ def get_database_url():
     db_host = os.getenv("POSTGRES_HOST", "localhost")
     db_port = os.getenv("POSTGRES_PORT", "5432")
     db_name = os.getenv("POSTGRES_DB")
-    
+
     return f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+
 
 # Lazy initialization of database components
 _engine = None
 _SessionLocal = None
+
 
 def init_database():
     """Initialize database engine and session factory."""
@@ -35,10 +37,14 @@ def init_database():
         _engine = create_engine(
             get_database_url(),
             pool_pre_ping=True,  # Verify connections before using them from pool
-            pool_recycle=3600,   # Recycle connections after 1 hour
-            echo=False,          # Set to True for SQL debugging
+            pool_recycle=3600,  # Recycle connections after 1 hour
+            pool_size=10,  # Number of connections to maintain in pool
+            max_overflow=20,  # Additional connections beyond pool_size
+            pool_timeout=30,  # Timeout for getting connection from pool
+            echo=False,  # Set to True for SQL debugging
         )
         _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
+
 
 def get_engine():
     """Get the SQLAlchemy engine, initializing if necessary."""
@@ -46,11 +52,13 @@ def get_engine():
         init_database()
     return _engine
 
+
 def get_session_local():
     """Get the session factory, initializing if necessary."""
     if _SessionLocal is None:
         init_database()
     return _SessionLocal
+
 
 # For backward compatibility - these will be set after environment is loaded
 engine = None
@@ -60,24 +68,28 @@ SessionLocal = None
 # Using SQLAlchemy 2.0 syntax
 Base = declarative_base()
 
+
 @contextmanager
 def get_db_session() -> Generator[Session, None, None]:
     """
     Context manager for database sessions.
-    
+
     This function provides a database session that is automatically
     closed after use, and handles committing changes or rolling back
     on exceptions.
-    
+
     Example:
         with get_db_session() as session:
             user = session.query(User).filter(User.id == 1).first()
-            
+
     Returns:
         SQLAlchemy session object
     """
-    session_factory = get_session_local()
-    session = session_factory()
+    # Ensure database is initialized
+    if _SessionLocal is None:
+        init_database()
+
+    session = _SessionLocal()
     try:
         yield session
         session.commit()
@@ -87,5 +99,15 @@ def get_db_session() -> Generator[Session, None, None]:
     finally:
         session.close()
 
+
 # Export modules and functions
-__all__ = ["transaction", "get_db_session", "Base", "SessionLocal", "engine", "init_database", "get_engine", "get_session_local"]
+__all__ = [
+    "transaction",
+    "get_db_session",
+    "Base",
+    "SessionLocal",
+    "engine",
+    "init_database",
+    "get_engine",
+    "get_session_local",
+]
