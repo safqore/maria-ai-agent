@@ -11,10 +11,11 @@ import os
 from typing import Any, Dict, Optional, Tuple
 
 import boto3
-from backend.app.services.session_service import SessionService
 from botocore.exceptions import BotoCoreError, NoCredentialsError
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
+
+from backend.app.services.session_service import SessionService
 
 # Configuration
 ALLOWED_EXTENSIONS = {"pdf"}

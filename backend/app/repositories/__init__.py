@@ -6,4 +6,4 @@ This module contains repository classes that handle data access for the applicat
 
 from backend.app.repositories.user_session_repository import UserSessionRepository
 
-__all__ = ['UserSessionRepository']
+__all__ = ["UserSessionRepository"]

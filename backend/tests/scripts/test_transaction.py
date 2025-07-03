@@ -17,11 +17,13 @@ print("Starting transaction test...")
 
 try:
     print("Importing directly from database.py...")
-    from backend.app.database import Base, engine, SessionLocal, get_db_session
+    from backend.app.database import Base, SessionLocal, engine, get_db_session
+
     print("Importing TransactionContext...")
-    from backend.app.database import TransactionContext
     from sqlalchemy import text
-    
+
+    from backend.app.database import TransactionContext
+
     print("Imports successful!")
 except ImportError as e:
     print(f"Error during test: {e}")
@@ -32,7 +34,7 @@ except ImportError as e:
 def test_transaction_context():
     """Test the transaction context manager."""
     print("Testing TransactionContext...")
-    
+
     try:
         # Test auto commit
         with TransactionContext() as session:
@@ -41,7 +43,7 @@ def test_transaction_context():
             result = session.execute(text("SELECT 1")).fetchone()
             print(f"  - Test query result: {result}")
         print("  - Transaction context exited successfully")
-        
+
         # Test with existing session
         print("Creating a session manually...")
         manual_session = SessionLocal()
@@ -52,7 +54,7 @@ def test_transaction_context():
             print(f"  - Test query result: {result}")
         print("  - Transaction context exited successfully")
         manual_session.close()
-        
+
         # Test rollback on exception
         print("Testing rollback behavior...")
         try:
@@ -64,10 +66,10 @@ def test_transaction_context():
         except Exception as e:
             print(f"  - Expected exception caught: {type(e).__name__}")
             print("  - Rollback should have occurred")
-        
+
         print("All transaction tests passed!")
         return 0
-        
+
     except Exception as e:
         print(f"Error in transaction test: {e}")
         traceback.print_exc()
@@ -75,26 +77,26 @@ def test_transaction_context():
     """Test the TransactionContext for proper transaction handling."""
     try:
         print("Testing TransactionContext...")
-        
+
         # Test with explicit session
         session = SessionLocal()
         print("Session created successfully.")
-        
+
         with TransactionContext(session) as tx_session:
             # Execute a simple query
             result = tx_session.execute(text("SELECT 1")).fetchone()
             print(f"Query result with explicit session: {result}")
-        
+
         print("Transaction completed successfully with explicit session.")
-        
+
         # Test with implicit session
         with TransactionContext() as tx_session:
             # Execute a simple query
             result = tx_session.execute(text("SELECT 2")).fetchone()
             print(f"Query result with implicit session: {result}")
-        
+
         print("Transaction completed successfully with implicit session.")
-        
+
         # Test rollback on exception
         success = False
         try:
@@ -105,16 +107,16 @@ def test_transaction_context():
                 raise ValueError("Test exception")
         except ValueError:
             success = True
-        
+
         if success:
             print("Rollback on exception worked correctly.")
         else:
             print("Error: Exception was not raised as expected!")
             return 1
-        
+
         print("All transaction tests passed!")
         return 0
-    
+
     except Exception as e:
         print(f"Error testing transaction context: {e}")
         traceback.print_exc()

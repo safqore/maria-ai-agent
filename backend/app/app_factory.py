@@ -5,12 +5,13 @@ This module provides a function to create a Flask application instance
 with all the necessary configuration and blueprint registrations.
 """
 
-import os
-import redis
 import logging
+import os
 from pathlib import Path
+
+import redis
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -25,10 +26,12 @@ FRONTEND_ENV_PATH = Path(__file__).parent.parent.parent / "frontend" / ".env"
 # Import the blueprints
 from backend.app.routes.session import session_bp
 from backend.app.routes.upload import upload_bp
-from backend.app.utils.middleware import (
-    setup_request_logging, setup_request_validation, apply_middleware_to_blueprint
-)
 from backend.app.utils.auth import setup_auth_middleware
+from backend.app.utils.middleware import (
+    apply_middleware_to_blueprint,
+    setup_request_logging,
+    setup_request_validation,
+)
 
 # Initialize rate limiter with remote address as the key function
 redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
@@ -39,30 +42,32 @@ limiter = Limiter(
     strategy="fixed-window",
 )
 
+
 def read_frontend_env_file() -> dict[str, str]:
     """Read frontend .env file and return as dictionary.
-    
+
     Returns:
         dict[str, str]: Dictionary of environment variables from frontend .env
     """
     env_vars = {}
     try:
-        with open(FRONTEND_ENV_PATH, 'r') as file:
+        with open(FRONTEND_ENV_PATH, "r") as file:
             for line in file:
                 line = line.strip()
-                if line and not line.startswith('#') and '=' in line:
-                    key, value = line.split('=', 1)
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
                     env_vars[key.strip()] = value.strip()
     except FileNotFoundError:
         logger.warning(f"Frontend .env file not found at {FRONTEND_ENV_PATH}")
     except Exception as e:
         logger.error(f"Error reading frontend .env file: {e}")
-    
+
     return env_vars
+
 
 def get_frontend_port() -> str:
     """Get the frontend port from environment or frontend .env file.
-    
+
     Returns:
         str: Frontend port number as string
     """
@@ -70,29 +75,30 @@ def get_frontend_port() -> str:
     port = os.getenv("FRONTEND_PORT")
     if port:
         return port
-    
+
     # Try to get from frontend .env file
     frontend_env = read_frontend_env_file()
     port = frontend_env.get("PORT")
     if port:
         return port
-    
+
     # Default port for React applications
     return "3000"
 
+
 def get_cors_origins() -> list[str]:
     """Get allowed CORS origins based on frontend port configuration.
-    
+
     This dynamically creates the CORS origin list based on the frontend
     port configuration, allowing for flexible development setups.
-    
+
     Returns:
         list[str]: List of allowed CORS origins
     """
     frontend_port = get_frontend_port()
     # Get allowed hosts from environment, default to localhost and 127.0.0.1
     allowed_hosts = os.getenv("CORS_HOSTS", "localhost,127.0.0.1").split(",")
-    
+
     # Build origins list with protocol and port
     origins = []
     for host in allowed_hosts:
@@ -101,19 +107,20 @@ def get_cors_origins() -> list[str]:
             # Add both http and https for each host
             origins.append(f"http://{host}:{frontend_port}")
             origins.append(f"https://{host}:{frontend_port}")
-    
+
     # Log the configured origins for debugging
     logger.info(f"CORS configured with origins: {origins}")
-    
+
     return origins
+
 
 def create_app(test_config=None):
     """
     Create and configure the Flask application.
-    
+
     Args:
         test_config: Configuration dictionary for testing
-        
+
     Returns:
         A configured Flask application instance
     """
@@ -121,29 +128,30 @@ def create_app(test_config=None):
     load_dotenv(
         dotenv_path=os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
     )
-    
+
     # Initialize database after environment is loaded
-    from backend.app.database import init_database, get_engine, get_session_local
     import backend.app.database as database
+    from backend.app.database import get_engine, get_session_local, init_database
+
     init_database()
     database.engine = get_engine()
     database.SessionLocal = get_session_local()
-    
+
     # Create and configure the app
     app = Flask(__name__, instance_relative_config=True)
-    
+
     # Configure CORS with dynamic origins
     cors_origins = get_cors_origins()
-    
+
     CORS(
         app,
         resources={r"/*": {"origins": cors_origins, "supports_credentials": True}},
     )
-    
+
     # Initialize rate limiter with config from env
     session_rate_limit = os.getenv("SESSION_RATE_LIMIT", "10/minute")
     limiter.default_limits = [session_rate_limit]
-    
+
     # Handle Redis connection for rate limiter
     if app.config.get("ENV") == "development" or app.config.get("TESTING"):
         try:
@@ -154,25 +162,25 @@ def create_app(test_config=None):
         except (redis.ConnectionError, redis.exceptions.ConnectionError):
             logger.warning("Redis unavailable, falling back to in-memory storage")
             limiter.storage_uri = "memory://"
-    
+
     limiter.init_app(app)
-    
+
     # Load configuration
     if test_config is None:
         # Load the instance config if it exists
-        app.config.from_pyfile('config.py', silent=True)
+        app.config.from_pyfile("config.py", silent=True)
     else:
         # Load the test config if passed in
         app.config.from_mapping(test_config)
-    
+
     # Get API version and prefix from environment
     api_version = os.getenv("API_VERSION", "v1")
     api_prefix = os.getenv("API_PREFIX", "/api")
     versioned_prefix = f"{api_prefix}/{api_version}"
-    
+
     # Skip middleware application when testing to avoid multiple registration issues
     skip_middleware = app.config.get("SKIP_MIDDLEWARE", False)
-    
+
     if not skip_middleware:
         # Apply middleware to blueprints
         logger.info("Applying middleware to blueprints")
@@ -180,96 +188,105 @@ def create_app(test_config=None):
         apply_middleware_to_blueprint(upload_bp)
     else:
         logger.info("Skipping middleware application due to SKIP_MIDDLEWARE flag")
-    
+
     # Register blueprints with proper API versioning
     # First register with empty prefix for backward compatibility
-    app.register_blueprint(session_bp, url_prefix='')
-    app.register_blueprint(upload_bp, url_prefix='')
-    
+    app.register_blueprint(session_bp, url_prefix="")
+    app.register_blueprint(upload_bp, url_prefix="")
+
     # Also register with versioned API prefix for new clients
     # Note: Flask doesn't allow registering the same blueprint twice with the same name
     # So we use a different name for the versioned routes
-    app.register_blueprint(session_bp, url_prefix=versioned_prefix, name=f"session_{api_version}")
-    app.register_blueprint(upload_bp, url_prefix=versioned_prefix, name=f"upload_{api_version}")
-    
+    app.register_blueprint(
+        session_bp, url_prefix=versioned_prefix, name=f"session_{api_version}"
+    )
+    app.register_blueprint(
+        upload_bp, url_prefix=versioned_prefix, name=f"upload_{api_version}"
+    )
+
     # Create instance directory if it doesn't exist
     try:
         os.makedirs(app.instance_path)
     except OSError:
         pass
-    
+
     # Register error handlers
     from backend.app.errors import register_error_handlers
+
     register_error_handlers(app)
-    
+
     # Set up request logging middleware
     setup_request_logging(app)
-    
+
     # Set up request validation middleware
     setup_request_validation(app)
-    
+
     # Set up authentication middleware
     setup_auth_middleware(app)
-    
+
     # Add a general OPTIONS route to handle CORS preflight requests
-    @app.route('/<path:path>', methods=['OPTIONS'])
+    @app.route("/<path:path>", methods=["OPTIONS"])
     def options_handler(path):
         response = app.make_default_options_response()
         return response
-    
+
     @app.after_request
     def after_request_func(response):
         """Add additional headers or process responses if needed"""
         # Add API version header
-        response.headers['X-API-Version'] = api_version
+        response.headers["X-API-Version"] = api_version
         return response
-    
+
     # Add API information endpoint
-    @app.route('/api/info')
+    @app.route("/api/info")
     def api_info():
         """Return API information."""
-        return jsonify({
-            "name": "Maria AI Agent API",
-            "version": api_version,
-            "endpoints": {
-                "session": f"{versioned_prefix}/",
-                "upload": f"{versioned_prefix}/upload",
-                "legacy": "/",
-                "auth-info": "/api/auth-info"
-            },
-            "documentation": "/docs/api_endpoints.md"
-        })
-    
+        return jsonify(
+            {
+                "name": "Maria AI Agent API",
+                "version": api_version,
+                "endpoints": {
+                    "session": f"{versioned_prefix}/",
+                    "upload": f"{versioned_prefix}/upload",
+                    "legacy": "/",
+                    "auth-info": "/api/auth-info",
+                },
+                "documentation": "/docs/api_endpoints.md",
+            }
+        )
+
     # Simple route for testing
-    @app.route('/ping')
+    @app.route("/ping")
     def ping():
-        return {'message': 'pong'}
-    
+        return {"message": "pong"}
+
     # Create database tables if they don't exist
     from backend.app.database import Base, engine
+
     Base.metadata.create_all(bind=engine)
-    
+
     # Log successful app creation
     logger.info(f"Flask app created with API version {api_version}")
-    
+
     return app
 
 
 def register_error_handlers(app):
     """Register error handlers with the Flask application.
-    
+
     Args:
         app: The Flask application instance
     """
     # Import and use the centralized error handlers
     from backend.app.errors import register_error_handlers as reg_errors
+
     reg_errors(app)
-    
+
     # Add fallback error handlers if needed
     @app.errorhandler(404)
     def not_found(e):
-        return {'error': 'Resource not found'}, 404
-    
+        return {"error": "Resource not found"}, 404
+
     @app.errorhandler(500)
     def server_error(e):
-        return {'error': 'Server error'}, 500
+        return {"error": "Server error"}, 500

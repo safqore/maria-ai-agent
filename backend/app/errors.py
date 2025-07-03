@@ -87,10 +87,10 @@ def handle_api_error(error: APIError) -> Tuple[Response, int]:
     response = {"error": error.message, "status": "error", "details": error.details}
     resp = jsonify(response)
     # Add CORS headers to ensure preflight requests pass even on errors
-    resp.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-    resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    resp.headers.add('Access-Control-Allow-Credentials', 'true')
+    resp.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+    resp.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+    resp.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
+    resp.headers.add("Access-Control-Allow-Credentials", "true")
     return resp, error.status_code
 
 
@@ -116,10 +116,10 @@ def handle_general_error(error: Exception) -> Tuple[Response, int]:
     }
     resp = jsonify(response)
     # Add CORS headers to ensure preflight requests pass even on errors
-    resp.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-    resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    resp.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    resp.headers.add('Access-Control-Allow-Credentials', 'true')
+    resp.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+    resp.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+    resp.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
+    resp.headers.add("Access-Control-Allow-Credentials", "true")
     return resp, 500
 
 
@@ -150,7 +150,7 @@ def api_route(func: F) -> F:
         # Always allow OPTIONS requests to pass through without trying to parse JSON
         if request.method == "OPTIONS":
             return func(*args, **kwargs)
-            
+
         try:
             return func(*args, **kwargs)
         except APIError as e:

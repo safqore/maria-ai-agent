@@ -2,6 +2,7 @@ import io
 from unittest.mock import patch
 
 import pytest
+
 from backend.app import create_app
 
 
@@ -18,7 +19,9 @@ def test_upload_file_valid_uuid(client):
         "file": (io.BytesIO(b"test pdf content"), "test.pdf"),
         "session_uuid": "123e4567-e89b-12d3-a456-426614174000",
     }
-    with patch("backend.app.services.upload_service.s3_client.upload_fileobj") as mock_upload:
+    with patch(
+        "backend.app.services.upload_service.s3_client.upload_fileobj"
+    ) as mock_upload:
         response = client.post("/upload", data=data, content_type="multipart/form-data")
         assert response.status_code == 200
         assert "url" in response.json

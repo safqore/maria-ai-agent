@@ -12,13 +12,14 @@ the transition to SQLAlchemy ORM.
 import os
 
 import psycopg2
-from backend.app.database import get_db_session, engine
+
+from backend.app.database import engine, get_db_session
 
 
 def get_db_connection():
     """
     Create and return a direct connection to the PostgreSQL database.
-    
+
     DEPRECATED: Use SQLAlchemy ORM through app.database.get_db_session() instead.
 
     The connection parameters are read from environment variables:

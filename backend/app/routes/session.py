@@ -7,16 +7,17 @@ This module provides routes for:
 - User consent management
 """
 
-import os
 import functools
+import os
+
+from flask import Blueprint, g, jsonify, request
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from marshmallow import ValidationError
 
 from backend.app.errors import api_route
 from backend.app.schemas.session_schemas import SessionPersistSchema, UUIDSchema
 from backend.app.services.session_service import SessionService
-from flask import Blueprint, jsonify, request, g
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from marshmallow import ValidationError
 
 # Create the session blueprint
 session_bp = Blueprint("session", __name__)
@@ -27,16 +28,19 @@ SESSION_RATE_LIMIT = os.getenv("SESSION_RATE_LIMIT", "10/minute")
 # Limiter will be initialized in app factory and attached to app
 limiter = Limiter(key_func=get_remote_address, default_limits=[SESSION_RATE_LIMIT])
 
+
 # Create a service instance for each request
 def with_session_service(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         g.session_service = SessionService()
         return f(*args, **kwargs)
+
     return wrapper
 
+
 # Apply the with_session_service decorator to all route handlers in this blueprint
-session_bp.before_request(lambda: setattr(g, 'session_service', SessionService()))
+session_bp.before_request(lambda: setattr(g, "session_service", SessionService()))
 
 
 @session_bp.route("/validate-uuid", methods=["POST", "OPTIONS"])
@@ -68,7 +72,7 @@ def validate_uuid():
     if request.method == "OPTIONS":
         response = jsonify({"status": "success"})
         return response, 200
-        
+
     data = request.get_json()
 
     # Validate request data
@@ -148,7 +152,7 @@ def persist_session():
     if request.method == "OPTIONS":
         response = jsonify({"status": "success"})
         return response, 200
-        
+
     data = request.get_json()
 
     # Validate request data

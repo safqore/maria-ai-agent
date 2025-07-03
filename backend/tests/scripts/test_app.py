@@ -14,13 +14,15 @@ sys.path.append(str(project_root))
 print("Importing modules...")
 try:
     from backend.app import create_app
+
     print("Successfully imported create_app")
 
     print("Creating Flask app...")
     app = create_app()
-    print('App created successfully!')
+    print("App created successfully!")
 except Exception as e:
     print(f"Error: {e}")
     import traceback
+
     traceback.print_exc()
     sys.exit(1)

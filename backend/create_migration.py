@@ -20,12 +20,13 @@ def create_migration():
     # Create migrations directory if it doesn't exist
     migrations_dir = Path(__file__).parent / "migrations_alembic" / "versions"
     migrations_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Create alembic.ini
     alembic_ini = Path(__file__).parent / "alembic.ini"
     if not alembic_ini.exists():
         with open(alembic_ini, "w") as f:
-            f.write("""
+            f.write(
+                """
 [alembic]
 script_location = migrations_alembic
 prepend_sys_path = .
@@ -63,22 +64,21 @@ formatter = generic
 [formatter_generic]
 format = %(levelname)-5.5s [%(name)s] %(message)s
 datefmt = %H:%M:%S
-            """.strip())
-    
+            """.strip()
+            )
+
     # Initialize configuration
     alembic_cfg = Config(str(alembic_ini))
-    
+
     # Create the migration script
-    command.revision(alembic_cfg, 
-                    message="initial_schema", 
-                    autogenerate=True)
+    command.revision(alembic_cfg, message="initial_schema", autogenerate=True)
 
 
 if __name__ == "__main__":
     # Create tables in database
     Base.metadata.create_all(engine)
-    
+
     # Create migration script
     create_migration()
-    
+
     print("Initial migration created successfully.")

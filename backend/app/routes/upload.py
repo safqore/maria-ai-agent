@@ -8,7 +8,8 @@ This module provides routes for:
 """
 
 import os
-from flask import Blueprint, request, jsonify, g
+
+from flask import Blueprint, g, jsonify, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from marshmallow import ValidationError
@@ -27,7 +28,8 @@ UPLOAD_RATE_LIMIT = os.getenv("UPLOAD_RATE_LIMIT", "5/minute")
 limiter = Limiter(key_func=get_remote_address, default_limits=[UPLOAD_RATE_LIMIT])
 
 # Apply before_request to all routes in this blueprint
-upload_bp.before_request(lambda: setattr(g, 'upload_service', UploadService()))
+upload_bp.before_request(lambda: setattr(g, "upload_service", UploadService()))
+
 
 @upload_bp.route("/upload", methods=["POST", "OPTIONS"])
 @limiter.limit(UPLOAD_RATE_LIMIT)
@@ -35,7 +37,7 @@ upload_bp.before_request(lambda: setattr(g, 'upload_service', UploadService()))
 def upload_file():
     """
     Upload a file associated with a user session.
-    
+
     ---
     tags:
       - Upload
