@@ -10,7 +10,7 @@ This module provides routes for:
 import functools
 import os
 
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, g, jsonify, request, current_app
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from marshmallow import ValidationError
@@ -25,8 +25,16 @@ session_bp = Blueprint("session", __name__)
 # Get rate limit from environment variable or default to 10/minute
 SESSION_RATE_LIMIT = os.getenv("SESSION_RATE_LIMIT", "10/minute")
 
-# Limiter will be initialized in app factory and attached to app
-limiter = Limiter(key_func=get_remote_address, default_limits=[SESSION_RATE_LIMIT])
+# Create limiter instance that will be initialized by app factory
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=[SESSION_RATE_LIMIT],
+    storage_uri="memory://",  # Use in-memory storage for tests
+)
+
+def is_rate_limiting_disabled():
+    """Check if rate limiting is disabled in config."""
+    return not current_app.config.get("RATELIMIT_ENABLED", True)
 
 
 # Create a service instance for each request
@@ -45,7 +53,10 @@ def setup_session_service():
 
 
 @session_bp.route("/validate-uuid", methods=["POST", "OPTIONS"])
-@limiter.limit(SESSION_RATE_LIMIT, exempt_when=lambda: request.method == "OPTIONS")
+@limiter.limit(
+    lambda: current_app.config.get("SESSION_RATE_LIMIT", SESSION_RATE_LIMIT),
+    exempt_when=lambda: request.method == "OPTIONS" or is_rate_limiting_disabled()
+)
 @api_route
 def validate_uuid():
     """
@@ -99,7 +110,10 @@ def validate_uuid():
 
 
 @session_bp.route("/generate-uuid", methods=["POST", "OPTIONS"])
-@limiter.limit(SESSION_RATE_LIMIT, exempt_when=lambda: request.method == "OPTIONS")
+@limiter.limit(
+    lambda: current_app.config.get("SESSION_RATE_LIMIT", SESSION_RATE_LIMIT),
+    exempt_when=lambda: request.method == "OPTIONS" or is_rate_limiting_disabled()
+)
 @api_route
 def generate_uuid():
     """
@@ -122,6 +136,7 @@ def generate_uuid():
     if request.method == "OPTIONS":
         response = jsonify({"status": "success"})
         return response, 200
+    
     response_data, status_code = g.session_service.generate_uuid()
     return jsonify(response_data), status_code
 

@@ -84,7 +84,9 @@ class TestSessionService:
 
         result = self.session_service.check_uuid_exists(test_uuid)
 
-        self.mock_repository.exists.assert_called_once_with(test_uuid)
+        # The repository should be called with a UUID object, not a string
+        expected_uuid_obj = uuid.UUID(test_uuid)
+        self.mock_repository.exists.assert_called_once_with(expected_uuid_obj)
         assert result is True
 
     def test_check_uuid_exists_returns_false_when_not_found(self):
@@ -174,75 +176,114 @@ class TestSessionService:
 
     # UUID Generation Tests
     @patch("backend.app.services.session_service.log_audit_event")
-    @patch("uuid.uuid4")
-    def test_generate_uuid_success_first_attempt(self, mock_uuid4, mock_audit):
+    @patch("backend.app.services.session_service.uuid.UUID")
+    @patch("backend.app.services.session_service.uuid.uuid4")
+    def test_generate_uuid_success_first_attempt(self, mock_uuid4, mock_UUID, mock_audit):
         """Test successful UUID generation on first attempt."""
-        generated_uuid = uuid.uuid4()
-        mock_uuid4.return_value = generated_uuid
+        # Create a UUID string for testing
+        generated_uuid_str = str(uuid.uuid4())
+        
+        # Mock uuid4 to return a mock object that converts to the string
+        mock_uuid_obj = Mock()
+        mock_uuid_obj.__str__ = Mock(return_value=generated_uuid_str)
+        mock_uuid4.return_value = mock_uuid_obj
+        
+        # Mock UUID constructor to return a proper UUID object
+        mock_UUID.return_value = uuid.UUID(generated_uuid_str)
+        
         self.mock_repository.exists.return_value = False
 
         response, status_code = self.session_service.generate_uuid()
 
         assert status_code == 200
         assert response["status"] == "success"
-        assert response["uuid"] == str(generated_uuid)
+        assert response["uuid"] == generated_uuid_str
         assert response["message"] == "Generated unique UUID"
         assert response["details"] == {}
 
         mock_audit.assert_called_once_with(
-            "uuid_generation_success", user_uuid=str(generated_uuid)
+            "uuid_generation_success", user_uuid=generated_uuid_str
         )
-        self.mock_repository.exists.assert_called_once_with(str(generated_uuid))
+        # The repository should be called with a UUID object
+        expected_uuid_obj = uuid.UUID(generated_uuid_str)
+        self.mock_repository.exists.assert_called_once_with(expected_uuid_obj)
 
-    @patch("backend.app.services.session_service.log_audit_event")
-    @patch("uuid.uuid4")
-    def test_generate_uuid_success_after_collision(self, mock_uuid4, mock_audit):
-        """Test successful UUID generation after collision."""
-        collision_uuid = uuid.uuid4()
-        success_uuid = uuid.uuid4()
-        mock_uuid4.side_effect = [collision_uuid, success_uuid]
+    def test_generate_uuid_success_after_collision(self):
+        """Test UUID generation success after collision."""
+        # Generate real UUID strings BEFORE applying any mocks
+        collision_uuid_str = str(uuid.uuid4())  # This will exist 
+        success_uuid_str = str(uuid.uuid4())    # This will not exist
+        
+        # Create mock uuid4 objects that return valid UUID strings  
+        class MockUUIDObj:
+            def __init__(self, uuid_str):
+                self.uuid_str = uuid_str
+            def __str__(self):
+                return self.uuid_str
+            def __repr__(self):
+                return f"MockUUIDObj({self.uuid_str})"
+        
+        mock1 = MockUUIDObj(collision_uuid_str)
+        mock2 = MockUUIDObj(success_uuid_str)
+        
+        # Apply patches within the test method
+        with patch("backend.app.services.session_service.log_audit_event") as mock_audit, \
+             patch("backend.app.services.session_service.uuid.uuid4") as mock_uuid4:
+            
+            mock_uuid4.side_effect = [mock1, mock2]
 
-        # First UUID exists (collision), second doesn't
-        self.mock_repository.exists.side_effect = [True, False]
+            # First UUID exists (collision), second doesn't
+            self.mock_repository.exists.side_effect = [True, False]
 
-        response, status_code = self.session_service.generate_uuid()
+            response, status_code = self.session_service.generate_uuid()
 
-        assert status_code == 200
-        assert response["status"] == "success"
-        assert response["uuid"] == str(success_uuid)
+            assert status_code == 200
+            assert response["status"] == "success"
+            assert response["uuid"] == success_uuid_str
 
-        # Should check both UUIDs
-        expected_calls = [call(str(collision_uuid)), call(str(success_uuid))]
-        self.mock_repository.exists.assert_has_calls(expected_calls)
-        assert self.mock_repository.exists.call_count == 2
+            # Should check both UUIDs - repository expects UUID objects
+            expected_calls = [call(uuid.UUID(collision_uuid_str)), call(uuid.UUID(success_uuid_str))]
+            self.mock_repository.exists.assert_has_calls(expected_calls)
+            assert self.mock_repository.exists.call_count == 2
 
-    @patch("backend.app.services.session_service.log_audit_event")
-    @patch("uuid.uuid4")
-    def test_generate_uuid_max_retries_exceeded(self, mock_uuid4, mock_audit):
+    def test_generate_uuid_max_retries_exceeded(self):
         """Test UUID generation failure after max retries."""
-        collision_uuids = [uuid.uuid4(), uuid.uuid4(), uuid.uuid4()]
-        mock_uuid4.side_effect = collision_uuids
+        # Generate real UUID strings BEFORE applying any mocks
+        collision_uuid_strs = [str(uuid.uuid4()) for _ in range(3)]
+        
+        # Create mock objects that return valid UUID strings
+        class MockUUIDObj:
+            def __init__(self, uuid_str):
+                self.uuid_str = uuid_str
+            def __str__(self):
+                return self.uuid_str
+        
+        # Apply patches within the test method
+        with patch("backend.app.services.session_service.log_audit_event") as mock_audit, \
+             patch("backend.app.services.session_service.uuid.uuid4") as mock_uuid4:
+            
+            mock_uuid4.side_effect = [MockUUIDObj(uuid_str) for uuid_str in collision_uuid_strs]
 
-        # All UUIDs already exist
-        self.mock_repository.exists.return_value = True
+            # All UUIDs already exist
+            self.mock_repository.exists.return_value = True
 
-        response, status_code = self.session_service.generate_uuid()
+            response, status_code = self.session_service.generate_uuid()
 
-        assert status_code == 500
-        assert response["status"] == "error"
-        assert response["uuid"] is None
-        assert response["message"] == "Could not generate unique UUID"
-        assert (
-            response["details"]["reason"]
-            == "Could not generate unique UUID after 3 attempts"
-        )
+            assert status_code == 500
+            assert response["status"] == "error"
+            assert response["uuid"] is None
+            assert response["message"] == "Could not generate unique UUID"
+            assert (
+                response["details"]["reason"]
+                == "Could not generate unique UUID after 3 attempts"
+            )
 
-        # Should try 3 times
-        assert self.mock_repository.exists.call_count == 3
-        mock_audit.assert_called_once_with(
-            "uuid_generation_failed",
-            details={"reason": "Could not generate unique UUID after 3 attempts"},
-        )
+            # Should try 3 times
+            assert self.mock_repository.exists.call_count == 3
+            mock_audit.assert_called_once_with(
+                "uuid_generation_failed",
+                details={"reason": "Could not generate unique UUID after 3 attempts"},
+            )
 
     # Session Persistence Tests
     @patch("backend.app.services.session_service.log_audit_event")
@@ -266,7 +307,9 @@ class TestSessionService:
         assert response["message"] == "Session created successfully"
         assert response["uuid"] == test_uuid
 
-        self.mock_repository.exists.assert_called_once_with(test_uuid)
+        # The repository should be called with a UUID object, not a string
+        expected_uuid_obj = uuid.UUID(test_uuid)
+        self.mock_repository.exists.assert_called_once_with(expected_uuid_obj)
         self.mock_repository.create_session.assert_called_once_with(
             session_uuid=test_uuid, name=test_name, email=test_email
         )

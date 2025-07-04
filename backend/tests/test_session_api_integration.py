@@ -53,6 +53,17 @@ class TestSessionAPIIntegration:
             mock_g.session_service = mock_service
             yield mock_service
 
+    def teardown_method(self):
+        """Reset rate limiter state after each test."""
+        try:
+            from backend.app.routes.session import limiter
+            # Reset the in-memory storage for rate limiting
+            if hasattr(limiter, 'storage') and hasattr(limiter.storage, 'storage'):
+                limiter.storage.storage.clear()
+        except Exception:
+            # Ignore any errors during cleanup
+            pass
+
     # Generate UUID Endpoint Tests
     def test_generate_uuid_success(self, client, mock_session_service):
         """Test successful UUID generation."""

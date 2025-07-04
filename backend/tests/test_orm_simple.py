@@ -46,14 +46,15 @@ def test_repository():
     repo = get_user_session_repository()
 
     # Generate test UUID
-    session_uuid = str(uuid.uuid4())
-    print(f"Generated UUID: {session_uuid}")
+    session_uuid_obj = uuid.uuid4()  # Keep as UUID object
+    session_uuid_str = str(session_uuid_obj)  # String for create_session
+    print(f"Generated UUID: {session_uuid_str}")
 
     # Test create
     print("\nTesting create operation...")
     try:
         user_session = repo.create_session(
-            session_uuid=session_uuid,
+            session_uuid=session_uuid_str,  # create_session still expects string
             name="Test User",
             email="test@example.com",
             consent_user_data=True,
@@ -67,7 +68,7 @@ def test_repository():
     # Test get
     print("\nTesting get operation...")
     try:
-        retrieved = repo.get_by_uuid(session_uuid)
+        retrieved = repo.get_by_uuid(session_uuid_obj)  # Pass UUID object
         if retrieved:
             print(f"Retrieved session: {retrieved}")
             print(f"Session data: {retrieved.to_dict()}")
@@ -82,7 +83,7 @@ def test_repository():
     print("\nTesting update operation...")
     try:
         updated = repo.update_session(
-            session_uuid, {"name": "Updated User", "email": "updated@example.com"}
+            session_uuid_obj, {"name": "Updated User", "email": "updated@example.com"}  # Pass UUID object
         )
         if updated:
             print(f"Updated session: {updated}")
@@ -97,11 +98,11 @@ def test_repository():
     # Test delete
     print("\nTesting delete operation...")
     try:
-        success = repo.delete_session(session_uuid)
+        success = repo.delete_session(session_uuid_obj)  # Pass UUID object
         if success:
-            print(f"Successfully deleted session with UUID: {session_uuid}")
+            print(f"Successfully deleted session with UUID: {session_uuid_str}")
         else:
-            print(f"Error: Failed to delete session with UUID: {session_uuid}")
+            print(f"Error: Failed to delete session with UUID: {session_uuid_str}")
             raise ValueError("Failed to delete session")
     except Exception as e:
         print(f"Error deleting session: {str(e)}")

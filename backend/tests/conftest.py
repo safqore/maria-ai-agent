@@ -13,59 +13,20 @@ from flask import Flask
 # This adds the project root to sys.path if it's not already there
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 
-# Set the SQLALCHEMY_DATABASE_URI environment variable to SQLite at the very top of the file, before any other imports, to ensure all tests use SQLite and not PostgreSQL. This should be the first line in the file.
-import os
-os.environ["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
-
 
 @pytest.fixture(scope="session", autouse=True)
-def test_database_url():
-    """Set up SQLite database URL for all tests."""
-    import os
-    import tempfile
-    
-    # Set environment variables to force SQLite for testing
-    # This will cause get_database_url() to return None, which we can handle
-    os.environ["POSTGRES_USER"] = ""
-    os.environ["POSTGRES_PASSWORD"] = ""
-    os.environ["POSTGRES_HOST"] = ""
-    os.environ["POSTGRES_PORT"] = ""
-    os.environ["POSTGRES_DB"] = ""
-    
-    # Create a temporary file-based SQLite database
-    temp_db = tempfile.NamedTemporaryFile(suffix='.db', delete=False)
-    temp_db.close()
-    sqlite_url = f"sqlite:///{temp_db.name}"
-    
-    # Import and set the database URL after environment is configured
-    import backend.app.database_core
-    backend.app.database_core._custom_database_url = sqlite_url
-    
-    # Force re-initialization of the database engine
-    backend.app.database_core._engine = None
-    backend.app.database_core._SessionLocal = None
-    
-    yield sqlite_url
-    
-    # Clean up the temporary database file
-    try:
-        os.unlink(temp_db.name)
-    except OSError:
-        pass
-    
-    # Reset to None to allow normal operation
-    backend.app.database_core._custom_database_url = None
-
-
-@pytest.fixture(scope="session", autouse=True)
-def initialize_test_database(test_database_url):
+def initialize_test_database():
     """Initialize the test database with tables."""
-    from backend.app.database_core import get_engine, Base
+    # Import after setting up the environment
+    from backend.app.database_core import get_engine, Base, init_database
     
     # Import models to ensure SQLAlchemy knows about all tables
     from backend.app import models
     
     print("DEBUG: Initializing test database with tables...")
+    
+    # Force initialization of database
+    init_database()
     
     # Get engine and create tables
     engine = get_engine()
@@ -75,12 +36,16 @@ def initialize_test_database(test_database_url):
     
     yield
     
-    # Cleanup if needed
-    pass
+    # Cleanup - drop all tables
+    try:
+        Base.metadata.drop_all(bind=engine)
+        print("DEBUG: Database tables cleaned up")
+    except Exception as e:
+        print(f"DEBUG: Error cleaning up database: {e}")
 
 
 @pytest.fixture
-def test_app(test_database_url):
+def test_app():
     """
     Create a test-specific Flask app with minimal configuration.
 
@@ -89,7 +54,6 @@ def test_app(test_database_url):
     """
     app = Flask("test_app")
     app.config["TESTING"] = True
-    app.config["SQLALCHEMY_DATABASE_URI"] = test_database_url
     app.config["REQUIRE_AUTH"] = False  # Disable auth for testing
     app.config["SKIP_MIDDLEWARE"] = True  # Skip middleware to avoid conflicts
 
@@ -97,7 +61,7 @@ def test_app(test_database_url):
 
 
 @pytest.fixture
-def client(test_database_url):
+def client():
     """
     Create a test client using the create_app function.
     
@@ -129,7 +93,7 @@ def session_uuid(client):
     from backend.app.repositories.factory import get_user_session_repository
     from backend.app.database_core import Base, get_engine
     
-    # Ensure tables exist in the current database session
+    # Ensure tables exist (should already be created by initialize_test_database)
     Base.metadata.create_all(bind=get_engine())
     
     # Generate a unique UUID for this test

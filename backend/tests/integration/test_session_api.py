@@ -169,8 +169,14 @@ def app(request):
     @app.route("/validate-uuid", methods=["POST"])
     def validate_uuid_endpoint():
         try:
-            # Check content type properly for Flask test client
-            content_type = request.headers.get("Content-Type", "")
+            # Check content type properly for Flask test client - defensive access
+            content_type = ""
+            try:
+                if hasattr(request, 'headers') and request.headers:
+                    content_type = request.headers.get("Content-Type", "")
+            except Exception:
+                pass
+            
             is_json = content_type.startswith("application/json")
 
             if not is_json:
@@ -186,7 +192,12 @@ def app(request):
                     415,
                 )
 
-            data = request.get_json()
+            data = None
+            try:
+                data = request.get_json()
+            except Exception:
+                pass
+                
             if not data or "uuid" not in data:
                 return (
                     jsonify(
@@ -262,8 +273,14 @@ def app(request):
     @app.route("/persist_session", methods=["POST"])
     def persist_session_endpoint():
         try:
-            # Check content type properly for Flask test client
-            content_type = request.headers.get("Content-Type", "")
+            # Check content type properly for Flask test client - defensive access
+            content_type = ""
+            try:
+                if hasattr(request, 'headers') and request.headers:
+                    content_type = request.headers.get("Content-Type", "")
+            except Exception:
+                pass
+            
             is_json = content_type.startswith("application/json")
 
             if not is_json:
@@ -396,9 +413,11 @@ def app(request):
             # Use Flask's request context if available
             correlation_id = None
             try:
-                correlation_id = request.headers.get(
-                    "X-Request-ID"
-                ) or request.headers.get("X-Correlation-ID")
+                # Only access request attributes if they exist
+                if hasattr(request, 'headers') and request.headers:
+                    correlation_id = request.headers.get(
+                        "X-Request-ID"
+                    ) or request.headers.get("X-Correlation-ID")
             except Exception:
                 pass
 
@@ -407,19 +426,22 @@ def app(request):
 
             response.headers["X-Correlation-ID"] = correlation_id
 
-            # Add CORS headers for options requests
-            if request.method == "OPTIONS":
-                response.headers["Access-Control-Allow-Origin"] = "*"
-                response.headers["Access-Control-Allow-Methods"] = (
-                    "GET, POST, PUT, DELETE, OPTIONS"
-                )
-                response.headers["Access-Control-Allow-Headers"] = (
-                    "Content-Type, X-Correlation-ID, X-Request-ID"
-                )
-
-            # For versioned endpoints, add API version header
+            # Add CORS headers for options requests - safely check method
             try:
-                if "/api/v1/" in request.path:
+                if hasattr(request, 'method') and request.method == "OPTIONS":
+                    response.headers["Access-Control-Allow-Origin"] = "*"
+                    response.headers["Access-Control-Allow-Methods"] = (
+                        "GET, POST, PUT, DELETE, OPTIONS"
+                    )
+                    response.headers["Access-Control-Allow-Headers"] = (
+                        "Content-Type, X-Correlation-ID, X-Request-ID"
+                    )
+            except Exception:
+                pass
+
+            # For versioned endpoints, add API version header - safely check path
+            try:
+                if hasattr(request, 'path') and request.path and "/api/v1/" in request.path:
                     response.headers["X-API-Version"] = "v1"
             except Exception as e:
                 app.logger.debug(f"Could not add API version header: {str(e)}")

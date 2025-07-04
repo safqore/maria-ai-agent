@@ -28,14 +28,24 @@ class TestDatabasePerformance:
     @pytest.fixture(scope="class")
     def setup_test_data(self):
         """Setup test data for performance testing."""
+        # Initialize database with table creation like conftest.py
+        from backend.app.database_core import get_engine, Base, init_database
+        from backend.app.models import UserSession  # Import models to ensure they're registered
+        
         init_database()
+        engine = get_engine()
+        
+        # Create database tables
+        Base.metadata.create_all(bind=engine)
+        print("DEBUG: Database tables created successfully")
 
         # Create test sessions for performance testing
         test_sessions = []
         with TransactionContext() as session:
             for i in range(100):
+                session_uuid = uuid.uuid4()  # Create UUID object, not string
                 user_session = UserSession(
-                    uuid=str(uuid.uuid4()),
+                    uuid=session_uuid,  # Pass UUID object directly
                     name=f"Test User {i}",
                     email=f"test{i}@example.com",
                     consent_user_data=True,
@@ -45,15 +55,19 @@ class TestDatabasePerformance:
                     resend_attempts=i % 3,
                 )
                 session.add(user_session)
-                test_sessions.append(user_session.uuid)
+                test_sessions.append(str(session_uuid))  # Store string for comparison
 
         yield test_sessions
 
         # Cleanup
         with TransactionContext() as session:
+            # Convert string UUIDs to UUID objects for proper comparison
+            uuid_objects = [uuid.UUID(uuid_str) for uuid_str in test_sessions]
             session.query(UserSession).filter(
-                UserSession.uuid.in_(test_sessions)
+                UserSession.uuid.in_(uuid_objects)
             ).delete(synchronize_session=False)
+            
+        print("DEBUG: Database tables cleaned up")
 
     @contextmanager
     def performance_timer(self):
@@ -71,8 +85,8 @@ class TestDatabasePerformance:
         for i in range(10):
             with self.performance_timer():
                 session_uuid = str(uuid.uuid4())
-                repo.create(
-                    uuid=session_uuid,
+                repo.create_session(  # Use create_session which handles string UUID conversion
+                    session_uuid=session_uuid,
                     name=f"Perf Test User {i}",
                     email=f"perf{i}@example.com",
                     consent_user_data=True,
@@ -101,11 +115,11 @@ class TestDatabasePerformance:
         execution_times = []
 
         # Test retrieval performance with indexed UUID lookup
-        for session_uuid in test_sessions[:20]:  # Test first 20
+        for session_uuid_str in test_sessions[:20]:  # Test first 20
             with self.performance_timer():
-                session = repo.get_by_uuid(session_uuid)
+                session = repo.get_by_uuid(uuid.UUID(session_uuid_str))  # Convert string to UUID object
             execution_times.append(self.last_execution_time)
-            assert session is not None, f"Session {session_uuid} should exist"
+            assert session is not None, f"Session {session_uuid_str} should exist"
 
         avg_time = statistics.mean(execution_times)
         max_time = max(execution_times)
@@ -227,9 +241,9 @@ class TestDatabasePerformance:
             with self.performance_timer():
                 with TransactionContext() as session:
                     # Perform multiple operations in single transaction
-                    session_uuid = str(uuid.uuid4())
+                    session_uuid = uuid.uuid4()  # Create UUID object, not string
                     user_session = UserSession(
-                        uuid=session_uuid,
+                        uuid=session_uuid,  # Pass UUID object directly
                         name=f"Transaction Test {i}",
                         email=f"trans{i}@example.com",
                         consent_user_data=True,
@@ -272,7 +286,7 @@ class TestDatabasePerformance:
         test_sessions = setup_test_data
 
         # Get a session and verify lazy loading behavior
-        session = repo.get_by_uuid(test_sessions[0])
+        session = repo.get_by_uuid(uuid.UUID(test_sessions[0]))  # Convert string to UUID object
         assert session is not None
 
         # Verify that accessing attributes doesn't cause additional queries
@@ -341,15 +355,15 @@ class TestDatabasePerformance:
                 repo = UserSessionRepository()
                 # Perform multiple operations
                 for i in range(5):
-                    session_uuid = str(uuid.uuid4())
-                    repo.create(
-                        uuid=session_uuid,
+                    session_uuid = uuid.uuid4()  # Create UUID object, not string
+                    repo.create_session(  # Use create_session which handles string UUID conversion
+                        session_uuid=str(session_uuid),  # Pass string UUID to create_session
                         name=f"Concurrent Test {threading.current_thread().ident}",
                         email=f"concurrent{i}@{threading.current_thread().ident}.com",
                         consent_user_data=True,
                     )
                     # Retrieve it back
-                    retrieved = repo.get_by_uuid(session_uuid)
+                    retrieved = repo.get_by_uuid(session_uuid)  # Pass UUID object
                     assert retrieved is not None
 
                 end_time = time.time()
@@ -399,9 +413,9 @@ class TestDatabasePerformance:
 
         # Test operations that should use indexes
         operations = [
-            ("UUID lookup", lambda: repo.get_by_uuid(test_sessions[0])),
+            ("UUID lookup", lambda: repo.get_by_uuid(uuid.UUID(test_sessions[0]))),  # Convert to UUID object
             ("Email lookup", lambda: repo.get_by_id(test_sessions[1])),
-            ("Existence check", lambda: repo.exists(test_sessions[2])),
+            ("Existence check", lambda: repo.exists(uuid.UUID(test_sessions[2]))),  # Convert to UUID object
         ]
 
         for operation_name, operation in operations:

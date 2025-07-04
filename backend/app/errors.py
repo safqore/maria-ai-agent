@@ -12,6 +12,7 @@ from functools import wraps
 from typing import Any, Callable, Dict, Tuple, TypeVar, cast
 
 from flask import Response, current_app, jsonify, request
+from werkzeug.exceptions import HTTPException, UnsupportedMediaType, MethodNotAllowed, BadRequest
 
 # Type variable for function return type
 F = TypeVar("F", bound=Callable[..., Any])
@@ -94,6 +95,42 @@ def handle_api_error(error: APIError) -> Tuple[Response, int]:
     return resp, error.status_code
 
 
+def handle_http_error(error: HTTPException) -> Tuple[Response, int]:
+    """
+    Handle HTTP errors by converting them to appropriate responses.
+
+    Args:
+        error: The HTTP error to handle
+
+    Returns:
+        tuple: (response, status_code)
+    """
+    # Map specific HTTP exceptions to appropriate status codes
+    if isinstance(error, UnsupportedMediaType):
+        # Convert 415 to 400 for better API consistency
+        status_code = 400
+        message = "Invalid content type. Expected application/json"
+    elif isinstance(error, MethodNotAllowed):
+        status_code = 405
+        message = "Method not allowed"
+    elif isinstance(error, BadRequest):
+        status_code = 400
+        message = "Bad request"
+    else:
+        # Use the original status code for other HTTP exceptions
+        status_code = error.code
+        message = error.description or str(error)
+
+    response = {"error": message, "status": "error", "details": {}}
+    resp = jsonify(response)
+    # Add CORS headers to ensure preflight requests pass even on errors
+    resp.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+    resp.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+    resp.headers.add("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS")
+    resp.headers.add("Access-Control-Allow-Credentials", "true")
+    return resp, status_code
+
+
 def handle_general_error(error: Exception) -> Tuple[Response, int]:
     """
     Handle general errors by converting them to 500 error responses.
@@ -131,6 +168,7 @@ def register_error_handlers(app):
         app: The Flask application
     """
     app.register_error_handler(APIError, handle_api_error)
+    app.register_error_handler(HTTPException, handle_http_error)
     app.register_error_handler(Exception, handle_general_error)
 
 
@@ -155,6 +193,8 @@ def api_route(func: F) -> F:
             return func(*args, **kwargs)
         except APIError as e:
             return handle_api_error(e)
+        except HTTPException as e:
+            return handle_http_error(e)
         except Exception as e:
             return handle_general_error(e)
 
