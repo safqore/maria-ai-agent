@@ -10,9 +10,9 @@ import uuid
 import pytest
 from flask import Blueprint, Flask, g, jsonify, request
 
-from backend.app import create_app
-from backend.app.utils.auth import require_api_key, setup_auth_middleware
-from backend.app.utils.middleware import apply_middleware_to_blueprint
+from app import create_app
+from app.utils.auth import require_api_key, setup_auth_middleware
+from app.utils.middleware import apply_middleware_to_blueprint
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def app():
     app.config["API_KEYS"] = ["test-key", "alt-key"]
 
     # Override the imported globals with our test values
-    import backend.app.utils.auth as auth
+    import app.utils.auth as auth
 
     auth.REQUIRE_AUTH = True  # Ensure auth is required for tests
     auth.API_KEYS = ["test-key", "alt-key"]
@@ -63,7 +63,7 @@ def app():
     app.register_blueprint(open_bp, url_prefix="/api/test")
 
     # Set up request logging
-    from backend.app.utils.middleware import setup_request_logging
+    from app.utils.middleware import setup_request_logging
 
     setup_request_logging(app)
 

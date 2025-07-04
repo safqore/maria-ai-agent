@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from sqlalchemy.exc import SQLAlchemyError
 
-from backend.app.errors import ResourceNotFoundError, ServerError
+from app.errors import ResourceNotFoundError, ServerError
 from backend.tests.mocks.database import get_db_session
 from backend.tests.mocks.models import UserSession
 

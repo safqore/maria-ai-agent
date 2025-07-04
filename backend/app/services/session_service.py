@@ -15,10 +15,10 @@ Architecture Note:
 import uuid
 from typing import Any, Dict, Optional, Tuple
 
-from backend.app.database.transaction import TransactionContext
-from backend.app.repositories.factory import get_user_session_repository
-from backend.app.utils.audit_utils import log_audit_event
-from backend.app.utils.s3_utils import migrate_s3_files
+from app.database.transaction import TransactionContext
+from app.repositories.factory import get_user_session_repository
+from app.utils.audit_utils import log_audit_event
+from app.utils.s3_utils import migrate_s3_files
 
 
 class SessionService:

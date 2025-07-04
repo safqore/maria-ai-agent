@@ -5,7 +5,7 @@
 #
 # This is required for all backend operations (tests, server, database, etc.)
 
-.PHONY: help install-dev format lint test run-backend run-frontend clean git-commit git-status git-add
+.PHONY: help install-dev format lint test test-setup run-backend run-frontend clean git-commit git-status git-add
 
 help: ## Show help message
 	@echo "Maria AI Agent - Development Commands"
@@ -32,7 +32,10 @@ lint:
 	mypy backend/
 	cd frontend && npm run lint
 
-test: ## Run all tests (requires: conda activate maria-ai-agent)
+test-setup: ## Set up test database (requires: conda activate maria-ai-agent)
+	cd backend && python setup_test_db.py
+
+test: test-setup ## Run all tests (requires: conda activate maria-ai-agent)
 	pytest backend/
 	cd frontend && npm test
 
@@ -50,6 +53,7 @@ clean:
 	rm -rf htmlcov
 	rm -rf frontend/node_modules
 	rm -rf frontend/build
+	rm -f backend/maria_ai_test.db
 
 # Git commands with proper locale settings
 git-status:

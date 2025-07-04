@@ -12,10 +12,10 @@ from unittest.mock import patch
 import pytest
 from flask import Flask, jsonify
 
-from backend.app import create_app
-from backend.app.models import UserSession
-from backend.app.repositories.user_session_repository import UserSessionRepository
-from backend.app.database_core import Base, get_engine
+from app import create_app
+from app.models import UserSession
+from app.repositories.user_session_repository import UserSessionRepository
+from app.database_core import Base, get_engine
 
 
 @pytest.fixture
@@ -32,17 +32,15 @@ def app():
     # Create test configuration
     test_config = {
         "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
-        "REQUIRE_AUTH": False,  # Disable auth for testing
-        "DEBUG": True,
-        "SKIP_MIDDLEWARE": True,  # Skip middleware to avoid registration conflicts
-        "RATELIMIT_ENABLED": False,  # Disable rate limiting for tests
-        "WTF_CSRF_ENABLED": False,
-        "SECRET_KEY": "test-secret-key",
-        "MAX_CONTENT_LENGTH": (1 * 1024 * 1024),  # 1MB max upload size for testing
+        "SKIP_MIDDLEWARE": True,
+        "REQUIRE_AUTH": False,
     }
     
-    app = create_app(test_config)
+    # Create app without test_config parameter
+    app = create_app()
+    
+    # Set test configuration after app creation
+    app.config.update(test_config)
 
     # Create database tables
     with app.app_context():
@@ -91,7 +89,7 @@ class TestUploadAPI:
         file_content, file_name = test_file
 
         response = client.post(
-            "/upload",
+            "/api/v1/upload",
             data={"file": (file_content, file_name), "session_uuid": session_uuid},
             content_type="multipart/form-data",
         )
@@ -132,7 +130,7 @@ class TestUploadAPI:
     def test_upload_file_missing_file(self, client, session_uuid):
         """Test upload-file endpoint with missing file."""
         response = client.post(
-            "/upload",
+            "/api/v1/upload",
             data={"session_uuid": session_uuid},
             content_type="multipart/form-data",
         )
@@ -146,7 +144,7 @@ class TestUploadAPI:
         file_content, file_name = test_file
 
         response = client.post(
-            "/upload",
+            "/api/v1/upload",
             data={"file": (file_content, file_name)},
             content_type="multipart/form-data",
         )
@@ -160,7 +158,7 @@ class TestUploadAPI:
         file_content, file_name = test_file
 
         response = client.post(
-            "/upload",
+            "/api/v1/upload",
             data={"file": (file_content, file_name), "session_uuid": "invalid-uuid"},
             content_type="multipart/form-data",
         )
@@ -181,7 +179,7 @@ class TestUploadAPI:
 
         try:
             response = client.post(
-                "/upload",
+                "/api/v1/upload",
                 data={"file": large_file, "session_uuid": session_uuid},
                 content_type="multipart/form-data",
             )

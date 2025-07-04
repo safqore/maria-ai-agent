@@ -9,7 +9,7 @@ import json
 import pytest
 from flask import Blueprint, Flask, g, jsonify, request
 
-from backend.app.utils.middleware import apply_middleware_to_blueprint
+from app.utils.middleware import apply_middleware_to_blueprint
 
 
 @pytest.fixture

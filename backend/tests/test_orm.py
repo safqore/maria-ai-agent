@@ -23,9 +23,9 @@ from pathlib import Path
 project_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(project_dir))
 
-from backend.app.database_core import Base, get_engine, get_db_session
-from backend.app.models import UserSession
-from backend.app.repositories.factory import get_user_session_repository
+from app.database_core import Base, get_engine, get_db_session
+from app.models import UserSession
+from app.repositories.factory import get_user_session_repository
 
 
 def test_create_session():

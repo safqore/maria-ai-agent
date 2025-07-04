@@ -14,10 +14,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import UUID
 
-from backend.app.database_core import Base, get_db_session
-from backend.app.database.transaction import TransactionContext
-from backend.app.errors import ResourceNotFoundError as NotFoundError
-from backend.app.errors import ServerError
+from app.database_core import Base, get_db_session
+from app.database.transaction import TransactionContext
+from app.errors import ResourceNotFoundError as NotFoundError
+from app.errors import ServerError
 
 # Define a TypeVar for SQLAlchemy models
 T = TypeVar("T", bound=Base)

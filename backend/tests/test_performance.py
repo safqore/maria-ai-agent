@@ -1,7 +1,8 @@
 """
 Performance tests for Maria AI Agent backend.
 
-This module tests performance of database operations and API endpoints.
+This module contains tests that verify the performance characteristics
+of the application under various load conditions.
 """
 
 import queue
@@ -10,14 +11,15 @@ import threading
 import time
 import uuid
 from contextlib import contextmanager
+from typing import List
 
 import pytest
 
-from backend.app import create_app
-from backend.app.database_core import get_db_session
-from backend.app.database.transaction import TransactionContext
-from backend.app.models import UserSession
-from backend.app.repositories.user_session_repository import UserSessionRepository
+from app import create_app
+from app.database_core import get_db_session
+from app.database.transaction import TransactionContext
+from app.models import UserSession
+from app.repositories.user_session_repository import UserSessionRepository
 
 
 class TestPerformance:
@@ -201,7 +203,7 @@ class TestAPIPerformance:
 
         for i in range(20):
             with self.performance_timer():
-                response = client.post("/generate-uuid")
+                response = client.post("/api/v1/generate-uuid")
             execution_times.append(self.last_execution_time)
             assert response.status_code == 200
 
@@ -222,7 +224,7 @@ class TestAPIPerformance:
         for i in range(20):
             with self.performance_timer():
                 response = client.post(
-                    "/validate-uuid",
+                    "/api/v1/validate-uuid",
                     json={"uuid": test_uuid},
                     content_type="application/json",
                 )
@@ -250,7 +252,7 @@ class TestAPIPerformance:
                 with app.test_client() as thread_client:
                     # Make multiple API calls
                     for i in range(5):
-                        response = thread_client.post("/generate-uuid")
+                        response = thread_client.post("/api/v1/generate-uuid")
                         assert response.status_code == 200
                 end_time = time.time()
                 results.put(end_time - start_time)
@@ -292,7 +294,7 @@ class TestAPIPerformance:
 
         # Make requests for 3 seconds
         while time.time() - start_time < 3:
-            response = client.post("/generate-uuid")
+            response = client.post("/api/v1/generate-uuid")
             if response.status_code == 200:
                 successful_requests += 1
 

@@ -17,8 +17,8 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from backend.app.app_factory import create_app
-from backend.app.routes.session import limiter
+from app.app_factory import create_app
+from app.routes.session import limiter
 
 
 class TestSessionAPIIntegration:
@@ -48,7 +48,7 @@ class TestSessionAPIIntegration:
     @pytest.fixture
     def mock_session_service(self, app_context):
         """Mock session service for consistent testing."""
-        with patch("backend.app.routes.session.SessionService") as mock_service_class:
+        with patch("app.routes.session.SessionService") as mock_service_class:
             mock_service = Mock()
             mock_service_class.return_value = mock_service
             yield mock_service
@@ -56,7 +56,7 @@ class TestSessionAPIIntegration:
     def teardown_method(self):
         """Reset rate limiter state after each test."""
         try:
-            from backend.app.routes.session import limiter
+            from app.routes.session import limiter
             # Reset the in-memory storage for rate limiting
             if hasattr(limiter, 'storage') and hasattr(limiter.storage, 'storage'):
                 limiter.storage.storage.clear()
@@ -78,7 +78,7 @@ class TestSessionAPIIntegration:
             200,
         )
 
-        response = client.post("/generate-uuid")
+        response = client.post("/api/v1/generate-uuid")
 
         assert response.status_code == 200
         assert response.content_type == "application/json"
@@ -105,7 +105,7 @@ class TestSessionAPIIntegration:
             500,
         )
 
-        response = client.post("/generate-uuid")
+        response = client.post("/api/v1/generate-uuid")
 
         assert response.status_code == 500
         data = response.get_json()
@@ -115,7 +115,7 @@ class TestSessionAPIIntegration:
 
     def test_generate_uuid_options_request(self, client):
         """Test OPTIONS request for CORS preflight."""
-        response = client.options("/generate-uuid")
+        response = client.options("/api/v1/generate-uuid")
 
         assert response.status_code == 200
         data = response.get_json()
@@ -123,7 +123,7 @@ class TestSessionAPIIntegration:
 
     def test_generate_uuid_wrong_method(self, client):
         """Test wrong HTTP method returns 405."""
-        response = client.get("/generate-uuid")
+        response = client.get("/api/v1/generate-uuid")
         assert response.status_code == 405
 
     # Validate UUID Endpoint Tests
@@ -140,7 +140,7 @@ class TestSessionAPIIntegration:
             200,
         )
 
-        response = client.post("/validate-uuid", json={"uuid": test_uuid})
+        response = client.post("/api/v1/validate-uuid", json={"uuid": test_uuid})
 
         assert response.status_code == 200
         data = response.get_json()
@@ -154,7 +154,7 @@ class TestSessionAPIIntegration:
         invalid_uuid = "not-a-uuid"
 
         # This should fail schema validation before reaching service
-        response = client.post("/validate-uuid", json={"uuid": invalid_uuid})
+        response = client.post("/api/v1/validate-uuid", json={"uuid": invalid_uuid})
 
         assert response.status_code == 400
         data = response.get_json()
@@ -174,7 +174,7 @@ class TestSessionAPIIntegration:
             409,
         )
 
-        response = client.post("/validate-uuid", json={"uuid": test_uuid})
+        response = client.post("/api/v1/validate-uuid", json={"uuid": test_uuid})
 
         assert response.status_code == 409
         data = response.get_json()
@@ -183,7 +183,7 @@ class TestSessionAPIIntegration:
 
     def test_validate_uuid_missing_payload(self, client):
         """Test validation with missing request body."""
-        response = client.post("/validate-uuid", json={})
+        response = client.post("/api/v1/validate-uuid", json={})
 
         assert response.status_code == 400
         data = response.get_json()
@@ -192,13 +192,13 @@ class TestSessionAPIIntegration:
 
     def test_validate_uuid_no_json(self, client):
         """Test validation with no JSON body."""
-        response = client.post("/validate-uuid", data="not json")
+        response = client.post("/api/v1/validate-uuid", data="not json")
 
         assert response.status_code == 400
 
     def test_validate_uuid_options_request(self, client):
         """Test OPTIONS request for CORS preflight."""
-        response = client.options("/validate-uuid")
+        response = client.options("/api/v1/validate-uuid")
 
         assert response.status_code == 200
         data = response.get_json()
@@ -214,7 +214,7 @@ class TestSessionAPIIntegration:
         )
 
         response = client.post(
-            "/persist_session",
+            "/api/v1/persist_session",
             json={
                 "session_uuid": test_uuid,
                 "name": "John Doe",
@@ -242,7 +242,7 @@ class TestSessionAPIIntegration:
         )
 
         response = client.post(
-            "/persist_session",
+            "/api/v1/persist_session",
             json={
                 "session_uuid": old_uuid,
                 "name": "John Doe",
@@ -258,7 +258,7 @@ class TestSessionAPIIntegration:
     def test_persist_session_invalid_uuid(self, client):
         """Test session persistence with invalid UUID."""
         response = client.post(
-            "/persist_session",
+            "/api/v1/persist_session",
             json={
                 "session_uuid": "not-a-uuid",
                 "name": "John Doe",
@@ -274,7 +274,7 @@ class TestSessionAPIIntegration:
         """Test session persistence with missing required fields."""
         # Missing session_uuid
         response = client.post(
-            "/persist_session", json={"name": "John Doe", "email": "john@example.com"}
+            "/api/v1/persist_session", json={"name": "John Doe", "email": "john@example.com"}
         )
 
         assert response.status_code == 400
@@ -288,7 +288,7 @@ class TestSessionAPIIntegration:
         )
 
         # Only session_uuid provided, name and email should default to empty
-        response = client.post("/persist_session", json={"session_uuid": test_uuid})
+        response = client.post("/api/v1/persist_session", json={"session_uuid": test_uuid})
 
         assert response.status_code == 200
 
@@ -297,7 +297,7 @@ class TestSessionAPIIntegration:
 
     def test_persist_session_options_request(self, client):
         """Test OPTIONS request for CORS preflight."""
-        response = client.options("/persist_session")
+        response = client.options("/api/v1/persist_session")
 
         assert response.status_code == 200
         data = response.get_json()
@@ -307,8 +307,8 @@ class TestSessionAPIIntegration:
     @pytest.mark.parametrize(
         "endpoint,method,payload",
         [
-            ("/generate-uuid", "post", None),
-            ("/validate-uuid", "post", {"uuid": str(uuid.uuid4())}),
+            ("/api/v1/generate-uuid", "post", None),
+            ("/api/v1/validate-uuid", "post", {"uuid": str(uuid.uuid4())}),
         ],
     )
     def test_rate_limiting_enabled(self, app, endpoint, method, payload):
@@ -343,19 +343,19 @@ class TestSessionAPIIntegration:
         with app.test_client() as client:
             # Make request from first IP
             response = client.post(
-                "/generate-uuid", environ_overrides={"REMOTE_ADDR": "1.2.3.4"}
+                "/api/v1/generate-uuid", environ_overrides={"REMOTE_ADDR": "1.2.3.4"}
             )
             assert response.status_code == 200
 
             # Make request from second IP (should work)
             response = client.post(
-                "/generate-uuid", environ_overrides={"REMOTE_ADDR": "5.6.7.8"}
+                "/api/v1/generate-uuid", environ_overrides={"REMOTE_ADDR": "5.6.7.8"}
             )
             assert response.status_code == 200
 
             # Second request from first IP should be rate limited
             response = client.post(
-                "/generate-uuid", environ_overrides={"REMOTE_ADDR": "1.2.3.4"}
+                "/api/v1/generate-uuid", environ_overrides={"REMOTE_ADDR": "1.2.3.4"}
             )
             assert response.status_code == 429
 
@@ -364,7 +364,7 @@ class TestSessionAPIIntegration:
         """Test that service exceptions are handled gracefully."""
         mock_session_service.generate_uuid.side_effect = Exception("Database error")
 
-        response = client.post("/generate-uuid")
+        response = client.post("/api/v1/generate-uuid")
 
         # Should return 500 with error message
         assert response.status_code == 500
@@ -373,7 +373,7 @@ class TestSessionAPIIntegration:
     def test_malformed_json_handling(self, client):
         """Test handling of malformed JSON."""
         response = client.post(
-            "/validate-uuid", data="{invalid json}", content_type="application/json"
+            "/api/v1/validate-uuid", data="{invalid json}", content_type="application/json"
         )
 
         assert response.status_code == 400
@@ -382,7 +382,7 @@ class TestSessionAPIIntegration:
         """Test handling of unusually large payloads."""
         large_uuid = "a" * 1000  # Very long string
 
-        response = client.post("/validate-uuid", json={"uuid": large_uuid})
+        response = client.post("/api/v1/validate-uuid", json={"uuid": large_uuid})
 
         assert response.status_code == 400
 
@@ -391,7 +391,7 @@ class TestSessionAPIIntegration:
         """Test that SQL injection attempts are handled safely."""
         malicious_uuid = "'; DROP TABLE users; --"
 
-        response = client.post("/validate-uuid", json={"uuid": malicious_uuid})
+        response = client.post("/api/v1/validate-uuid", json={"uuid": malicious_uuid})
 
         # Should be caught by UUID format validation
         assert response.status_code == 400
@@ -400,7 +400,7 @@ class TestSessionAPIIntegration:
         """Test that XSS attempts are handled safely."""
         xss_uuid = "<script>alert('xss')</script>"
 
-        response = client.post("/validate-uuid", json={"uuid": xss_uuid})
+        response = client.post("/api/v1/validate-uuid", json={"uuid": xss_uuid})
 
         assert response.status_code == 400
 
@@ -408,7 +408,7 @@ class TestSessionAPIIntegration:
     def test_wrong_content_type(self, client):
         """Test handling of wrong content type."""
         response = client.post(
-            "/validate-uuid", data='{"uuid":"test"}', content_type="text/plain"
+            "/api/v1/validate-uuid", data='{"uuid":"test"}', content_type="text/plain"
         )
 
         # Should require application/json
@@ -416,7 +416,7 @@ class TestSessionAPIIntegration:
 
     def test_missing_content_type(self, client):
         """Test handling of missing content type."""
-        response = client.post("/validate-uuid", data='{"uuid":"test"}')
+        response = client.post("/api/v1/validate-uuid", data='{"uuid":"test"}')
 
         assert response.status_code == 400
 
@@ -426,14 +426,14 @@ class TestSessionAPIIntegration:
         # This test uses the real service (no mocking) for integration testing
 
         # Generate a UUID
-        gen_response = client.post("/generate-uuid")
+        gen_response = client.post("/api/v1/generate-uuid")
         assert gen_response.status_code == 200
 
         gen_data = gen_response.get_json()
         generated_uuid = gen_data["uuid"]
 
         # Validate the generated UUID (should be successful since it's new)
-        val_response = client.post("/validate-uuid", json={"uuid": generated_uuid})
+        val_response = client.post("/api/v1/validate-uuid", json={"uuid": generated_uuid})
         assert val_response.status_code == 200
 
         val_data = val_response.get_json()
@@ -454,7 +454,7 @@ class TestSessionAPIIntegration:
         def make_request():
             # Each thread needs its own test client with proper context
             with app.test_client() as thread_client:
-                response = thread_client.post("/generate-uuid")
+                response = thread_client.post("/api/v1/generate-uuid")
                 results.append(response.status_code)
 
         # Create multiple threads
@@ -478,25 +478,25 @@ class TestSessionAPIIntegration:
     # Edge Cases
     def test_empty_json_body(self, client):
         """Test handling of empty JSON body."""
-        response = client.post("/validate-uuid", json={})
+        response = client.post("/api/v1/validate-uuid", json={})
 
         assert response.status_code == 400
 
     def test_null_values(self, client):
         """Test handling of null values in JSON."""
-        response = client.post("/validate-uuid", json={"uuid": None})
+        response = client.post("/api/v1/validate-uuid", json={"uuid": None})
 
         assert response.status_code == 400
 
     def test_numeric_uuid_value(self, client):
         """Test handling of numeric UUID value."""
-        response = client.post("/validate-uuid", json={"uuid": 123456})
+        response = client.post("/api/v1/validate-uuid", json={"uuid": 123456})
 
         assert response.status_code == 400
 
     def test_boolean_uuid_value(self, client):
         """Test handling of boolean UUID value."""
-        response = client.post("/validate-uuid", json={"uuid": True})
+        response = client.post("/api/v1/validate-uuid", json={"uuid": True})
 
         assert response.status_code == 400
 

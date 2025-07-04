@@ -5,8 +5,8 @@ This module provides factory functions to create repositories,
 ensuring that repository instances are created consistently.
 """
 
-from backend.app.models import UserSession
-from backend.app.repositories.user_session_repository import UserSessionRepository
+from app.models import UserSession
+from app.repositories.user_session_repository import UserSessionRepository
 
 
 def get_user_session_repository() -> UserSessionRepository:

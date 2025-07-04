@@ -6,7 +6,7 @@ and transaction handling.
 """
 
 # Only expose TransactionContext from transaction.py
-from backend.app.database.transaction import TransactionContext
+from app.database.transaction import TransactionContext
 
 __all__ = [
     "TransactionContext",

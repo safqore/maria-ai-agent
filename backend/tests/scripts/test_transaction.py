@@ -17,12 +17,12 @@ print("Starting transaction test...")
 
 try:
     print("Importing directly from database.py...")
-    from backend.app.database_core import Base, get_engine, get_session_local, get_db_session
+    from app.database_core import Base, get_engine, get_session_local, get_db_session
 
     print("Importing TransactionContext...")
     from sqlalchemy import text
 
-    from backend.app.database.transaction import TransactionContext
+    from app.database.transaction import TransactionContext
 
     print("Imports successful!")
 except ImportError as e:

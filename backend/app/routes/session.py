@@ -15,9 +15,9 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from marshmallow import ValidationError
 
-from backend.app.errors import api_route
-from backend.app.schemas.session_schemas import SessionPersistSchema, UUIDSchema
-from backend.app.services.session_service import SessionService
+from app.errors import api_route
+from app.schemas.session_schemas import SessionPersistSchema, UUIDSchema
+from app.services.session_service import SessionService
 
 # Create the session blueprint
 session_bp = Blueprint("session", __name__)

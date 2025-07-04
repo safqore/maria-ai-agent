@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 from flask import Flask, g, request
 
-from backend.app.utils.auth import require_api_key, setup_auth_middleware
+from app.utils.auth import require_api_key, setup_auth_middleware
 
 
 class TestAuth:
@@ -32,8 +32,8 @@ class TestAuth:
 
         return app
 
-    @patch("backend.app.utils.auth.REQUIRE_AUTH", True)
-    @patch("backend.app.utils.auth.API_KEYS", ["test-key"])
+    @patch("app.utils.auth.REQUIRE_AUTH", True)
+    @patch("app.utils.auth.API_KEYS", ["test-key"])
     def test_require_api_key_valid(self, app):
         """Test that routes with valid API key are accessible."""
         with app.test_client() as client:
@@ -41,31 +41,31 @@ class TestAuth:
             assert response.status_code == 200
             assert response.json == {"message": "protected"}
 
-    @patch("backend.app.utils.auth.REQUIRE_AUTH", True)
-    @patch("backend.app.utils.auth.API_KEYS", ["test-key"])
+    @patch("app.utils.auth.REQUIRE_AUTH", True)
+    @patch("app.utils.auth.API_KEYS", ["test-key"])
     def test_require_api_key_invalid(self, app):
         """Test that routes with invalid API key are rejected."""
         with app.test_client() as client:
             response = client.get("/protected", headers={"X-API-Key": "wrong-key"})
             assert response.status_code == 401
 
-    @patch("backend.app.utils.auth.REQUIRE_AUTH", True)
-    @patch("backend.app.utils.auth.API_KEYS", ["test-key"])
+    @patch("app.utils.auth.REQUIRE_AUTH", True)
+    @patch("app.utils.auth.API_KEYS", ["test-key"])
     def test_require_api_key_missing(self, app):
         """Test that routes without API key are rejected."""
         with app.test_client() as client:
             response = client.get("/protected")
             assert response.status_code == 401
 
-    @patch("backend.app.utils.auth.REQUIRE_AUTH", False)
+    @patch("app.utils.auth.REQUIRE_AUTH", False)
     def test_auth_disabled(self, app):
         """Test that auth can be disabled via environment."""
         with app.test_client() as client:
             response = client.get("/protected")
             assert response.status_code == 200
 
-    @patch("backend.app.utils.auth.REQUIRE_AUTH", True)
-    @patch("backend.app.utils.auth.API_KEYS", ["test-key"])
+    @patch("app.utils.auth.REQUIRE_AUTH", True)
+    @patch("app.utils.auth.API_KEYS", ["test-key"])
     def test_non_api_routes_accessible(self, app):
         """Test that non-API routes are accessible without auth."""
         with app.test_client() as client:
@@ -73,8 +73,8 @@ class TestAuth:
             response = client.get("/open")
             assert response.status_code == 200
 
-    @patch("backend.app.utils.auth.REQUIRE_AUTH", True)
-    @patch("backend.app.utils.auth.API_KEYS", ["test-key"])
+    @patch("app.utils.auth.REQUIRE_AUTH", True)
+    @patch("app.utils.auth.API_KEYS", ["test-key"])
     def test_options_requests_allowed(self, app):
         """Test that OPTIONS requests are allowed for CORS preflight."""
         with app.test_client() as client:

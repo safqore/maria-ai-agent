@@ -14,8 +14,8 @@ from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 
-from backend.app.models import UserSession
-from backend.app.services.session_service import SessionService
+from app.models import UserSession
+from app.services.session_service import SessionService
 
 
 class TestSessionService:
@@ -99,7 +99,7 @@ class TestSessionService:
         assert result is False
 
     # UUID Validation Method Tests
-    @patch("backend.app.services.session_service.log_audit_event")
+    @patch("app.services.session_service.log_audit_event")
     def test_validate_uuid_success(self, mock_audit):
         """Test successful UUID validation."""
         test_uuid = str(uuid.uuid4())
@@ -117,7 +117,7 @@ class TestSessionService:
             "uuid_validation_success", user_uuid=test_uuid
         )
 
-    @patch("backend.app.services.session_service.log_audit_event")
+    @patch("app.services.session_service.log_audit_event")
     def test_validate_uuid_invalid_format(self, mock_audit):
         """Test UUID validation with invalid format."""
         invalid_uuid = "not-a-uuid"
@@ -136,7 +136,7 @@ class TestSessionService:
             details={"reason": "invalid format"},
         )
 
-    @patch("backend.app.services.session_service.log_audit_event")
+    @patch("app.services.session_service.log_audit_event")
     def test_validate_uuid_empty_string(self, mock_audit):
         """Test UUID validation with empty string."""
         response, status_code = self.session_service.validate_uuid("")
@@ -145,7 +145,7 @@ class TestSessionService:
         assert response["status"] == "invalid"
         assert response["uuid"] is None
 
-    @patch("backend.app.services.session_service.log_audit_event")
+    @patch("app.services.session_service.log_audit_event")
     def test_validate_uuid_none(self, mock_audit):
         """Test UUID validation with None."""
         response, status_code = self.session_service.validate_uuid(None)
@@ -154,7 +154,7 @@ class TestSessionService:
         assert response["status"] == "invalid"
         assert response["uuid"] is None
 
-    @patch("backend.app.services.session_service.log_audit_event")
+    @patch("app.services.session_service.log_audit_event")
     def test_validate_uuid_collision(self, mock_audit):
         """Test UUID validation when UUID already exists."""
         test_uuid = str(uuid.uuid4())
@@ -175,9 +175,9 @@ class TestSessionService:
         )
 
     # UUID Generation Tests
-    @patch("backend.app.services.session_service.log_audit_event")
-    @patch("backend.app.services.session_service.uuid.UUID")
-    @patch("backend.app.services.session_service.uuid.uuid4")
+    @patch("app.services.session_service.log_audit_event")
+    @patch("app.services.session_service.uuid.UUID")
+    @patch("app.services.session_service.uuid.uuid4")
     def test_generate_uuid_success_first_attempt(self, mock_uuid4, mock_UUID, mock_audit):
         """Test successful UUID generation on first attempt."""
         # Create a UUID string for testing
@@ -227,8 +227,8 @@ class TestSessionService:
         mock2 = MockUUIDObj(success_uuid_str)
         
         # Apply patches within the test method
-        with patch("backend.app.services.session_service.log_audit_event") as mock_audit, \
-             patch("backend.app.services.session_service.uuid.uuid4") as mock_uuid4:
+        with patch("app.services.session_service.log_audit_event") as mock_audit, \
+             patch("app.services.session_service.uuid.uuid4") as mock_uuid4:
             
             mock_uuid4.side_effect = [mock1, mock2]
 
@@ -259,8 +259,8 @@ class TestSessionService:
                 return self.uuid_str
         
         # Apply patches within the test method
-        with patch("backend.app.services.session_service.log_audit_event") as mock_audit, \
-             patch("backend.app.services.session_service.uuid.uuid4") as mock_uuid4:
+        with patch("app.services.session_service.log_audit_event") as mock_audit, \
+             patch("app.services.session_service.uuid.uuid4") as mock_uuid4:
             
             mock_uuid4.side_effect = [MockUUIDObj(uuid_str) for uuid_str in collision_uuid_strs]
 
@@ -286,7 +286,7 @@ class TestSessionService:
             )
 
     # Session Persistence Tests
-    @patch("backend.app.services.session_service.log_audit_event")
+    @patch("app.services.session_service.log_audit_event")
     def test_persist_session_success(self, mock_audit):
         """Test successful session persistence."""
         test_uuid = str(uuid.uuid4())
@@ -354,7 +354,7 @@ class TestSessionService:
         assert status_code == 400
         assert response["error"] == "Invalid or missing session UUID"
 
-    @patch("backend.app.services.session_service.migrate_s3_files")
+    @patch("app.services.session_service.migrate_s3_files")
     @patch(
         "backend.app.services.session_service.uuid"
     )  # Patch the module's uuid import
@@ -408,7 +408,7 @@ class TestSessionService:
         )
 
     # Integration Tests
-    @patch("backend.app.services.session_service.log_audit_event")
+    @patch("app.services.session_service.log_audit_event")
     def test_full_validation_workflow_with_mocked_repo(self, mock_audit):
         """Test complete validation workflow with mocked repository."""
         test_uuid = str(uuid.uuid4())

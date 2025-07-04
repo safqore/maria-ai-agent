@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from flask import Flask, g, jsonify, request
 
-from backend.app.utils.middleware import (
+from app.utils.middleware import (
     extract_correlation_id,
     generate_request_id,
     log_request_middleware,
@@ -58,7 +58,7 @@ class TestMiddleware:
             assert "X-Correlation-ID" in processed_response.headers
             assert processed_response.headers["X-Correlation-ID"] == g.correlation_id
 
-    @patch("backend.app.utils.middleware.logger")
+    @patch("app.utils.middleware.logger")
     def test_middleware_logs_requests(self, mock_logger, app):
         """Test that the middleware logs request information."""
         with app.test_request_context("/test", method="GET"):

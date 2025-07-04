@@ -1,27 +1,36 @@
 """
-Configuration file for backend tests.
-This file is automatically recognized by pytest and allows sharing fixtures and setup.
+Pytest configuration and fixtures for Maria AI Agent backend tests.
+
+This module provides:
+- Database setup and teardown fixtures
+- Flask app fixtures for testing
+- Common test utilities
 """
 
 import os
 import sys
+import tempfile
 import uuid
+from pathlib import Path
+
+# Add the backend directory to Python path for imports
+backend_dir = Path(__file__).parent.parent
+sys.path.insert(0, str(backend_dir))
+
+# Ensure we can import from app
 import pytest
 from flask import Flask
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-# Ensure we can import from backend.app
-# This adds the project root to sys.path if it's not already there
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+from app.database_core import get_engine, Base, init_database
+from app import models
 
 
 @pytest.fixture(scope="session", autouse=True)
 def initialize_test_database():
     """Initialize the test database with tables."""
     # Import after setting up the environment
-    from backend.app.database_core import get_engine, Base, init_database
-    
-    # Import models to ensure SQLAlchemy knows about all tables
-    from backend.app import models
     
     print("DEBUG: Initializing test database with tables...")
     
@@ -68,15 +77,22 @@ def client():
     This fixture creates a proper Flask app using the application factory
     and returns a test client for making requests.
     """
-    from backend.app.app_factory import create_app
+    from app.app_factory import create_app
     
-    # Create test configuration
-    test_config = {
-        "TESTING": True,
-        "SKIP_MIDDLEWARE": True,  # Skip middleware to avoid conflicts
-    }
+    # Create app without test_config parameter
+    app = create_app()
     
-    app = create_app(test_config)
+    # Set test configuration after app creation
+    app.config["TESTING"] = True
+    app.config["SKIP_MIDDLEWARE"] = True  # Skip middleware to avoid conflicts
+    app.config["REQUIRE_AUTH"] = False  # Disable authentication for tests
+    app.config["RATELIMIT_ENABLED"] = False  # Disable rate limiting for tests
+    
+    # Disable S3 for tests
+    app.config["S3_BUCKET_NAME"] = "test-bucket"
+    app.config["AWS_ACCESS_KEY_ID"] = "test-key"
+    app.config["AWS_SECRET_ACCESS_KEY"] = "test-secret"
+    app.config["AWS_REGION"] = "us-east-1"
     
     with app.test_client() as client:
         yield client
@@ -90,8 +106,8 @@ def session_uuid(client):
     This fixture creates a test session in the database and returns the UUID object.
     After the test completes, it cleans up by deleting the session.
     """
-    from backend.app.repositories.factory import get_user_session_repository
-    from backend.app.database_core import Base, get_engine
+    from app.repositories.factory import get_user_session_repository
+    from app.database_core import Base, get_engine
     
     # Ensure tables exist (should already be created by initialize_test_database)
     Base.metadata.create_all(bind=get_engine())

@@ -46,7 +46,7 @@ def app(request):
     ].UserSessionRepository = UserSessionRepository
 
     # Patch the database functions
-    import backend.app.database as database
+    import app.database as database
     database.get_db_session = get_db_session
     database.get_engine = get_engine
     database.get_session_local = get_session_local
@@ -56,7 +56,7 @@ def app(request):
     database.SessionLocal = SessionLocal
 
     # CRITICAL: Also patch the core database module that TransactionContext uses
-    import backend.app.database_core as database_core
+    import app.database_core as database_core
     database_core.get_db_session = get_db_session
     database_core.get_engine = get_engine
     database_core.get_session_local = get_session_local
@@ -69,22 +69,20 @@ def app(request):
     init_database()
 
     # Import app factory after patching
-    from backend.app.app_factory import create_app
+    from app.app_factory import create_app
     
     # Create test configuration
     test_config = {
         "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
-        "REQUIRE_AUTH": False,  # Disable auth for testing
-        "DEBUG": True,
-        "SKIP_MIDDLEWARE": True,  # Skip middleware to avoid registration conflicts
-        "RATELIMIT_ENABLED": False,  # Disable rate limiting for tests
-        "WTF_CSRF_ENABLED": False,
-        "SECRET_KEY": "test-secret-key",
+        "SKIP_MIDDLEWARE": True,
+        "REQUIRE_AUTH": False,
     }
-
-    # Use the real app factory with test configuration
-    app = create_app(test_config=test_config)
+    
+    # Create app without test_config parameter
+    app = create_app()
+    
+    # Set test configuration after app creation
+    app.config.update(test_config)
     
     return app
 
@@ -126,7 +124,7 @@ class TestSessionAPI:
         # Test with correlation ID
         correlation_id = str(uuid.uuid4())
         response = client.post(
-            "/generate-uuid", headers={"X-Correlation-ID": correlation_id}
+            "/api/v1/generate-uuid", headers={"X-Correlation-ID": correlation_id}
         )
 
         assert response.status_code == 200
@@ -156,7 +154,7 @@ class TestSessionAPI:
     def test_validate_uuid_legacy_valid(self, client, test_session):
         """Test validate-uuid endpoint with valid UUID (legacy route)."""
         response = client.post(
-            "/validate-uuid",
+            "/api/v1/validate-uuid",
             json={"uuid": test_session},
             content_type="application/json",
         )
@@ -171,7 +169,7 @@ class TestSessionAPI:
     def test_validate_uuid_legacy_invalid(self, client):
         """Test validate-uuid endpoint with invalid UUID (legacy route)."""
         response = client.post(
-            "/validate-uuid",
+            "/api/v1/validate-uuid",
             json={"uuid": "not-a-uuid"},
             content_type="application/json",
         )
@@ -185,7 +183,7 @@ class TestSessionAPI:
     def test_validate_uuid_invalid_json(self, client):
         """Test validate-uuid endpoint with invalid JSON."""
         response = client.post(
-            "/validate-uuid", data="invalid-json", content_type="application/json"
+            "/api/v1/validate-uuid", data="invalid-json", content_type="application/json"
         )
 
         assert response.status_code == 400
@@ -213,7 +211,7 @@ class TestSessionAPI:
     def test_persist_session_legacy(self, client, test_session):
         """Test persist_session endpoint (legacy route)."""
         response = client.post(
-            "/persist_session",
+            "/api/v1/persist_session",
             json={
                 "session_uuid": test_session,
                 "name": "Test User",
@@ -245,7 +243,7 @@ class TestSessionAPI:
     def test_persist_session_invalid_uuid(self, client):
         """Test persist_session endpoint with invalid UUID."""
         response = client.post(
-            "/persist_session",
+            "/api/v1/persist_session",
             json={
                 "session_uuid": "invalid-uuid",
                 "name": "Test User",
@@ -275,7 +273,7 @@ class TestSessionAPI:
         """Test persist_session endpoint with missing fields."""
         # Test with missing name
         response = client.post(
-            "/persist_session",
+            "/api/v1/persist_session",
             json={
                 "session_uuid": test_session,
                 "email": "test@example.com",
@@ -293,7 +291,7 @@ class TestSessionAPI:
 
         # Test with missing session_uuid (required field)
         response = client.post(
-            "/persist_session",
+            "/api/v1/persist_session",
             json={
                 "name": "Test User",
                 "email": "test@example.com",
@@ -310,10 +308,10 @@ class TestSessionAPI:
     def test_persist_session_new_uuid_on_collision(self, client, test_session):
         """Test persist_session endpoint with UUID collision."""
         # Mock the S3 migration function to prevent AWS errors in tests
-        with mock.patch("backend.app.services.session_service.migrate_s3_files") as mock_migrate:
+        with mock.patch("app.services.session_service.migrate_s3_files") as mock_migrate:
             # First create a session with the test UUID
             response = client.post(
-                "/persist_session",
+                "/api/v1/persist_session",
                 json={
                     "session_uuid": test_session,
                     "name": "Test User",
@@ -326,7 +324,7 @@ class TestSessionAPI:
 
             # Now try to create another session with the same UUID
             response = client.post(
-                "/persist_session",
+                "/api/v1/persist_session",
                 json={
                     "session_uuid": test_session,
                     "name": "Another User",
@@ -361,7 +359,7 @@ class TestSessionAPI:
         non_existent_uuid = str(uuid.uuid4())
 
         response = client.post(
-            "/validate-uuid",
+            "/api/v1/validate-uuid",
             json={"uuid": non_existent_uuid},
             content_type="application/json",
         )
@@ -376,7 +374,7 @@ class TestSessionAPI:
     def test_validate_uuid_empty(self, client):
         """Test validate-uuid endpoint with empty UUID."""
         response = client.post(
-            "/validate-uuid", json={"uuid": ""}, content_type="application/json"
+            "/api/v1/validate-uuid", json={"uuid": ""}, content_type="application/json"
         )
 
         assert response.status_code == 400
@@ -388,7 +386,7 @@ class TestSessionAPI:
     def test_validate_uuid_missing_field(self, client):
         """Test validate-uuid endpoint with missing UUID field."""
         response = client.post(
-            "/validate-uuid", json={}, content_type="application/json"  # Empty JSON
+            "/api/v1/validate-uuid", json={}, content_type="application/json"  # Empty JSON
         )
 
         assert response.status_code == 400
@@ -398,7 +396,7 @@ class TestSessionAPI:
     def test_validate_uuid_malformed(self, client):
         """Test validate-uuid endpoint with malformed UUID."""
         response = client.post(
-            "/validate-uuid",
+            "/api/v1/validate-uuid",
             json={"uuid": "123-456-not-a-valid-uuid"},
             content_type="application/json",
         )
@@ -417,7 +415,7 @@ class TestSessionAPI:
         # a placeholder test that will be skipped.
 
         # Instead of actual testing, we verify that the endpoint works
-        response = client.post("/generate-uuid")
+        response = client.post("/api/v1/generate-uuid")
 
         # Just verify the endpoint responds
         assert response.status_code == 200
@@ -431,7 +429,7 @@ class TestSessionAPI:
         """Test correlation ID propagation through generate-uuid endpoint."""
         custom_correlation_id = str(uuid.uuid4())
         response = client.post(
-            "/generate-uuid", headers={"X-Correlation-ID": custom_correlation_id}
+            "/api/v1/generate-uuid", headers={"X-Correlation-ID": custom_correlation_id}
         )
 
         assert response.status_code == 200
@@ -481,7 +479,7 @@ class TestSessionAPI:
 
     def test_options_request_handling(self, client):
         """Test OPTIONS requests are handled correctly."""
-        response = client.options("/generate-uuid")
+        response = client.options("/api/v1/generate-uuid")
 
         assert response.status_code == 200
         assert "Access-Control-Allow-Origin" in response.headers
@@ -492,7 +490,7 @@ class TestSessionAPI:
         """Test persist_session endpoint with invalid email format."""
         # Test with invalid email format
         response = client.post(
-            "/persist_session",
+            "/api/v1/persist_session",
             json={
                 "session_uuid": test_session,
                 "name": "Test User",
@@ -513,7 +511,7 @@ class TestSessionAPI:
         """Test persist_session endpoint with custom correlation ID."""
         custom_correlation_id = str(uuid.uuid4())
         response = client.post(
-            "/persist_session",
+            "/api/v1/persist_session",
             json={
                 "session_uuid": test_session,
                 "name": "Test User",
@@ -531,7 +529,7 @@ class TestSessionAPI:
     def test_generate_uuid_invalid_http_method(self, client):
         """Test generate-uuid endpoint with invalid HTTP method."""
         # GET method is not allowed for this endpoint
-        response = client.get("/generate-uuid")
+        response = client.get("/api/v1/generate-uuid")
 
         assert response.status_code == 405
 
@@ -586,7 +584,7 @@ class TestSessionAPI:
     def test_invalid_content_type(self, client, test_session):
         """Test endpoints with invalid content type."""
         response = client.post(
-            "/validate-uuid",
+            "/api/v1/validate-uuid",
             data=json.dumps({"uuid": test_session}),
             content_type="text/plain",  # Invalid content type
         )
@@ -605,7 +603,7 @@ class TestSessionRepositoryIntegration:
     def test_session_persist_database_update(self, app, client):
         """Test that session persistence updates the database."""
         # Generate a new UUID
-        response = client.post("/generate-uuid")
+        response = client.post("/api/v1/generate-uuid")
         assert response.status_code == 200
         generated_uuid = response.json["uuid"]
 
@@ -613,7 +611,7 @@ class TestSessionRepositoryIntegration:
         test_name = "Integration Test User"
         test_email = "integration@test.com"
         response = client.post(
-            "/persist_session",
+            "/api/v1/persist_session",
             json={
                 "session_uuid": generated_uuid,
                 "name": test_name,
@@ -672,7 +670,7 @@ class TestSessionRepositoryIntegration:
 
         # Check validation correctly reports collision
         response = client.post(
-            "/validate-uuid",
+            "/api/v1/validate-uuid",
             json={"uuid": new_test_uuid},
             content_type="application/json",
         )
@@ -685,7 +683,7 @@ class TestSessionRepositoryIntegration:
 
         # Validation should now report success (no collision)
         response = client.post(
-            "/validate-uuid",
+            "/api/v1/validate-uuid",
             json={"uuid": new_test_uuid},
             content_type="application/json",
         )

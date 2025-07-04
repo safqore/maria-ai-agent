@@ -7,9 +7,9 @@ to ensure proper transaction management.
 
 import logging
 
-from backend.app.database.transaction import TransactionContext
-from backend.app.models import UserSession
-from backend.app.repositories.factory import get_user_session_repository
+from app.database.transaction import TransactionContext
+from app.models import UserSession
+from app.repositories.factory import get_user_session_repository
 
 # Configure logger
 logger = logging.getLogger(__name__)

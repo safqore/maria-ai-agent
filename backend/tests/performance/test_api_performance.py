@@ -17,7 +17,7 @@ from contextlib import contextmanager
 
 import pytest
 
-from backend.app import create_app
+from app import create_app
 
 
 class TestAPIPerformance:
@@ -51,7 +51,7 @@ class TestAPIPerformance:
 
         for i in range(50):
             with self.performance_timer():
-                response = client.post("/generate-uuid")
+                response = client.post("/api/v1/generate-uuid")
             execution_times.append(self.last_execution_time)
             assert response.status_code == 200
 
@@ -72,7 +72,7 @@ class TestAPIPerformance:
         for i in range(50):
             with self.performance_timer():
                 response = client.post(
-                    "/validate-uuid",
+                    "/api/v1/validate-uuid",
                     json={"uuid": test_uuid},
                     content_type="application/json",
                 )
@@ -99,7 +99,7 @@ class TestAPIPerformance:
                 with app.test_client() as thread_client:
                     # Make multiple API calls
                     for i in range(10):
-                        response = thread_client.post("/generate-uuid")
+                        response = thread_client.post("/api/v1/generate-uuid")
                         assert response.status_code == 200
                 end_time = time.time()
                 results.put(end_time - start_time)
@@ -141,7 +141,7 @@ class TestAPIPerformance:
 
         # Make requests for 5 seconds
         while time.time() - start_time < 5:
-            response = client.post("/generate-uuid")
+            response = client.post("/api/v1/generate-uuid")
             if response.status_code == 200:
                 successful_requests += 1
 

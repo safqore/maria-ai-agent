@@ -6,14 +6,14 @@ import os
 import sys
 from pathlib import Path
 
-# Add the project root directory to the Python path
-project_root = Path(__file__).resolve().parent.parent.parent.parent
-sys.path.append(str(project_root))
+# Add the backend directory to the Python path
+backend_dir = Path(__file__).resolve().parent.parent.parent
+sys.path.append(str(backend_dir))
 
-# Now we can import from the backend package
+# Now we can import from the app package
 print("Importing modules...")
 try:
-    from backend.app import create_app
+    from app import create_app
 
     print("Successfully imported create_app")
 

@@ -21,11 +21,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from backend.app.database_core import Base, get_engine, init_database
+from app.database_core import Base, get_engine, init_database
 
 # Import the repository components
-from backend.app.models import UserSession
-from backend.app.repositories.factory import get_user_session_repository
+from app.models import UserSession
+from app.repositories.factory import get_user_session_repository
 
 
 def test_repository():

@@ -18,12 +18,12 @@ try:
     print("Importing directly from transaction.py...")
 
     # Import the dependencies explicitly to avoid other imports
-    from backend.app.database.transaction import (
+    from app.database.transaction import (
         TransactionContext,
         get_engine,
         get_session_local,
     )
-    from backend.app.database_core import get_database_url
+    from app.database_core import get_database_url
 
     # Print database URL (with password masked)
     db_url = get_database_url()

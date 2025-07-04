@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from backend.app import create_app
-from backend.app.routes.session import limiter
+from app import create_app
+from app.routes.session import limiter
 
 # Set rate limit for testing
 os.environ["SESSION_RATE_LIMIT"] = "1/minute"
@@ -18,11 +18,11 @@ def client():
         yield client
 
 
-@patch("backend.app.services.session_service.SessionService.check_uuid_exists")
+@patch("app.services.session_service.SessionService.check_uuid_exists")
 def test_generate_uuid_success(mock_check_uuid_exists, client):
     # Mock UUID existence check to always return False (no collision)
     mock_check_uuid_exists.return_value = False
-    response = client.post("/generate-uuid")
+    response = client.post("/api/v1/generate-uuid")
     try:
         data = response.get_json()
     except Exception:
@@ -35,21 +35,21 @@ def test_generate_uuid_success(mock_check_uuid_exists, client):
     assert data["message"] == "Generated unique UUID"
 
 
-@patch("backend.app.services.session_service.SessionService.check_uuid_exists")
+@patch("app.services.session_service.SessionService.check_uuid_exists")
 def test_validate_uuid_invalid(mock_check_uuid_exists, client):
-    response = client.post("/validate-uuid", json={"uuid": "not-a-uuid"})
+    response = client.post("/api/v1/validate-uuid", json={"uuid": "not-a-uuid"})
     data = response.get_json()
     assert response.status_code == 400
     assert data["status"] == "invalid"
     assert data["uuid"] is None
 
 
-@patch("backend.app.services.session_service.SessionService.check_uuid_exists")
+@patch("app.services.session_service.SessionService.check_uuid_exists")
 def test_validate_uuid_success(mock_check_uuid_exists, client):
     # Mock UUID existence check to return False (no collision)
     mock_check_uuid_exists.return_value = False
     # Generate a new UUID and validate it (should be unique)
-    gen_response = client.post("/generate-uuid")
+    gen_response = client.post("/api/v1/generate-uuid")
     try:
         gen_data = gen_response.get_json()
     except Exception:
@@ -59,7 +59,7 @@ def test_validate_uuid_success(mock_check_uuid_exists, client):
         gen_data, dict
     ), f"Expected dict, got {type(gen_data)}: {gen_data}"
     uuid_val = gen_data["uuid"]
-    response = client.post("/validate-uuid", json={"uuid": uuid_val})
+    response = client.post("/api/v1/validate-uuid", json={"uuid": uuid_val})
     try:
         data = response.get_json()
     except Exception:
@@ -71,7 +71,7 @@ def test_validate_uuid_success(mock_check_uuid_exists, client):
     assert data["uuid"] == uuid_val
 
 
-@patch("backend.app.services.session_service.SessionService.check_uuid_exists")
+@patch("app.services.session_service.SessionService.check_uuid_exists")
 def test_rate_limit(mock_check_uuid_exists, client):
     # Defensive: skip if limiter storage is not initialized
     try:
@@ -88,12 +88,12 @@ def test_rate_limit(mock_check_uuid_exists, client):
     # Exceed the rate limit using the same IP
     for _ in range(10):
         response = client.post(
-            "/generate-uuid", environ_overrides={"REMOTE_ADDR": "1.2.3.4"}
+            "/api/v1/generate-uuid", environ_overrides={"REMOTE_ADDR": "1.2.3.4"}
         )
         assert response.status_code == 200
     # The next request should be rate limited
     response = client.post(
-        "/generate-uuid", environ_overrides={"REMOTE_ADDR": "1.2.3.4"}
+        "/api/v1/generate-uuid", environ_overrides={"REMOTE_ADDR": "1.2.3.4"}
     )
     assert response.status_code == 429
     assert "rate limit" in response.get_data(as_text=True).lower()

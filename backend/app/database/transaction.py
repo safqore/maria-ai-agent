@@ -12,20 +12,17 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
 
-
-# Remove the local get_database_url function and always use the one from backend.app.database
+# Remove the local get_database_url function and always use the one from app.database
 
 def get_engine():
     """Lazily create and return the SQLAlchemy engine using the correct database URL."""
-    from backend.app.database_core import get_engine as get_core_engine
+    from app.database_core import get_engine as get_core_engine
     return get_core_engine()
-
 
 def get_session_local():
     """Lazily create and return the session factory using the correct engine."""
-    from backend.app.database_core import get_session_local as get_core_session_local
+    from app.database_core import get_session_local as get_core_session_local
     return get_core_session_local()
-
 
 class TransactionContext:
     """

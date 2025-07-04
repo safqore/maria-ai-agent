@@ -18,6 +18,7 @@ This document is the single source of truth for all current, actively relevant q
 - [Email Verification](#email-verification)
 - [File Upload](#file-upload)
 - [Architecture](#architecture)
+- [Database/Testing](#databasetesting)
 - [Other Features](#other-features)
 
 ---
@@ -146,3 +147,49 @@ _Document key architectural decisions and design patterns used in the project._
 | 9   | Documentation is maintained alongside code changes.                              | Validated         | This document, README.md               |
 | 10  | Unit tests are prioritized over integration tests for most components.           | Validated         | testing.md, plan.md                    |
 | 11  | Using FSM transitions is more robust than directly setting FSM states.           | Validated         | ChatContext.tsx, FiniteStateMachine.ts |
+
+---
+
+## Database/Testing
+
+### Questions
+
+| #   | Question                                                   | Answer/Status                                                                                     | Notes                       |
+| --- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------- |
+| 1   | Should migrations be run automatically before tests?       | Yes, migrations should run automatically before tests to ensure consistent test environment.      | User confirmed              |
+| 2   | What migration tool should be used?                        | Alembic is the standard migration tool for SQLAlchemy applications.                              | User confirmed              |
+| 3   | What database should be used for all test runs?            | SQLite should be the default for all test runs (local/dev/test environments).                    | User confirmed              |
+| 4   | How should database initialization be handled in CI/CD?     | Automated database setup with migrations applied before test execution.                           | To be implemented           |
+| 5   | What is the strategy for handling SQLite threading issues? | Use thread-local database connections or skip concurrent tests that require thread safety.        | To be resolved              |
+
+### Assumptions
+
+| #   | Assumption                                                                       | Status/Validation | Notes                                  |
+| --- | -------------------------------------------------------------------------------- | ----------------- | -------------------------------------- |
+| 1   | SQLite is sufficient for all development and testing scenarios.                  | Validated         | User confirmed                         |
+| 2   | Alembic migrations provide better version control than raw SQL scripts.         | Validated         | User confirmed                         |
+| 3   | Automatic migration application before tests ensures test reliability.           | Validated         | User confirmed                         |
+| 4   | Database initialization scripts should work from both project root and backend.  | To be implemented | Need to fix import path issues         |
+| 5   | Test database should be separate from development database.                      | Validated         | Current setup uses maria_ai_test.db    |
+
+---
+
+## Other Features
+
+_Features that will be implemented after the refactor project comes to a close._
+
+### Questions
+
+| #   | Question                                                   | Answer/Status                                                                                     | Notes                       |
+| --- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------------------------- |
+| 1   | When will advanced email verification be implemented?      | After refactor project completion - currently in flight.                                          | Post-refactor feature       |
+| 2   | When will comprehensive audit logging be implemented?      | After refactor project completion - currently in flight.                                          | Post-refactor feature       |
+| 3   | When will advanced session management features be added?   | After refactor project completion - currently in flight.                                          | Post-refactor feature       |
+
+### Assumptions
+
+| #   | Assumption                                                                       | Status/Validation | Notes                                  |
+| --- | -------------------------------------------------------------------------------- | ----------------- | -------------------------------------- |
+| 1   | Core refactor architecture will support future feature additions.                | Validated         | Current architecture is extensible     |
+| 2   | Post-refactor features can be implemented without major architectural changes.   | Validated         | Current design supports this           |
+| 3   | Refactor completion is the priority before adding new features.                 | Validated         | User confirmed                         |

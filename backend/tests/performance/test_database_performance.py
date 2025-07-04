@@ -16,10 +16,10 @@ from typing import Any, Dict, List
 
 import pytest
 
-from backend.app.database_core import get_db_session, init_database
-from backend.app.database.transaction import TransactionContext
-from backend.app.models import UserSession
-from backend.app.repositories.user_session_repository import UserSessionRepository
+from app.database_core import get_db_session, init_database
+from app.database.transaction import TransactionContext
+from app.models import UserSession
+from app.repositories.user_session_repository import UserSessionRepository
 
 
 class TestDatabasePerformance:
@@ -29,8 +29,8 @@ class TestDatabasePerformance:
     def setup_test_data(self):
         """Setup test data for performance testing."""
         # Initialize database with table creation like conftest.py
-        from backend.app.database_core import get_engine, Base, init_database
-        from backend.app.models import UserSession  # Import models to ensure they're registered
+        from app.database_core import get_engine, Base, init_database
+        from app.models import UserSession  # Import models to ensure they're registered
         
         init_database()
         engine = get_engine()
