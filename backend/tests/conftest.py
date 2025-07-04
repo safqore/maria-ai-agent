@@ -87,9 +87,10 @@ def client():
     app.config["SKIP_MIDDLEWARE"] = True  # Skip middleware to avoid conflicts
     app.config["REQUIRE_AUTH"] = False  # Disable authentication for tests
     app.config["RATELIMIT_ENABLED"] = False  # Disable rate limiting for tests
-    
+
     # Ensure authentication is disabled at the module level as well
     import app.utils.auth
+
     app.utils.auth.REQUIRE_AUTH = False
 
     # Disable S3 for tests
