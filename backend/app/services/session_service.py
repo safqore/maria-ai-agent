@@ -198,13 +198,10 @@ class SessionService:
                 
                 # Check if session UUID already exists
                 if self.user_session_repository.exists(uuid_obj):
+                    # Generate new UUID and migrate S3 files
                     new_uuid = str(uuid.uuid4())
                     migrate_s3_files(session_uuid, new_uuid)
-                    session_uuid = new_uuid
-                    return {
-                        "new_uuid": new_uuid,
-                        "message": "UUID collision, new UUID assigned",
-                    }, 200
+                    session_uuid = new_uuid  # Use the new UUID for session creation
 
                 # Create the user session within the transaction
                 user_session = self.user_session_repository.create_session(

@@ -82,8 +82,7 @@ def validate_uuid():
     """
     # Handle OPTIONS requests separately
     if request.method == "OPTIONS":
-        response = jsonify({"status": "success"})
-        return response, 200
+        return jsonify({"status": "success"}), 200
 
     data = request.get_json()
 
@@ -134,8 +133,7 @@ def generate_uuid():
     """
     # Handle OPTIONS requests separately
     if request.method == "OPTIONS":
-        response = jsonify({"status": "success"})
-        return response, 200
+        return jsonify({"status": "success"}), 200
     
     response_data, status_code = g.session_service.generate_uuid()
     return jsonify(response_data), status_code
@@ -166,8 +164,7 @@ def persist_session():
     """
     # Handle OPTIONS requests separately
     if request.method == "OPTIONS":
-        response = jsonify({"status": "success"})
-        return response, 200
+        return jsonify({"status": "success"}), 200
 
     data = request.get_json()
 

@@ -31,32 +31,12 @@ from backend.tests.mocks.repositories import UserSessionRepository
 
 @pytest.fixture
 def app(request):
-    """Create a Flask application for testing."""
-    # Import here to avoid circular imports
-    from backend.app.errors import register_error_handlers
-    from backend.app.routes.session import session_bp
-    from backend.app.routes.upload import upload_bp
-
-    # Create Flask app
-    app = Flask("test_app")
-    app.config["TESTING"] = True
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
-    app.config["REQUIRE_AUTH"] = False  # Disable auth for testing
-    app.config["DEBUG"] = True
-
-    # Set up error logging
-    import logging
-
-    handler = logging.StreamHandler()
-    app.logger.addHandler(handler)
-    app.logger.setLevel(logging.DEBUG)
-
-    # Set up patching for database module
-    # We need to patch the import of UserSession and UserSessionRepository in the routes
+    """Create a Flask application for testing using the real app factory."""
+    import os
     import sys
-    from unittest.mock import MagicMock, patch
-
-    # Patch database modules with our SQLite-compatible versions
+    from unittest.mock import patch, MagicMock
+    
+    # Set up patching for database module before importing app factory
     sys.modules["backend.app.models"] = MagicMock()
     sys.modules["backend.app.models"].UserSession = UserSession
 
@@ -67,7 +47,6 @@ def app(request):
 
     # Patch the database functions
     import backend.app.database as database
-
     database.get_db_session = get_db_session
     database.get_engine = get_engine
     database.get_session_local = get_session_local
@@ -79,385 +58,25 @@ def app(request):
     # Create database tables
     init_database()
 
-    # Register error handlers first
-    @app.errorhandler(400)
-    def bad_request(e):
-        # If it's a JSON error, use a consistent format with correlation ID
-        if str(e.description).startswith("Failed to decode JSON"):
-            correlation_id = str(uuid.uuid4())
-            return (
-                jsonify(
-                    {
-                        "error": "Invalid request",
-                        "message": "Invalid JSON format",
-                        "correlation_id": correlation_id,
-                    }
-                ),
-                400,
-            )
-        # Otherwise use our standard error format
-        return (
-            jsonify(
-                {
-                    "status": "invalid",
-                    "message": str(e.description),
-                    "uuid": None,
-                    "details": {"uuid": ["Invalid UUID format"]},
-                }
-            ),
-            400,
-        )
+    # Import app factory after patching
+    from backend.app.app_factory import create_app
+    
+    # Create test configuration
+    test_config = {
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "REQUIRE_AUTH": False,  # Disable auth for testing
+        "DEBUG": True,
+        "SKIP_MIDDLEWARE": True,  # Skip middleware to avoid registration conflicts
+        "RATELIMIT_ENABLED": False,  # Disable rate limiting for tests
+        "WTF_CSRF_ENABLED": False,
+        "SECRET_KEY": "test-secret-key",
+    }
 
-    @app.errorhandler(404)
-    def not_found(e):
-        return (
-            jsonify(
-                {
-                    "status": "not_found",
-                    "message": str(e.description),
-                }
-            ),
-            404,
-        )
-
-    @app.errorhandler(405)
-    def method_not_allowed(e):
-        response = jsonify(
-            {"error": "Method not allowed", "allowed_methods": e.valid_methods}
-        )
-        response.headers["Allow"] = ", ".join(e.valid_methods)
-        return response, 405
-
-    @app.errorhandler(415)
-    def unsupported_media_type(e):
-        return (
-            jsonify(
-                {
-                    "status": "invalid",
-                    "error": "Unsupported Media Type",
-                    "message": "Content-Type must be application/json",
-                    "correlation_id": str(uuid.uuid4()),
-                }
-            ),
-            415,
-        )
-
-    @app.errorhandler(500)
-    def server_error(e):
-        app.logger.error(f"Server error: {str(e)}")
-        return (
-            jsonify(
-                {
-                    "error": "Internal server error",
-                    "message": "An unexpected error occurred",
-                }
-            ),
-            500,
-        )
-
-    # Mock the routes directly instead of using blueprints to avoid import issues
-    @app.route("/generate-uuid", methods=["POST"])
-    def generate_uuid_endpoint():
-        new_uuid = str(uuid.uuid4())
-        return jsonify({"uuid": new_uuid, "status": "success"}), 200
-
-    @app.route("/api/v1/generate-uuid", methods=["POST"])
-    def generate_uuid_v1_endpoint():
-        new_uuid = str(uuid.uuid4())
-        return jsonify({"uuid": new_uuid, "status": "success"}), 200
-
-    @app.route("/validate-uuid", methods=["POST"])
-    def validate_uuid_endpoint():
-        try:
-            # Check content type properly for Flask test client - defensive access
-            content_type = ""
-            try:
-                if hasattr(request, 'headers') and request.headers:
-                    content_type = request.headers.get("Content-Type", "")
-            except Exception:
-                pass
-            
-            is_json = content_type.startswith("application/json")
-
-            if not is_json:
-                return (
-                    jsonify(
-                        {
-                            "status": "invalid",
-                            "error": "Unsupported Media Type",
-                            "message": "Content-Type must be application/json",
-                            "correlation_id": str(uuid.uuid4()),
-                        }
-                    ),
-                    415,
-                )
-
-            data = None
-            try:
-                data = request.get_json()
-            except Exception:
-                pass
-                
-            if not data or "uuid" not in data:
-                return (
-                    jsonify(
-                        {
-                            "status": "invalid",
-                            "message": "Missing UUID field",
-                            "uuid": None,
-                            "details": {"uuid": ["Field is required"]},
-                        }
-                    ),
-                    400,
-                )
-
-            uuid_str = data["uuid"]
-            if not uuid_str:
-                return (
-                    jsonify(
-                        {
-                            "status": "invalid",
-                            "message": "Empty UUID",
-                            "uuid": None,
-                            "details": {"uuid": ["UUID cannot be empty"]},
-                        }
-                    ),
-                    400,
-                )
-
-            try:
-                # Check if valid UUID format
-                uuid_obj = uuid.UUID(uuid_str)
-
-                # Check for collision
-                with app.app_context():
-                    repo = UserSessionRepository()
-                    if repo.exists(uuid_str):
-                        return (
-                            jsonify(
-                                {
-                                    "status": "collision",
-                                    "message": "UUID collision",
-                                    "uuid": uuid_str,
-                                }
-                            ),
-                            409,
-                        )
-
-                # Valid UUID and no collision
-                return (
-                    jsonify({"status": "success", "valid": True, "uuid": uuid_str}),
-                    200,
-                )
-            except ValueError:
-                # Invalid UUID format
-                return (
-                    jsonify(
-                        {
-                            "status": "invalid",
-                            "message": "Invalid UUID format",
-                            "uuid": None,
-                            "details": {"uuid": ["Invalid UUID format"]},
-                        }
-                    ),
-                    400,
-                )
-        except Exception as e:
-            app.logger.error(f"Error in validate_uuid: {str(e)}")
-            return jsonify({"error": "Internal server error", "message": str(e)}), 500
-
-    @app.route("/api/v1/validate-uuid", methods=["POST"])
-    def validate_uuid_v1_endpoint():
-        return validate_uuid_endpoint()
-
-    @app.route("/persist_session", methods=["POST"])
-    def persist_session_endpoint():
-        try:
-            # Check content type properly for Flask test client - defensive access
-            content_type = ""
-            try:
-                if hasattr(request, 'headers') and request.headers:
-                    content_type = request.headers.get("Content-Type", "")
-            except Exception:
-                pass
-            
-            is_json = content_type.startswith("application/json")
-
-            if not is_json:
-                return (
-                    jsonify(
-                        {
-                            "status": "invalid",
-                            "error": "Unsupported Media Type",
-                            "message": "Content-Type must be application/json",
-                            "correlation_id": str(uuid.uuid4()),
-                        }
-                    ),
-                    415,
-                )
-
-            data = request.get_json()
-            if not data:
-                return (
-                    jsonify(
-                        {
-                            "error": "Invalid request",
-                            "message": "Missing request data",
-                            "details": {"request": ["Missing JSON body"]},
-                        }
-                    ),
-                    400,
-                )
-
-            if "session_uuid" not in data:
-                return (
-                    jsonify(
-                        {
-                            "error": "Missing field",
-                            "message": "session_uuid field is required",
-                            "details": {"session_uuid": ["Field is required"]},
-                        }
-                    ),
-                    400,
-                )
-
-            session_uuid = data["session_uuid"]
-            name = data.get("name", "Anonymous")
-            email = data.get("email", "")
-
-            with app.app_context():
-                repo = UserSessionRepository()
-                if repo.exists(session_uuid):
-                    # Session UUID exists, generate a new one
-                    new_uuid = str(uuid.uuid4())
-                    return (
-                        jsonify(
-                            {
-                                "message": "UUID collision, new UUID assigned",
-                                "new_uuid": new_uuid,
-                                "session_uuid": session_uuid,
-                            }
-                        ),
-                        200,
-                    )
-
-                # Create new session
-                try:
-                    user_session = repo.create(
-                        uuid=session_uuid,
-                        name=name,
-                        email=email,
-                        consent_user_data=True,
-                    )
-
-                    return jsonify(
-                        {
-                            "message": "Session persisted successfully",
-                            "session_uuid": session_uuid,
-                        },
-                        200,
-                    )
-                except ValueError as ve:
-                    # Handle invalid UUID format
-                    new_uuid = str(uuid.uuid4())
-                    user_session = repo.create(
-                        uuid=new_uuid, name=name, email=email, consent_user_data=True
-                    )
-                    return (
-                        jsonify(
-                            {
-                                "message": "Invalid UUID format, new UUID assigned",
-                                "error": str(ve),
-                                "session_uuid": new_uuid,
-                            }
-                        ),
-                        200,
-                    )
-        except Exception as e:
-            app.logger.error(f"Error in persist_session: {str(e)}")
-            return jsonify({"error": "Internal server error", "message": str(e)}), 500
-
-    @app.route("/api/v1/persist_session", methods=["POST"])
-    def persist_session_v1_endpoint():
-        return persist_session_endpoint()
-
-    # Add API info endpoint
-    @app.route("/api/info", methods=["GET"])
-    def api_info():
-        response = jsonify(
-            {
-                "name": "Session API",
-                "version": "v1",
-                "status": "ok",
-                "endpoints": [
-                    "/generate-uuid",
-                    "/validate-uuid",
-                    "/persist_session",
-                    "/api/v1/generate-uuid",
-                    "/api/v1/validate-uuid",
-                    "/api/v1/persist_session",
-                ],
-            }
-        )
-        response.headers["X-API-Version"] = "v1"
-        return response, 200
-
-    # We're not using blueprints anymore - we're directly defining routes in the test app
-    # to avoid import and patching complexities
-    pass
-
-    # Add minimal request ID middleware for correlation ID headers
-    @app.after_request
-    def add_correlation_id(response):
-        try:
-            # Use Flask's request context if available
-            correlation_id = None
-            try:
-                # Only access request attributes if they exist
-                if hasattr(request, 'headers') and request.headers:
-                    correlation_id = request.headers.get(
-                        "X-Request-ID"
-                    ) or request.headers.get("X-Correlation-ID")
-            except Exception:
-                pass
-
-            if not correlation_id:
-                correlation_id = str(uuid.uuid4())
-
-            response.headers["X-Correlation-ID"] = correlation_id
-
-            # Add CORS headers for options requests - safely check method
-            try:
-                if hasattr(request, 'method') and request.method == "OPTIONS":
-                    response.headers["Access-Control-Allow-Origin"] = "*"
-                    response.headers["Access-Control-Allow-Methods"] = (
-                        "GET, POST, PUT, DELETE, OPTIONS"
-                    )
-                    response.headers["Access-Control-Allow-Headers"] = (
-                        "Content-Type, X-Correlation-ID, X-Request-ID"
-                    )
-            except Exception:
-                pass
-
-            # For versioned endpoints, add API version header - safely check path
-            try:
-                if hasattr(request, 'path') and request.path and "/api/v1/" in request.path:
-                    response.headers["X-API-Version"] = "v1"
-            except Exception as e:
-                app.logger.debug(f"Could not add API version header: {str(e)}")
-
-        except Exception as e:
-            # Ensure we always add a correlation ID even if request context is not available
-            app.logger.debug(f"Error in after_request: {str(e)}")
-            response.headers["X-Correlation-ID"] = str(uuid.uuid4())
-
-        return response
-
-    # Yield the app for testing
-    yield app
-
-    # Clean up database
-    Base.metadata.drop_all(bind=engine)
+    # Use the real app factory with test configuration
+    app = create_app(test_config=test_config)
+    
+    return app
 
 
 @pytest.fixture
@@ -533,8 +152,10 @@ class TestSessionAPI:
         )
 
         assert response.status_code == 200
-        assert "valid" in response.json
-        assert response.json["valid"] is True
+        assert "status" in response.json
+        assert response.json["status"] == "success"
+        assert "uuid" in response.json
+        assert response.json["uuid"] == test_session
         assert "X-Correlation-ID" in response.headers
 
     def test_validate_uuid_legacy_invalid(self, client):
@@ -571,8 +192,10 @@ class TestSessionAPI:
         )
 
         assert response.status_code == 200
-        assert "valid" in response.json
-        assert response.json["valid"] is True
+        assert "status" in response.json
+        assert response.json["status"] == "success"
+        assert "uuid" in response.json
+        assert response.json["uuid"] == test_session
         assert "X-Correlation-ID" in response.headers
         assert "X-API-Version" in response.headers
         assert response.headers["X-API-Version"] == "v1"
@@ -589,7 +212,7 @@ class TestSessionAPI:
             content_type="application/json",
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 201  # 201 Created is correct for resource creation
         assert "X-Correlation-ID" in response.headers
 
     def test_persist_session_versioned(self, client, test_session):
@@ -604,7 +227,7 @@ class TestSessionAPI:
             content_type="application/json",
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 201  # 201 Created is correct for resource creation
         assert "X-Correlation-ID" in response.headers
         assert "X-API-Version" in response.headers
         assert response.headers["X-API-Version"] == "v1"
@@ -621,13 +244,10 @@ class TestSessionAPI:
             content_type="application/json",
         )
 
-        # The mock repository should handle invalid UUIDs by generating new ones
-        # We expect a 200 response with an error message and a new UUID
-        assert response.status_code == 200
-        assert "message" in response.json
-        assert "Invalid UUID" in response.json["message"]
+        # Invalid UUID should return 400 Bad Request
+        assert response.status_code == 400
         assert "error" in response.json
-        assert "session_uuid" in response.json
+        assert "details" in response.json
         assert "X-Correlation-ID" in response.headers
 
     def test_api_info_endpoint(self, client):
@@ -649,16 +269,16 @@ class TestSessionAPI:
             json={
                 "session_uuid": test_session,
                 "email": "test@example.com",
-                # No name field
+                # No name field - this is optional
             },
             content_type="application/json",
         )
 
-        # This should still work as the name is optional
-        assert response.status_code == 200
+        # This should create a new session successfully with 201 status
+        assert response.status_code == 201
         assert "message" in response.json
-        assert "session_uuid" in response.json
-        assert response.json["session_uuid"] == test_session
+        assert "uuid" in response.json
+        assert response.json["uuid"] == test_session
         assert "X-Correlation-ID" in response.headers
 
         # Test with missing session_uuid (required field)
@@ -679,46 +299,51 @@ class TestSessionAPI:
 
     def test_persist_session_new_uuid_on_collision(self, client, test_session):
         """Test persist_session endpoint with UUID collision."""
-        # First create another user with the same UUID
-        response = client.post(
-            "/persist_session",
-            json={
-                "session_uuid": test_session,
-                "name": "Test User",
-                "email": "test@example.com",
-            },
-            content_type="application/json",
-        )
+        # Mock the S3 migration function to prevent AWS errors in tests
+        with mock.patch("backend.app.services.session_service.migrate_s3_files") as mock_migrate:
+            # First create a session with the test UUID
+            response = client.post(
+                "/persist_session",
+                json={
+                    "session_uuid": test_session,
+                    "name": "Test User",
+                    "email": "test@example.com",
+                },
+                content_type="application/json",
+            )
 
-        assert response.status_code == 200
+            assert response.status_code == 201  # First creation should return 201
 
-        # Now try to create another session with a different name but same UUID
-        response = client.post(
-            "/persist_session",
-            json={
-                "session_uuid": test_session,
-                "name": "Another User",
-                "email": "another@example.com",
-            },
-            content_type="application/json",
-        )
+            # Now try to create another session with the same UUID
+            response = client.post(
+                "/persist_session",
+                json={
+                    "session_uuid": test_session,
+                    "name": "Another User",
+                    "email": "another@example.com",
+                },
+                content_type="application/json",
+            )
 
-        # Should return a new UUID due to collision
-        assert response.status_code == 200
-        assert "new_uuid" in response.json
-        assert "message" in response.json
-        assert "UUID collision, new UUID assigned" in response.json["message"]
-        assert "X-Correlation-ID" in response.headers
+            # Should return a new UUID due to collision with 200 status
+            assert response.status_code == 200
+            assert "new_uuid" in response.json
+            assert "message" in response.json
+            assert "UUID collision, new UUID assigned" in response.json["message"]
+            assert "X-Correlation-ID" in response.headers
 
-        # Verify the new UUID is valid
-        new_uuid = response.json["new_uuid"]
-        try:
-            uuid.UUID(new_uuid)
-            is_valid_uuid = True
-        except ValueError:
-            is_valid_uuid = False
+            # Verify the new UUID is valid
+            new_uuid = response.json["new_uuid"]
+            try:
+                uuid.UUID(new_uuid)
+                is_valid_uuid = True
+            except ValueError:
+                is_valid_uuid = False
 
-        assert is_valid_uuid
+            assert is_valid_uuid
+            
+            # Verify that S3 migration was called
+            assert mock_migrate.called, "S3 migration should be called for collision handling"
 
     def test_validate_uuid_nonexistent(self, client):
         """Test validate-uuid endpoint with non-existent but valid UUID."""
@@ -819,7 +444,9 @@ class TestSessionAPI:
                 consent_user_data=True,
                 ip_address="127.0.0.1",
             )
-            exists = repo.exists(new_test_uuid)
+            # Check existence the same way the service does - with UUID object
+            uuid_obj = uuid.UUID(new_test_uuid)
+            exists = repo.exists(uuid_obj)
             assert exists is True
 
         # Test with an existing UUID (should report collision)
@@ -828,6 +455,11 @@ class TestSessionAPI:
             json={"uuid": new_test_uuid},
             content_type="application/json",
         )
+
+        # Debug: Print actual response details
+        print(f"DEBUG: Status code: {response.status_code}")
+        print(f"DEBUG: Response JSON: {response.json}")
+        print(f"DEBUG: Response headers: {dict(response.headers)}")
 
         assert response.status_code == 409
         assert "status" in response.json

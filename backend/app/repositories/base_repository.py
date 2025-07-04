@@ -12,6 +12,7 @@ from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 from sqlalchemy import inspect
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from sqlalchemy.dialects.postgresql import UUID
 
 from backend.app.database_core import Base, get_db_session
 from backend.app.database.transaction import TransactionContext
@@ -42,6 +43,29 @@ class BaseRepository(Generic[T]):
             model_class: The SQLAlchemy model class this repository will manage
         """
         self.model_class = model_class
+
+    def _convert_uuid_if_needed(self, id_value: Union[int, str, uuid.UUID]) -> Union[int, str, uuid.UUID]:
+        """
+        Convert string UUID to UUID object if the primary key is a UUID column.
+        
+        Args:
+            id_value: The primary key value
+            
+        Returns:
+            The converted value (UUID object if needed, otherwise unchanged)
+        """
+        # Get the primary key column
+        primary_key_column = inspect(self.model_class).primary_key[0]
+        
+        # Check if the primary key is a UUID column
+        if isinstance(primary_key_column.type, UUID) and isinstance(id_value, str):
+            try:
+                return uuid.UUID(id_value)
+            except ValueError:
+                # If it's not a valid UUID string, let SQLAlchemy handle the error
+                return id_value
+        
+        return id_value
 
     def get_all(self) -> List[T]:
         """
@@ -74,11 +98,14 @@ class BaseRepository(Generic[T]):
         """
         try:
             with TransactionContext() as session:
+                # Convert string UUID to UUID object if needed
+                converted_id = self._convert_uuid_if_needed(id_value)
+                
                 # Get the primary key column name
                 primary_key = inspect(self.model_class).primary_key[0].name
 
                 # Create a filter for the primary key
-                filter_condition = getattr(self.model_class, primary_key) == id_value
+                filter_condition = getattr(self.model_class, primary_key) == converted_id
 
                 instance = (
                     session.query(self.model_class).filter(filter_condition).first()
@@ -111,7 +138,23 @@ class BaseRepository(Generic[T]):
         """
         try:
             with TransactionContext() as session:
-                instance = self.model_class(**kwargs)
+                # Convert string UUIDs to UUID objects where needed (let SQLAlchemy handle storage format)
+                processed_kwargs = {}
+                for key, value in kwargs.items():
+                    # Check if this field corresponds to a UUID column
+                    if hasattr(self.model_class, key):
+                        column = getattr(self.model_class.__table__.c, key, None)
+                        if column is not None and isinstance(column.type, UUID) and isinstance(value, str):
+                            try:
+                                processed_kwargs[key] = uuid.UUID(value)
+                            except ValueError:
+                                processed_kwargs[key] = value
+                        else:
+                            processed_kwargs[key] = value
+                    else:
+                        processed_kwargs[key] = value
+                
+                instance = self.model_class(**processed_kwargs)
                 session.add(instance)
                 # No need to explicitly commit - TransactionContext handles it
                 session.flush()  # Ensure the instance gets its ID assigned
@@ -148,11 +191,14 @@ class BaseRepository(Generic[T]):
         """
         try:
             with TransactionContext() as session:
+                # Convert string UUID to UUID object if needed
+                converted_id = self._convert_uuid_if_needed(id_value)
+                
                 # Get the primary key column name
                 primary_key = inspect(self.model_class).primary_key[0].name
 
                 # Create a filter for the primary key
-                filter_condition = getattr(self.model_class, primary_key) == id_value
+                filter_condition = getattr(self.model_class, primary_key) == converted_id
 
                 # Find the instance
                 instance = (
@@ -199,11 +245,14 @@ class BaseRepository(Generic[T]):
         """
         try:
             with get_db_session() as session:
+                # Convert string UUID to UUID object if needed
+                converted_id = self._convert_uuid_if_needed(id_value)
+                
                 # Get the primary key column name
                 primary_key = inspect(self.model_class).primary_key[0].name
 
                 # Create a filter for the primary key
-                filter_condition = getattr(self.model_class, primary_key) == id_value
+                filter_condition = getattr(self.model_class, primary_key) == converted_id
 
                 # Find the instance
                 instance = (
@@ -234,11 +283,14 @@ class BaseRepository(Generic[T]):
         """
         try:
             with get_db_session() as session:
+                # Convert string UUID to UUID object if needed (let SQLAlchemy handle storage format)
+                converted_id = self._convert_uuid_if_needed(id_value)
+                
                 # Get the primary key column name
                 primary_key = inspect(self.model_class).primary_key[0].name
 
                 # Create a filter for the primary key
-                filter_condition = getattr(self.model_class, primary_key) == id_value
+                filter_condition = getattr(self.model_class, primary_key) == converted_id
 
                 # Check if the record exists
                 return session.query(

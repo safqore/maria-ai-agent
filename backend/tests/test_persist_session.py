@@ -32,20 +32,29 @@ def test_persist_session_unique_uuid(client):
 def test_persist_session_collision(client):
     test_uuid = str(uuid.uuid4())
     data = {"session_uuid": test_uuid, "name": "Test User", "email": "test@example.com"}
-    with (
-        patch("backend.app.repositories.factory.get_user_session_repository") as mock_repo_factory,
-        patch("backend.app.utils.s3_utils.migrate_s3_files") as mock_migrate,
-    ):
-        mock_repo = MagicMock()
-        mock_repo.exists.return_value = True  # UUID exists (collision)
-        mock_repo.create.return_value = MagicMock()
-        mock_repo_factory.return_value = mock_repo
+    
+    # Test collision handling directly on the service
+    with patch("backend.app.services.session_service.migrate_s3_files") as mock_migrate:
+        from backend.app.services.session_service import SessionService
+        service = SessionService()
         
-        response = client.post("/persist_session", json=data)
-        assert response.status_code == 201  # 201 Created is correct for resource creation
-        assert "uuid" in response.json  # New UUID is in 'uuid' field
-        assert "Session created successfully" in response.json["message"]
-        # Verify that S3 migration was called (key collision handling behavior)
+        # Mock the repository to simulate collision
+        service.user_session_repository = MagicMock()
+        service.user_session_repository.exists.return_value = True  # Collision
+        service.user_session_repository.create_session.return_value = MagicMock(
+            uuid=test_uuid,
+            name="Test User",
+            email="test@example.com",
+            created_at=None
+        )
+        
+        # Call the service method to test collision logic
+        result, status_code = service.persist_session(test_uuid, "Test User", "test@example.com")
+        
+        # Verify collision handling worked
+        assert status_code == 201
+        assert "Session created successfully" in result["message"]
+        assert "uuid" in result
         assert mock_migrate.called, "S3 migration should be called for collision handling"
 
 

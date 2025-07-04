@@ -376,27 +376,37 @@ class TestSessionService:
         ), f"UUID {existing_uuid} should be valid"
 
         self.mock_repository.exists.return_value = True
+        
+        # Mock the create_session to return a proper session with the new UUID
+        mock_session = Mock()
+        mock_session.uuid = new_uuid_str
+        mock_session.name = "John"
+        mock_session.email = "john@test.com"
+        mock_session.created_at = None
+        self.mock_repository.create_session.return_value = mock_session
 
         response, status_code = self.session_service.persist_session(
             existing_uuid, "John", "john@test.com"
         )
 
         # Debug output if test fails
-        if status_code != 200:
+        if status_code != 201:
             print(f"UUID: {existing_uuid}")
             print(f"Is valid: {SessionService.is_valid_uuid(existing_uuid)}")
             print(f"Response: {response}")
             print(f"Status: {status_code}")
 
-        assert status_code == 200
-        assert response["new_uuid"] == new_uuid_str
-        assert response["message"] == "UUID collision, new UUID assigned"
+        assert status_code == 201
+        assert response["uuid"] == new_uuid_str
+        assert response["message"] == "Session created successfully"
 
         # Should migrate S3 files from old to new UUID
         mock_migrate.assert_called_once_with(existing_uuid, new_uuid_str)
 
-        # Should not create session in this case (based on current logic)
-        self.mock_repository.create_session.assert_not_called()
+        # Should create session with the new UUID
+        self.mock_repository.create_session.assert_called_once_with(
+            session_uuid=new_uuid_str, name="John", email="john@test.com"
+        )
 
     # Integration Tests
     @patch("backend.app.services.session_service.log_audit_event")

@@ -48,9 +48,9 @@ class TestSessionAPIIntegration:
     @pytest.fixture
     def mock_session_service(self, app_context):
         """Mock session service for consistent testing."""
-        with patch("backend.app.routes.session.g") as mock_g:
+        with patch("backend.app.routes.session.SessionService") as mock_service_class:
             mock_service = Mock()
-            mock_g.session_service = mock_service
+            mock_service_class.return_value = mock_service
             yield mock_service
 
     def teardown_method(self):
@@ -441,16 +441,21 @@ class TestSessionAPIIntegration:
         assert val_data["uuid"] == generated_uuid
 
     # Performance Tests
-    def test_concurrent_requests(self, client):
+    def test_concurrent_requests(self, app):
         """Test handling of multiple concurrent requests."""
         import threading
         import time
+        
+        # Disable rate limiting for this test since we're testing concurrent handling, not rate limiting
+        app.config["RATELIMIT_ENABLED"] = False
 
         results = []
 
         def make_request():
-            response = client.post("/generate-uuid")
-            results.append(response.status_code)
+            # Each thread needs its own test client with proper context
+            with app.test_client() as thread_client:
+                response = thread_client.post("/generate-uuid")
+                results.append(response.status_code)
 
         # Create multiple threads
         threads = []

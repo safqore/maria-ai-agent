@@ -88,17 +88,19 @@ class TestAPIPerformance:
 
         print(f"UUID validation performance: avg={avg_time:.3f}s, max={max_time:.3f}s")
 
-    def test_concurrent_api_requests(self, client):
+    def test_concurrent_api_requests(self, app):
         """Test concurrent API request handling."""
         results = queue.Queue()
 
         def worker():
             try:
                 start_time = time.time()
-                # Make multiple API calls
-                for i in range(10):
-                    response = client.post("/generate-uuid")
-                    assert response.status_code == 200
+                # Each thread needs its own test client with proper context
+                with app.test_client() as thread_client:
+                    # Make multiple API calls
+                    for i in range(10):
+                        response = thread_client.post("/generate-uuid")
+                        assert response.status_code == 200
                 end_time = time.time()
                 results.put(end_time - start_time)
             except Exception as e:

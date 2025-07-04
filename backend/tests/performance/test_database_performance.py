@@ -352,16 +352,20 @@ class TestDatabasePerformance:
         def worker():
             try:
                 start_time = time.time()
+                # Each thread needs its own repository instance to avoid context conflicts
                 repo = UserSessionRepository()
                 # Perform multiple operations
                 for i in range(5):
                     session_uuid = uuid.uuid4()  # Create UUID object, not string
-                    repo.create_session(  # Use create_session which handles string UUID conversion
+                    # Use create_session method which properly handles UUID conversion
+                    created_session = repo.create_session(
                         session_uuid=str(session_uuid),  # Pass string UUID to create_session
                         name=f"Concurrent Test {threading.current_thread().ident}",
                         email=f"concurrent{i}@{threading.current_thread().ident}.com",
                         consent_user_data=True,
                     )
+                    assert created_session is not None
+                    
                     # Retrieve it back
                     retrieved = repo.get_by_uuid(session_uuid)  # Pass UUID object
                     assert retrieved is not None
