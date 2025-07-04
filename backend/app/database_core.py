@@ -14,7 +14,7 @@ from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.pool import StaticPool, NullPool
 
 # Global variable to store a custom database URL (used for testing)
 _custom_database_url = None
@@ -77,6 +77,8 @@ def init_database():
             "check_same_thread": False,
             "isolation_level": None,  # Use autocommit mode
         }
+        # Use StaticPool for in-memory databases to share same database instance
+        # This is essential for :memory: databases to work properly in tests
         engine_kwargs["poolclass"] = StaticPool
         # StaticPool doesn't support pool_size and max_overflow parameters
         # Remove them if they exist

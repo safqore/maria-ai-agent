@@ -195,7 +195,7 @@ class TestSessionAPIIntegration:
         """Test validation with no JSON body."""
         response = client.post("/api/v1/validate-uuid", data="not json")
 
-        assert response.status_code == 400
+        assert response.status_code == 415  # Unsupported Media Type is correct for non-JSON
 
     def test_validate_uuid_options_request(self, client):
         """Test OPTIONS request for CORS preflight."""
@@ -417,14 +417,14 @@ class TestSessionAPIIntegration:
             "/api/v1/validate-uuid", data='{"uuid":"test"}', content_type="text/plain"
         )
 
-        # Should require application/json
-        assert response.status_code == 400
+        # Should require application/json - 415 is correct for unsupported media type
+        assert response.status_code == 415
 
     def test_missing_content_type(self, client):
         """Test handling of missing content type."""
         response = client.post("/api/v1/validate-uuid", data='{"uuid":"test"}')
 
-        assert response.status_code == 400
+        assert response.status_code == 415  # Unsupported Media Type for missing content type
 
     # Integration Tests with Real Service (Optional)
     def test_end_to_end_uuid_workflow(self, client):

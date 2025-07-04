@@ -24,7 +24,12 @@ class TestSessionService:
     def setup_method(self):
         """Set up test fixtures before each test method."""
         self.mock_repository = Mock()
-        # Don't create SessionService here - let individual tests handle it
+        # Create SessionService with mocked repository for tests that need self.session_service
+        with patch(
+            "app.services.session_service.get_user_session_repository",
+            return_value=self.mock_repository,
+        ):
+            self.session_service = SessionService()
 
     def create_session_service(self):
         """Helper method to create SessionService with mocked repository."""
