@@ -31,8 +31,11 @@ def require_api_key(f):
 
     @functools.wraps(f)
     def decorated_function(*args, **kwargs):
+        # Check app config first, then fall back to module-level variable
+        require_auth = current_app.config.get("REQUIRE_AUTH", REQUIRE_AUTH)
+        
         # Skip auth if not required (for development)
-        if not REQUIRE_AUTH:
+        if not require_auth:
             g.authenticated = False
             return f(*args, **kwargs)
 
@@ -79,8 +82,11 @@ def setup_auth_middleware(app):
         if not request.path.startswith("/api/"):
             return None
 
+        # Check app config first, then fall back to module-level variable
+        require_auth = app.config.get("REQUIRE_AUTH", REQUIRE_AUTH)
+        
         # Skip auth if disabled
-        if not REQUIRE_AUTH:
+        if not require_auth:
             return None
 
         # Check for API key
@@ -101,9 +107,12 @@ def setup_auth_middleware(app):
     @app.route("/api/auth-info", methods=["GET"])
     def auth_info():
         """Return information about API authentication requirements."""
+        # Check app config first, then fall back to module-level variable
+        require_auth = app.config.get("REQUIRE_AUTH", REQUIRE_AUTH)
+        
         response = jsonify(
             {
-                "authentication_required": REQUIRE_AUTH,
+                "authentication_required": require_auth,
                 "auth_type": "API Key",
                 "header_name": "X-API-Key",
                 "query_param": "api_key",

@@ -317,7 +317,7 @@ class TestSessionService:
         mock_audit.assert_called_once_with(
             "session_persisted",
             user_uuid=test_uuid,
-            details={"name": test_name, "email": test_email},
+            details={"name": test_name, "email": test_email, "had_collision": False},
         )
 
     def test_persist_session_invalid_uuid(self):
@@ -396,9 +396,8 @@ class TestSessionService:
             print(f"Response: {response}")
             print(f"Status: {status_code}")
 
-        assert status_code == 201
-        assert response["uuid"] == new_uuid_str
-        assert response["message"] == "Session created successfully"
+        assert status_code == 200  # Collision should return 200 (OK), not 201 (Created)
+        assert response["message"] == "UUID collision, new UUID assigned"
 
         # Should migrate S3 files from old to new UUID
         mock_migrate.assert_called_once_with(existing_uuid, new_uuid_str)

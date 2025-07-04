@@ -52,8 +52,8 @@ def test_persist_session_collision(client):
         result, status_code = service.persist_session(test_uuid, "Test User", "test@example.com")
         
         # Verify collision handling worked
-        assert status_code == 201
-        assert "Session created successfully" in result["message"]
+        assert status_code == 200  # Collision should return 200 (OK), not 201 (Created)
+        assert "UUID collision, new UUID assigned" in result["message"]
         assert "uuid" in result
         assert mock_migrate.called, "S3 migration should be called for collision handling"
 

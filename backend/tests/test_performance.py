@@ -80,7 +80,8 @@ class TestPerformance:
         # Test retrieval performance
         for i in range(20):
             with self.performance_timer():
-                session = repo.get_by_uuid(session_uuid)
+                # Convert string UUID to UUID object for repository method
+                session = repo.get_by_uuid(uuid.UUID(session_uuid))
             execution_times.append(self.last_execution_time)
             assert session is not None, f"Session {session_uuid} should exist"
 
@@ -129,7 +130,7 @@ class TestPerformance:
             with self.performance_timer():
                 with TransactionContext() as session:
                     # Perform multiple operations in single transaction
-                    session_uuid = str(uuid.uuid4())
+                    session_uuid = uuid.uuid4()  # Use UUID object directly, not string
                     user_session = UserSession(
                         uuid=session_uuid,
                         name=f"Transaction Test {i}",

@@ -29,15 +29,20 @@ def app():
     os.environ["AWS_REGION"] = "us-east-1"
     os.environ["S3_BUCKET_NAME"] = "test-bucket"
     
-    app = create_app({"TESTING": True})
-
-    # Configure app for testing
-    app.config["TESTING"] = True
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
-    app.config["REQUIRE_AUTH"] = False  # Disable auth for testing
-    app.config["MAX_CONTENT_LENGTH"] = (
-        1 * 1024 * 1024
-    )  # 1MB max upload size for testing
+    # Create test configuration
+    test_config = {
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "REQUIRE_AUTH": False,  # Disable auth for testing
+        "DEBUG": True,
+        "SKIP_MIDDLEWARE": True,  # Skip middleware to avoid registration conflicts
+        "RATELIMIT_ENABLED": False,  # Disable rate limiting for tests
+        "WTF_CSRF_ENABLED": False,
+        "SECRET_KEY": "test-secret-key",
+        "MAX_CONTENT_LENGTH": (1 * 1024 * 1024),  # 1MB max upload size for testing
+    }
+    
+    app = create_app(test_config)
 
     # Create database tables
     with app.app_context():

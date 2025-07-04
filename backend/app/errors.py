@@ -107,9 +107,9 @@ def handle_http_error(error: HTTPException) -> Tuple[Response, int]:
     """
     # Map specific HTTP exceptions to appropriate status codes
     if isinstance(error, UnsupportedMediaType):
-        # Convert 415 to 400 for better API consistency
-        status_code = 400
-        message = "Invalid content type. Expected application/json"
+        # Use proper 415 status code for unsupported media type
+        status_code = 415
+        message = "Invalid Content-Type. Expected application/json"
     elif isinstance(error, MethodNotAllowed):
         status_code = 405
         message = "Method not allowed"
@@ -121,8 +121,19 @@ def handle_http_error(error: HTTPException) -> Tuple[Response, int]:
         status_code = error.code
         message = error.description or str(error)
 
-    response = {"error": message, "status": "error", "details": {}}
+    response = {"error": message, "message": message, "status": "error", "details": {}}
     resp = jsonify(response)
+    
+    # Add Allow header for 405 Method Not Allowed responses
+    if isinstance(error, MethodNotAllowed):
+        # Get allowed methods from the error object if available
+        allowed_methods = getattr(error, 'valid_methods', None)
+        if allowed_methods:
+            resp.headers['Allow'] = ', '.join(sorted(allowed_methods))
+        else:
+            # Fallback to common methods for API endpoints
+            resp.headers['Allow'] = 'POST, OPTIONS'
+    
     # Add CORS headers to ensure preflight requests pass even on errors
     resp.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
     resp.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")

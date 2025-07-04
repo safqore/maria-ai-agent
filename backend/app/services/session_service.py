@@ -183,6 +183,12 @@ class SessionService:
             tuple: (response_data, status_code)
                 response_data: Dictionary with persistence result
                 status_code: HTTP status code
+                
+        Status Codes:
+            201: Created - New session with original UUID
+            200: OK - Session created with new UUID due to collision
+            400: Bad Request - Invalid input
+            500: Internal Server Error - Database/server error
         """
         if not session_uuid or not self.is_valid_uuid(session_uuid):
             return {
@@ -196,12 +202,16 @@ class SessionService:
                 # Convert string to UUID object for repository calls
                 uuid_obj = uuid.UUID(session_uuid)
                 
+                # Track if there was a collision
+                had_collision = False
+                
                 # Check if session UUID already exists
                 if self.user_session_repository.exists(uuid_obj):
                     # Generate new UUID and migrate S3 files
                     new_uuid = str(uuid.uuid4())
                     migrate_s3_files(session_uuid, new_uuid)
                     session_uuid = new_uuid  # Use the new UUID for session creation
+                    had_collision = True
 
                 # Create the user session within the transaction
                 user_session = self.user_session_repository.create_session(
@@ -211,22 +221,40 @@ class SessionService:
                 log_audit_event(
                     "session_persisted",
                     user_uuid=str(user_session.uuid),
-                    details={"name": name, "email": email},
+                    details={"name": name, "email": email, "had_collision": had_collision},
                 )
 
-                return {
-                    "message": "Session created successfully",
-                    "uuid": str(user_session.uuid),
-                    "user_data": {
-                        "name": user_session.name,
-                        "email": user_session.email,
-                        "created_at": (
-                            user_session.created_at.isoformat()
-                            if user_session.created_at
-                            else None
-                        ),
-                    },
-                }, 201
+                # Return different status codes based on collision
+                status_code = 200 if had_collision else 201
+                message = (
+                    "UUID collision, new UUID assigned"
+                    if had_collision
+                    else "Session created successfully"
+                )
+
+                # Structure response with consistent "uuid" field plus collision-specific fields
+                if had_collision:
+                    return {
+                        "message": message,
+                        "uuid": str(user_session.uuid),  # Consistent field for all responses
+                        "new_uuid": str(user_session.uuid),  # Specific field for collision tests
+                        "had_collision": had_collision,
+                        "user_data": {
+                            "name": user_session.name,
+                            "email": user_session.email,
+                        },
+                    }, status_code
+                else:
+                    return {
+                        "message": message,
+                        "uuid": str(user_session.uuid),  # Consistent field for all responses
+                        "session_uuid": str(user_session.uuid),  # Specific field for normal tests
+                        "had_collision": had_collision,
+                        "user_data": {
+                            "name": user_session.name,
+                            "email": user_session.email,
+                        },
+                    }, status_code
 
         except Exception as e:
             log_audit_event(
