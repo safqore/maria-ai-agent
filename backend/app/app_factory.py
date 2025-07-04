@@ -6,14 +6,18 @@ extensions, blueprints, and middleware.
 """
 
 import os
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 from app.routes.session import session_bp, setup_session_service
 from app.routes.upload import upload_bp
-from app.utils.middleware import setup_request_logging, setup_request_validation
+from app.utils.middleware import (
+    setup_request_logging, 
+    setup_request_validation,
+    apply_middleware_to_blueprint
+)
 from app.utils.auth import setup_auth_middleware
 
 
@@ -59,9 +63,31 @@ def create_app(config=None):
         # For tests, we still want basic logging but skip auth
         setup_request_logging(app)
 
+    # Apply middleware to blueprints with versioning
+    apply_middleware_to_blueprint(session_bp, api_version="v1")
+    apply_middleware_to_blueprint(upload_bp, api_version="v1")
+
     # Register blueprints
     app.register_blueprint(session_bp, url_prefix="/api/v1")
     app.register_blueprint(upload_bp, url_prefix="/api/v1")
+
+    # Add main API info endpoint
+    @app.route("/api/info", methods=["GET"])
+    def api_info():
+        """Get API information."""
+        response = jsonify({
+            "name": "Maria AI Agent API",
+            "version": "v1",
+            "endpoints": [
+                "/api/v1/generate-uuid",
+                "/api/v1/validate-uuid",
+                "/api/v1/persist_session",
+                "/api/info"
+            ]
+        })
+        # Add version header for consistency
+        response.headers["X-API-Version"] = "v1"
+        return response, 200
 
     # Setup request context
     @app.before_request

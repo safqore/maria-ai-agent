@@ -46,15 +46,15 @@ export const ChatApi = {
         text,
         session_uuid: sessionUUID,
       });
-      
+
       // Add correlation ID to the response
       return {
         ...response.data,
-        correlationId: response.correlationId
+        correlationId: response.correlationId,
       };
     } catch (error) {
-      throw error instanceof ApiError 
-        ? error 
+      throw error instanceof ApiError
+        ? error
         : new ApiError(`Failed to send message: ${(error as Error).message}`);
     }
   },

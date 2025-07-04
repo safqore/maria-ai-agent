@@ -81,7 +81,7 @@ describe('FileApi', () => {
       const result = await uploadPromise;
       expect(result).toEqual({
         ...mockResponse,
-        correlationId: 'test-correlation-id'
+        correlationId: 'test-correlation-id',
       });
     });
 

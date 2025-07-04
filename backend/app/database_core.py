@@ -71,9 +71,18 @@ def init_database():
         "pool_recycle": 3600,
         "echo": False,
     }
-    if db_url.startswith("sqlite:///:memory:"):
-        engine_kwargs["connect_args"] = {"check_same_thread": False}
+    if db_url.startswith("sqlite://"):
+        # SQLite-specific configuration for thread safety
+        engine_kwargs["connect_args"] = {
+            "check_same_thread": False,
+            "isolation_level": None,  # Use autocommit mode
+        }
         engine_kwargs["poolclass"] = StaticPool
+        # StaticPool doesn't support pool_size and max_overflow parameters
+        # Remove them if they exist
+        engine_kwargs.pop("pool_size", None)
+        engine_kwargs.pop("max_overflow", None)
+    
     _engine = create_engine(db_url, **engine_kwargs)
     _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
 

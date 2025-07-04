@@ -1,6 +1,6 @@
 /**
  * Phase 5 Integration Tests
- * 
+ *
  * This file contains integration tests for Phase 5 of the Maria AI Agent refactoring project,
  * focusing on Context and Global State Refinements.
  */

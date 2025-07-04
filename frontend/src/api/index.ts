@@ -8,11 +8,15 @@
 export { ApiError, ApiErrorType } from './config';
 
 // API Client exports
-export { 
-  get, post, put, patch, del, 
+export {
+  get,
+  post,
+  put,
+  patch,
+  del,
   apiClient,
   createApiUrl,
-  extractCorrelationId
+  extractCorrelationId,
 } from './apiClient';
 export type { ApiRequestConfig, ApiResponse } from './apiClient';
 

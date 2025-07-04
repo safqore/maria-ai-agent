@@ -57,7 +57,7 @@ To use the FSM in a component:
 const App: React.FC = () => {
   // Create FSM instance
   const fsm = createStateMachine();
-  
+
   return (
     <ChatProvider fsm={fsm}>
       <ChatContainer />
@@ -72,12 +72,12 @@ Inside a component that needs FSM functionality:
 ```tsx
 const ChatComponent: React.FC = () => {
   const { buttonClickHandler, processTextInputHandler } = useChatStateMachineAdapter(fsm);
-  
+
   // Use the adapter methods to interact with the FSM
   const handleButtonClick = (value: string) => {
     buttonClickHandler(value);
   };
-  
+
   return (
     // Component JSX
   );

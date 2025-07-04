@@ -5,6 +5,7 @@ This module provides routes for:
 - UUID validation and generation
 - Session persistence
 - User consent management
+- API information
 """
 
 import functools
@@ -51,6 +52,33 @@ def with_session_service(f):
 def setup_session_service():
     """Set up session service for requests. Called by app factory."""
     g.session_service = SessionService()
+
+
+@session_bp.route("/info", methods=["GET"])
+@api_route
+def api_info():
+    """
+    Get API information.
+
+    This endpoint provides information about the API including version,
+    name, and available endpoints.
+
+    Returns:
+        JSON response with:
+        - name: API name
+        - version: API version
+        - endpoints: List of available endpoints
+    """
+    return jsonify({
+        "name": "Maria AI Agent API",
+        "version": "v1",
+        "endpoints": [
+            "/api/v1/generate-uuid",
+            "/api/v1/validate-uuid",
+            "/api/v1/persist_session",
+            "/api/info"
+        ]
+    }), 200
 
 
 @session_bp.route("/validate-uuid", methods=["POST", "OPTIONS"])

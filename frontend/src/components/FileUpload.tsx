@@ -78,20 +78,16 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone }) => {
         f.file === file ? { ...f, status: 'uploading', progress: 0, error: undefined } : f
       )
     );
-    
+
     try {
       // Always ensure a valid UUID is present before upload
       const uuid = await getOrCreateSessionUUID();
-      
+
       // Use FileApi service with progress callback
-      const response = await FileApi.uploadFile(
-        file,
-        uuid,
-        (percent) => {
-          setFiles(prev => prev.map(f => (f.file === file ? { ...f, progress: percent } : f)));
-        }
-      );
-      
+      const response = await FileApi.uploadFile(file, uuid, percent => {
+        setFiles(prev => prev.map(f => (f.file === file ? { ...f, progress: percent } : f)));
+      });
+
       // Check if response has the expected format from backend
       if (response.filename && response.url) {
         // Backend returned successful upload format: {filename, url}
@@ -126,19 +122,25 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone }) => {
       } else {
         setFiles(prev =>
           prev.map(f =>
-            f.file === file ? { ...f, status: 'error', error: response.message || response.error || 'Upload failed' } : f
+            f.file === file
+              ? {
+                  ...f,
+                  status: 'error',
+                  error: response.message || response.error || 'Upload failed',
+                }
+              : f
           )
         );
       }
     } catch (error: any) {
       const errorMessage = error?.message || 'Network error';
-      
+
       // Handle backend invalid/tampered UUID error
       if (errorMessage.includes('invalid session')) {
         window.location.reload(); // Optionally, trigger a full reload to reset session
         return;
       }
-      
+
       setFiles(prev =>
         prev.map(f => (f.file === file ? { ...f, status: 'error', error: errorMessage } : f))
       );
@@ -152,13 +154,13 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone }) => {
     // Enforce UUID check before any file remove action
     await getOrCreateSessionUUID();
     const fileObj = files.find(f => f.file === file);
-    
+
     if (fileObj?.status === 'uploaded' && fileObj.url) {
       // Use FileApi service for deletion
       try {
         const uuid = await getOrCreateSessionUUID();
         const response = await FileApi.deleteFile(fileObj.file.name, uuid);
-        
+
         if (response.status !== 'success') {
           // Handle deletion error, but still remove from UI
           console.warn('File deletion failed:', response.message);
@@ -173,7 +175,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone }) => {
         console.warn('File deletion error:', error);
       }
     }
-    
+
     setFiles(prev => prev.filter(f => f.file !== file));
   };
 

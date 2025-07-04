@@ -2,12 +2,17 @@ import React from 'react';
 import { render, act, waitFor, fireEvent } from '@testing-library/react';
 import { ChatProvider, useChat } from '../../contexts/ChatContext';
 import { ChatActionTypes } from '../../contexts/ChatContext';
-import { States, StateMachine, Transitions, createStateMachine } from '../../state/FiniteStateMachine';
+import {
+  States,
+  StateMachine,
+  Transitions,
+  createStateMachine,
+} from '../../state/FiniteStateMachine';
 
 // Mock FSM for testing
 const createMockFSM = (): StateMachine => {
   const fsm = createStateMachine();
-  
+
   // Mock the methods that handleButtonClick depends on
   fsm.getResponseDisplayValue = jest.fn().mockReturnValue('Yes');
   fsm.canTransition = jest.fn().mockReturnValue(true);
@@ -15,7 +20,7 @@ const createMockFSM = (): StateMachine => {
   fsm.getCurrentState = jest.fn().mockReturnValue(States.COLLECTING_NAME);
   fsm.getState = jest.fn().mockReturnValue(States.COLLECTING_NAME);
   fsm.reset = jest.fn();
-  
+
   return fsm;
 };
 

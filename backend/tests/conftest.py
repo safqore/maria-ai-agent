@@ -17,10 +17,14 @@ from pathlib import Path
 backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir))
 
+# Set test environment variables before importing Flask app
+os.environ["PYTEST_CURRENT_TEST"] = "true"
+os.environ["TESTING"] = "true"
+
 # Ensure we can import from app
 import pytest
 from flask import Flask
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 
 from app.database_core import get_engine, Base, init_database
@@ -30,8 +34,6 @@ from app import models
 @pytest.fixture(scope="session", autouse=True)
 def initialize_test_database():
     """Initialize the test database with tables."""
-    # Import after setting up the environment
-
     print("DEBUG: Initializing test database with tables...")
 
     # Force initialization of database
@@ -39,9 +41,19 @@ def initialize_test_database():
 
     # Get engine and create tables
     engine = get_engine()
+    
+    # Make sure all models are imported so their tables are created
+    from app.models import UserSession
+    
+    # Create all tables
     Base.metadata.create_all(bind=engine)
 
     print("DEBUG: Database tables created successfully")
+    
+    # Verify tables were created
+    inspector = inspect(engine)
+    table_names = inspector.get_table_names()
+    print(f"DEBUG: Created tables: {table_names}")
 
     yield
 
@@ -99,6 +111,12 @@ def client():
     app.config["AWS_SECRET_ACCESS_KEY"] = "test-secret"
     app.config["AWS_REGION"] = "us-east-1"
 
+    # Ensure database is initialized
+    with app.app_context():
+        init_database()
+        engine = get_engine()
+        Base.metadata.create_all(bind=engine)
+
     with app.test_client() as client:
         yield client
 
@@ -122,12 +140,18 @@ def session_uuid(client):
 
     # Create the test session
     repo = get_user_session_repository()
-    user_session = repo.create_session(
-        session_uuid=str(test_uuid),  # create_session still expects string
-        name="Test User",
-        email="test@example.com",
-        consent_user_data=True,
-    )
+    try:
+        user_session = repo.create_session(
+            session_uuid=str(test_uuid),  # create_session still expects string
+            name="Test User",
+            email="test@example.com",
+            consent_user_data=True,
+        )
+        print(f"DEBUG: Created test session with UUID: {test_uuid}")
+    except Exception as e:
+        print(f"DEBUG: Error creating test session: {e}")
+        # If creation fails, still yield the UUID for tests to use
+        pass
 
     # Yield the UUID object to the test
     yield test_uuid
@@ -135,6 +159,8 @@ def session_uuid(client):
     # Clean up after the test
     try:
         repo.delete_session(test_uuid)  # Pass UUID object
-    except Exception:
+        print(f"DEBUG: Cleaned up test session with UUID: {test_uuid}")
+    except Exception as e:
+        print(f"DEBUG: Error cleaning up test session: {e}")
         # If deletion fails, that's okay - we tried to clean up
         pass

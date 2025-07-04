@@ -31,15 +31,15 @@ export const SessionApi = {
   generateUUID: async (): Promise<UUIDResponse> => {
     try {
       const response = await post<UUIDResponse>('generate-uuid');
-      
+
       // Add correlation ID to the response
       return {
         ...response.data,
-        correlationId: response.correlationId
+        correlationId: response.correlationId,
       };
     } catch (error) {
-      throw error instanceof ApiError 
-        ? error 
+      throw error instanceof ApiError
+        ? error
         : new ApiError(`Failed to generate UUID: ${(error as Error).message}`);
     }
   },
@@ -52,15 +52,15 @@ export const SessionApi = {
   validateUUID: async (uuid: string): Promise<UUIDResponse> => {
     try {
       const response = await post<UUIDResponse>('validate-uuid', { uuid });
-      
+
       // Add correlation ID to the response
       return {
         ...response.data,
-        correlationId: response.correlationId
+        correlationId: response.correlationId,
       };
     } catch (error) {
-      throw error instanceof ApiError 
-        ? error 
+      throw error instanceof ApiError
+        ? error
         : new ApiError(`Failed to validate UUID: ${(error as Error).message}`);
     }
   },
@@ -77,15 +77,15 @@ export const SessionApi = {
         uuid,
         consent_user_data: consentUserData,
       });
-      
+
       // Add correlation ID to the response
       return {
         ...response.data,
-        correlationId: response.correlationId
+        correlationId: response.correlationId,
       };
     } catch (error) {
-      throw error instanceof ApiError 
-        ? error 
+      throw error instanceof ApiError
+        ? error
         : new ApiError(`Failed to persist session: ${(error as Error).message}`);
     }
   },

@@ -23,20 +23,21 @@ class TestSessionService:
 
     def setup_method(self):
         """Set up test fixtures before each test method."""
-        # Mock the repository
         self.mock_repository = Mock()
+        # Don't create SessionService here - let individual tests handle it
 
-        # Create service instance with mocked repository
+    def create_session_service(self):
+        """Helper method to create SessionService with mocked repository."""
         with patch(
-            "backend.app.services.session_service.get_user_session_repository",
+            "app.repositories.factory.get_user_session_repository",
             return_value=self.mock_repository,
         ):
-            self.session_service = SessionService()
+            return SessionService()
 
     def test_init_creates_repository_instance(self):
         """Test that SessionService initializes with repository."""
         with patch(
-            "backend.app.services.session_service.get_user_session_repository"
+            "app.services.session_service.get_user_session_repository"
         ) as mock_factory:
             mock_repo = Mock()
             mock_factory.return_value = mock_repo
@@ -79,33 +80,48 @@ class TestSessionService:
 
     def test_check_uuid_exists_delegates_to_repository(self):
         """Test that check_uuid_exists calls repository.exists."""
-        test_uuid = str(uuid.uuid4())
-        self.mock_repository.exists.return_value = True
+        with patch(
+            "app.services.session_service.get_user_session_repository",
+            return_value=self.mock_repository,
+        ):
+            session_service = SessionService()
+            test_uuid = str(uuid.uuid4())
+            self.mock_repository.exists.return_value = True
 
-        result = self.session_service.check_uuid_exists(test_uuid)
+            result = session_service.check_uuid_exists(test_uuid)
 
-        # The repository should be called with a UUID object, not a string
-        expected_uuid_obj = uuid.UUID(test_uuid)
-        self.mock_repository.exists.assert_called_once_with(expected_uuid_obj)
-        assert result is True
+            # The repository should be called with a UUID object, not a string
+            expected_uuid_obj = uuid.UUID(test_uuid)
+            self.mock_repository.exists.assert_called_once_with(expected_uuid_obj)
+            assert result is True
 
     def test_check_uuid_exists_returns_false_when_not_found(self):
         """Test check_uuid_exists returns False when UUID not found."""
-        test_uuid = str(uuid.uuid4())
-        self.mock_repository.exists.return_value = False
+        with patch(
+            "app.services.session_service.get_user_session_repository",
+            return_value=self.mock_repository,
+        ):
+            session_service = SessionService()
+            test_uuid = str(uuid.uuid4())
+            self.mock_repository.exists.return_value = False
 
-        result = self.session_service.check_uuid_exists(test_uuid)
+            result = session_service.check_uuid_exists(test_uuid)
 
-        assert result is False
+            assert result is False
 
     # UUID Validation Method Tests
     @patch("app.services.session_service.log_audit_event")
     def test_validate_uuid_success(self, mock_audit):
         """Test successful UUID validation."""
-        test_uuid = str(uuid.uuid4())
-        self.mock_repository.exists.return_value = False
+        with patch(
+            "app.services.session_service.get_user_session_repository",
+            return_value=self.mock_repository,
+        ):
+            session_service = SessionService()
+            test_uuid = str(uuid.uuid4())
+            self.mock_repository.exists.return_value = False
 
-        response, status_code = self.session_service.validate_uuid(test_uuid)
+            response, status_code = session_service.validate_uuid(test_uuid)
 
         assert status_code == 200
         assert response["status"] == "success"
@@ -370,7 +386,7 @@ class TestSessionService:
 
     @patch("app.services.session_service.migrate_s3_files")
     @patch(
-        "backend.app.services.session_service.uuid"
+        "app.services.session_service.uuid"
     )  # Patch the module's uuid import
     def test_persist_session_uuid_collision(self, mock_uuid_module, mock_migrate):
         """Test session persistence with UUID collision."""
@@ -466,7 +482,7 @@ class TestSessionService:
     def test_multiple_service_instances_independent(self):
         """Test that multiple service instances are independent."""
         with patch(
-            "backend.app.services.session_service.get_user_session_repository"
+            "app.repositories.factory.get_user_session_repository"
         ) as mock_factory:
             mock_repo1 = Mock()
             mock_repo2 = Mock()

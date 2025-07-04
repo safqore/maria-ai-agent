@@ -64,7 +64,7 @@ export class EnhancedErrorBoundary extends Component<
       error: null,
       errorInfo: null,
       correlationId: undefined,
-      retryCount: 0
+      retryCount: 0,
     };
   }
 
@@ -81,7 +81,7 @@ export class EnhancedErrorBoundary extends Component<
     return {
       hasError: true,
       error,
-      correlationId
+      correlationId,
     };
   }
 
@@ -104,7 +104,7 @@ export class EnhancedErrorBoundary extends Component<
       correlationId,
       timestamp: new Date().toISOString(),
       userAgent: navigator.userAgent,
-      url: window.location.href
+      url: window.location.href,
     };
 
     // Log to console with structured data
@@ -141,8 +141,8 @@ export class EnhancedErrorBoundary extends Component<
         },
         body: JSON.stringify({
           type: 'frontend_error',
-          details: errorDetails
-        })
+          details: errorDetails,
+        }),
       }).catch(() => {
         // Silently fail - don't cause additional errors
       });
@@ -156,7 +156,7 @@ export class EnhancedErrorBoundary extends Component<
    */
   private handleRetry = (): void => {
     const { retryCount } = this.state;
-    
+
     if (retryCount >= 3) {
       console.warn('Maximum retry attempts reached');
       return;
@@ -167,7 +167,7 @@ export class EnhancedErrorBoundary extends Component<
       error: null,
       errorInfo: null,
       correlationId: undefined,
-      retryCount: retryCount + 1
+      retryCount: retryCount + 1,
     });
   };
 
@@ -221,21 +221,23 @@ export class EnhancedErrorBoundary extends Component<
 
       // Otherwise, use an enhanced default fallback UI
       return (
-        <div className="error-boundary" role="alert" style={{
-          padding: '20px',
-          margin: '10px',
-          border: '2px solid #ff4444',
-          borderRadius: '8px',
-          backgroundColor: '#fff5f5',
-          color: '#333'
-        }}>
+        <div
+          className="error-boundary"
+          role="alert"
+          style={{
+            padding: '20px',
+            margin: '10px',
+            border: '2px solid #ff4444',
+            borderRadius: '8px',
+            backgroundColor: '#fff5f5',
+            color: '#333',
+          }}
+        >
           <h2 style={{ color: '#d32f2f', marginTop: 0 }}>
             🚨 {context ? `${context} Error` : 'Application Error'}
           </h2>
-          
-          <p style={{ fontSize: '16px', marginBottom: '16px' }}>
-            {this.getUserFriendlyMessage()}
-          </p>
+
+          <p style={{ fontSize: '16px', marginBottom: '16px' }}>{this.getUserFriendlyMessage()}</p>
 
           {correlationId && (
             <p style={{ fontSize: '14px', color: '#666', marginBottom: '16px' }}>
@@ -256,13 +258,13 @@ export class EnhancedErrorBoundary extends Component<
                   color: 'white',
                   border: 'none',
                   borderRadius: '4px',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
                 }}
               >
                 Try Again ({3 - retryCount} attempts left)
               </button>
             )}
-            
+
             <button
               onClick={this.handleRefresh}
               style={{
@@ -271,7 +273,7 @@ export class EnhancedErrorBoundary extends Component<
                 color: 'white',
                 border: 'none',
                 borderRadius: '4px',
-                cursor: 'pointer'
+                cursor: 'pointer',
               }}
             >
               Refresh Page
@@ -283,15 +285,19 @@ export class EnhancedErrorBoundary extends Component<
               <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>
                 Technical Details (Development)
               </summary>
-              <div style={{
-                marginTop: '8px',
-                padding: '12px',
-                backgroundColor: '#f5f5f5',
-                borderRadius: '4px',
-                fontFamily: 'monospace',
-                fontSize: '12px'
-              }}>
-                <div><strong>Error:</strong> {error.toString()}</div>
+              <div
+                style={{
+                  marginTop: '8px',
+                  padding: '12px',
+                  backgroundColor: '#f5f5f5',
+                  borderRadius: '4px',
+                  fontFamily: 'monospace',
+                  fontSize: '12px',
+                }}
+              >
+                <div>
+                  <strong>Error:</strong> {error.toString()}
+                </div>
                 {error.stack && (
                   <div style={{ marginTop: '8px' }}>
                     <strong>Stack Trace:</strong>
@@ -325,4 +331,4 @@ export class EnhancedErrorBoundary extends Component<
   }
 }
 
-export default EnhancedErrorBoundary; 
+export default EnhancedErrorBoundary;

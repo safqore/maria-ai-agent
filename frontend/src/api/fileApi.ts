@@ -67,10 +67,10 @@ export const FileApi = {
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', createApiUrl('upload'));
-        
+
         // Add API version header
         xhr.setRequestHeader('Accept', 'application/json; version=v1');
-        
+
         // Set up progress tracking if callback provided
         if (onProgress) {
           xhr.upload.onprogress = e => {
@@ -85,13 +85,13 @@ export const FileApi = {
           if (xhr.status === 200) {
             try {
               const response = JSON.parse(xhr.response) as FileUploadResponse;
-              
+
               // Extract correlation ID from response headers
               const correlationId = xhr.getResponseHeader('X-Correlation-ID');
               if (correlationId) {
                 response.correlationId = correlationId;
               }
-              
+
               resolve(response);
             } catch (error) {
               reject(new ApiError(`Invalid response format: ${(error as Error).message}`));
@@ -130,15 +130,15 @@ export const FileApi = {
           session_uuid: sessionUUID,
         }),
       });
-      
+
       // Add correlation ID to the response
       return {
         ...response.data,
-        correlationId: response.correlationId
+        correlationId: response.correlationId,
       };
     } catch (error) {
-      throw error instanceof ApiError 
-        ? error 
+      throw error instanceof ApiError
+        ? error
         : new ApiError(`Failed to delete file: ${(error as Error).message}`);
     }
   },
