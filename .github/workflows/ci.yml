@@ -12,6 +12,30 @@ jobs:
     name: Backend CI
     runs-on: ubuntu-latest
 
+    # Add PostgreSQL service container
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: maria_ai
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    # Add environment variables for PostgreSQL connection
+    env:
+      POSTGRES_DB: maria_ai
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+
     defaults:
       run:
         working-directory: ./backend
@@ -29,6 +53,14 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r ../requirements.txt
+
+      - name: Set up database schema
+        run: |
+          psql -h localhost -d maria_ai -U postgres -f migrations/001_create_user_sessions.sql
+          psql -h localhost -d maria_ai -U postgres -f migrations/002_create_email_verification.sql
+          psql -h localhost -d maria_ai -U postgres -f migrations/003_add_performance_indexes.sql
+        env:
+          PGPASSWORD: postgres
 
       - name: Check formatting with Black
         run: black --check .
