@@ -83,7 +83,11 @@ def test_repository():
     print("\nTesting update operation...")
     try:
         updated = repo.update_session(
-            session_uuid_obj, {"name": "Updated User", "email": "updated@example.com"}  # Pass UUID object
+            session_uuid_obj,
+            {
+                "name": "Updated User",
+                "email": "updated@example.com",
+            },  # Pass UUID object
         )
         if updated:
             print(f"Updated session: {updated}")

@@ -57,8 +57,9 @@ class TestSessionAPIIntegration:
         """Reset rate limiter state after each test."""
         try:
             from app.routes.session import limiter
+
             # Reset the in-memory storage for rate limiting
-            if hasattr(limiter, 'storage') and hasattr(limiter.storage, 'storage'):
+            if hasattr(limiter, "storage") and hasattr(limiter.storage, "storage"):
                 limiter.storage.storage.clear()
         except Exception:
             # Ignore any errors during cleanup
@@ -274,7 +275,8 @@ class TestSessionAPIIntegration:
         """Test session persistence with missing required fields."""
         # Missing session_uuid
         response = client.post(
-            "/api/v1/persist_session", json={"name": "John Doe", "email": "john@example.com"}
+            "/api/v1/persist_session",
+            json={"name": "John Doe", "email": "john@example.com"},
         )
 
         assert response.status_code == 400
@@ -288,7 +290,9 @@ class TestSessionAPIIntegration:
         )
 
         # Only session_uuid provided, name and email should default to empty
-        response = client.post("/api/v1/persist_session", json={"session_uuid": test_uuid})
+        response = client.post(
+            "/api/v1/persist_session", json={"session_uuid": test_uuid}
+        )
 
         assert response.status_code == 200
 
@@ -373,7 +377,9 @@ class TestSessionAPIIntegration:
     def test_malformed_json_handling(self, client):
         """Test handling of malformed JSON."""
         response = client.post(
-            "/api/v1/validate-uuid", data="{invalid json}", content_type="application/json"
+            "/api/v1/validate-uuid",
+            data="{invalid json}",
+            content_type="application/json",
         )
 
         assert response.status_code == 400
@@ -433,7 +439,9 @@ class TestSessionAPIIntegration:
         generated_uuid = gen_data["uuid"]
 
         # Validate the generated UUID (should be successful since it's new)
-        val_response = client.post("/api/v1/validate-uuid", json={"uuid": generated_uuid})
+        val_response = client.post(
+            "/api/v1/validate-uuid", json={"uuid": generated_uuid}
+        )
         assert val_response.status_code == 200
 
         val_data = val_response.get_json()
@@ -445,7 +453,7 @@ class TestSessionAPIIntegration:
         """Test handling of multiple concurrent requests."""
         import threading
         import time
-        
+
         # Disable rate limiting for this test since we're testing concurrent handling, not rate limiting
         app.config["RATELIMIT_ENABLED"] = False
 

@@ -178,19 +178,21 @@ class TestSessionService:
     @patch("app.services.session_service.log_audit_event")
     @patch("app.services.session_service.uuid.UUID")
     @patch("app.services.session_service.uuid.uuid4")
-    def test_generate_uuid_success_first_attempt(self, mock_uuid4, mock_UUID, mock_audit):
+    def test_generate_uuid_success_first_attempt(
+        self, mock_uuid4, mock_UUID, mock_audit
+    ):
         """Test successful UUID generation on first attempt."""
         # Create a UUID string for testing
         generated_uuid_str = str(uuid.uuid4())
-        
+
         # Mock uuid4 to return a mock object that converts to the string
         mock_uuid_obj = Mock()
         mock_uuid_obj.__str__ = Mock(return_value=generated_uuid_str)
         mock_uuid4.return_value = mock_uuid_obj
-        
+
         # Mock UUID constructor to return a proper UUID object
         mock_UUID.return_value = uuid.UUID(generated_uuid_str)
-        
+
         self.mock_repository.exists.return_value = False
 
         response, status_code = self.session_service.generate_uuid()
@@ -211,25 +213,29 @@ class TestSessionService:
     def test_generate_uuid_success_after_collision(self):
         """Test UUID generation success after collision."""
         # Generate real UUID strings BEFORE applying any mocks
-        collision_uuid_str = str(uuid.uuid4())  # This will exist 
-        success_uuid_str = str(uuid.uuid4())    # This will not exist
-        
-        # Create mock uuid4 objects that return valid UUID strings  
+        collision_uuid_str = str(uuid.uuid4())  # This will exist
+        success_uuid_str = str(uuid.uuid4())  # This will not exist
+
+        # Create mock uuid4 objects that return valid UUID strings
         class MockUUIDObj:
             def __init__(self, uuid_str):
                 self.uuid_str = uuid_str
+
             def __str__(self):
                 return self.uuid_str
+
             def __repr__(self):
                 return f"MockUUIDObj({self.uuid_str})"
-        
+
         mock1 = MockUUIDObj(collision_uuid_str)
         mock2 = MockUUIDObj(success_uuid_str)
-        
+
         # Apply patches within the test method
-        with patch("app.services.session_service.log_audit_event") as mock_audit, \
-             patch("app.services.session_service.uuid.uuid4") as mock_uuid4:
-            
+        with (
+            patch("app.services.session_service.log_audit_event") as mock_audit,
+            patch("app.services.session_service.uuid.uuid4") as mock_uuid4,
+        ):
+
             mock_uuid4.side_effect = [mock1, mock2]
 
             # First UUID exists (collision), second doesn't
@@ -242,7 +248,10 @@ class TestSessionService:
             assert response["uuid"] == success_uuid_str
 
             # Should check both UUIDs - repository expects UUID objects
-            expected_calls = [call(uuid.UUID(collision_uuid_str)), call(uuid.UUID(success_uuid_str))]
+            expected_calls = [
+                call(uuid.UUID(collision_uuid_str)),
+                call(uuid.UUID(success_uuid_str)),
+            ]
             self.mock_repository.exists.assert_has_calls(expected_calls)
             assert self.mock_repository.exists.call_count == 2
 
@@ -250,19 +259,24 @@ class TestSessionService:
         """Test UUID generation failure after max retries."""
         # Generate real UUID strings BEFORE applying any mocks
         collision_uuid_strs = [str(uuid.uuid4()) for _ in range(3)]
-        
+
         # Create mock objects that return valid UUID strings
         class MockUUIDObj:
             def __init__(self, uuid_str):
                 self.uuid_str = uuid_str
+
             def __str__(self):
                 return self.uuid_str
-        
+
         # Apply patches within the test method
-        with patch("app.services.session_service.log_audit_event") as mock_audit, \
-             patch("app.services.session_service.uuid.uuid4") as mock_uuid4:
-            
-            mock_uuid4.side_effect = [MockUUIDObj(uuid_str) for uuid_str in collision_uuid_strs]
+        with (
+            patch("app.services.session_service.log_audit_event") as mock_audit,
+            patch("app.services.session_service.uuid.uuid4") as mock_uuid4,
+        ):
+
+            mock_uuid4.side_effect = [
+                MockUUIDObj(uuid_str) for uuid_str in collision_uuid_strs
+            ]
 
             # All UUIDs already exist
             self.mock_repository.exists.return_value = True
@@ -376,7 +390,7 @@ class TestSessionService:
         ), f"UUID {existing_uuid} should be valid"
 
         self.mock_repository.exists.return_value = True
-        
+
         # Mock the create_session to return a proper session with the new UUID
         mock_session = Mock()
         mock_session.uuid = new_uuid_str

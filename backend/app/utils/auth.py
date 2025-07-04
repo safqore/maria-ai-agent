@@ -33,7 +33,7 @@ def require_api_key(f):
     def decorated_function(*args, **kwargs):
         # Check app config first, then fall back to module-level variable
         require_auth = current_app.config.get("REQUIRE_AUTH", REQUIRE_AUTH)
-        
+
         # Skip auth if not required (for development)
         if not require_auth:
             g.authenticated = False
@@ -84,7 +84,7 @@ def setup_auth_middleware(app):
 
         # Check app config first, then fall back to module-level variable
         require_auth = app.config.get("REQUIRE_AUTH", REQUIRE_AUTH)
-        
+
         # Skip auth if disabled
         if not require_auth:
             return None
@@ -109,7 +109,7 @@ def setup_auth_middleware(app):
         """Return information about API authentication requirements."""
         # Check app config first, then fall back to module-level variable
         require_auth = app.config.get("REQUIRE_AUTH", REQUIRE_AUTH)
-        
+
         response = jsonify(
             {
                 "authentication_required": require_auth,

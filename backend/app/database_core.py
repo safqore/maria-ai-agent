@@ -35,7 +35,7 @@ def get_database_url():
     # Debug output
     pytest_test = os.getenv("PYTEST_CURRENT_TEST")
     print(f"DEBUG: PYTEST_CURRENT_TEST = {repr(pytest_test)}")
-    
+
     # If running under pytest, always use SQLite in-memory database
     if pytest_test:
         print("DEBUG: Using SQLite for pytest")
@@ -53,7 +53,7 @@ def get_database_url():
     db_host = os.getenv("POSTGRES_HOST", "localhost")
     db_port = os.getenv("POSTGRES_PORT", "5432")
     db_name = os.getenv("POSTGRES_DB")
-    
+
     postgres_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
     print(f"DEBUG: Using PostgreSQL URL: {postgres_url}")
     return postgres_url
@@ -67,13 +67,13 @@ def init_database():
     global _engine, _SessionLocal
     db_url = get_database_url()
     engine_kwargs = {
-        'pool_pre_ping': True,
-        'pool_recycle': 3600,
-        'echo': False,
+        "pool_pre_ping": True,
+        "pool_recycle": 3600,
+        "echo": False,
     }
-    if db_url.startswith('sqlite:///:memory:'):
-        engine_kwargs['connect_args'] = {'check_same_thread': False}
-        engine_kwargs['poolclass'] = StaticPool
+    if db_url.startswith("sqlite:///:memory:"):
+        engine_kwargs["connect_args"] = {"check_same_thread": False}
+        engine_kwargs["poolclass"] = StaticPool
     _engine = create_engine(db_url, **engine_kwargs)
     _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
 

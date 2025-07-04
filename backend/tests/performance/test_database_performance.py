@@ -31,10 +31,10 @@ class TestDatabasePerformance:
         # Initialize database with table creation like conftest.py
         from app.database_core import get_engine, Base, init_database
         from app.models import UserSession  # Import models to ensure they're registered
-        
+
         init_database()
         engine = get_engine()
-        
+
         # Create database tables
         Base.metadata.create_all(bind=engine)
         print("DEBUG: Database tables created successfully")
@@ -66,7 +66,7 @@ class TestDatabasePerformance:
             session.query(UserSession).filter(
                 UserSession.uuid.in_(uuid_objects)
             ).delete(synchronize_session=False)
-            
+
         print("DEBUG: Database tables cleaned up")
 
     @contextmanager
@@ -117,7 +117,9 @@ class TestDatabasePerformance:
         # Test retrieval performance with indexed UUID lookup
         for session_uuid_str in test_sessions[:20]:  # Test first 20
             with self.performance_timer():
-                session = repo.get_by_uuid(uuid.UUID(session_uuid_str))  # Convert string to UUID object
+                session = repo.get_by_uuid(
+                    uuid.UUID(session_uuid_str)
+                )  # Convert string to UUID object
             execution_times.append(self.last_execution_time)
             assert session is not None, f"Session {session_uuid_str} should exist"
 
@@ -286,7 +288,9 @@ class TestDatabasePerformance:
         test_sessions = setup_test_data
 
         # Get a session and verify lazy loading behavior
-        session = repo.get_by_uuid(uuid.UUID(test_sessions[0]))  # Convert string to UUID object
+        session = repo.get_by_uuid(
+            uuid.UUID(test_sessions[0])
+        )  # Convert string to UUID object
         assert session is not None
 
         # Verify that accessing attributes doesn't cause additional queries
@@ -359,13 +363,15 @@ class TestDatabasePerformance:
                     session_uuid = uuid.uuid4()  # Create UUID object, not string
                     # Use create_session method which properly handles UUID conversion
                     created_session = repo.create_session(
-                        session_uuid=str(session_uuid),  # Pass string UUID to create_session
+                        session_uuid=str(
+                            session_uuid
+                        ),  # Pass string UUID to create_session
                         name=f"Concurrent Test {threading.current_thread().ident}",
                         email=f"concurrent{i}@{threading.current_thread().ident}.com",
                         consent_user_data=True,
                     )
                     assert created_session is not None
-                    
+
                     # Retrieve it back
                     retrieved = repo.get_by_uuid(session_uuid)  # Pass UUID object
                     assert retrieved is not None
@@ -417,9 +423,15 @@ class TestDatabasePerformance:
 
         # Test operations that should use indexes
         operations = [
-            ("UUID lookup", lambda: repo.get_by_uuid(uuid.UUID(test_sessions[0]))),  # Convert to UUID object
+            (
+                "UUID lookup",
+                lambda: repo.get_by_uuid(uuid.UUID(test_sessions[0])),
+            ),  # Convert to UUID object
             ("Email lookup", lambda: repo.get_by_id(test_sessions[1])),
-            ("Existence check", lambda: repo.exists(uuid.UUID(test_sessions[2]))),  # Convert to UUID object
+            (
+                "Existence check",
+                lambda: repo.exists(uuid.UUID(test_sessions[2])),
+            ),  # Convert to UUID object
         ]
 
         for operation_name, operation in operations:

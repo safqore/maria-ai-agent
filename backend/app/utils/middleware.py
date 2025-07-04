@@ -287,7 +287,7 @@ def apply_middleware_to_blueprint(blueprint, api_version=None):
         api_version: Optional API version for versioning middleware
     """
     # Check if middleware has already been applied to this blueprint
-    if hasattr(blueprint, '_middleware_applied'):
+    if hasattr(blueprint, "_middleware_applied"):
         logger.debug(f"Middleware already applied to blueprint: {blueprint.name}")
         return blueprint
 

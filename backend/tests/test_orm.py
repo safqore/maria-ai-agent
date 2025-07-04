@@ -87,6 +87,3 @@ def test_delete_session(session_uuid):
     success = repo.delete_session(session_uuid)
 
     assert success is True
-
-
-

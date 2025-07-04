@@ -35,7 +35,7 @@ def app(request):
     import os
     import sys
     from unittest.mock import patch, MagicMock
-    
+
     # Set up patching for database module before importing app factory
     sys.modules["backend.app.models"] = MagicMock()
     sys.modules["backend.app.models"].UserSession = UserSession
@@ -47,6 +47,7 @@ def app(request):
 
     # Patch the database functions
     import app.database as database
+
     database.get_db_session = get_db_session
     database.get_engine = get_engine
     database.get_session_local = get_session_local
@@ -57,6 +58,7 @@ def app(request):
 
     # CRITICAL: Also patch the core database module that TransactionContext uses
     import app.database_core as database_core
+
     database_core.get_db_session = get_db_session
     database_core.get_engine = get_engine
     database_core.get_session_local = get_session_local
@@ -70,20 +72,20 @@ def app(request):
 
     # Import app factory after patching
     from app.app_factory import create_app
-    
+
     # Create test configuration
     test_config = {
         "TESTING": True,
         "SKIP_MIDDLEWARE": True,
         "REQUIRE_AUTH": False,
     }
-    
+
     # Create app without test_config parameter
     app = create_app()
-    
+
     # Set test configuration after app creation
     app.config.update(test_config)
-    
+
     return app
 
 
@@ -183,7 +185,9 @@ class TestSessionAPI:
     def test_validate_uuid_invalid_json(self, client):
         """Test validate-uuid endpoint with invalid JSON."""
         response = client.post(
-            "/api/v1/validate-uuid", data="invalid-json", content_type="application/json"
+            "/api/v1/validate-uuid",
+            data="invalid-json",
+            content_type="application/json",
         )
 
         assert response.status_code == 400
@@ -220,7 +224,9 @@ class TestSessionAPI:
             content_type="application/json",
         )
 
-        assert response.status_code == 201  # 201 Created is correct for resource creation
+        assert (
+            response.status_code == 201
+        )  # 201 Created is correct for resource creation
         assert "X-Correlation-ID" in response.headers
 
     def test_persist_session_versioned(self, client, test_session):
@@ -235,7 +241,9 @@ class TestSessionAPI:
             content_type="application/json",
         )
 
-        assert response.status_code == 201  # 201 Created is correct for resource creation
+        assert (
+            response.status_code == 201
+        )  # 201 Created is correct for resource creation
         assert "X-Correlation-ID" in response.headers
         assert "X-API-Version" in response.headers
         assert response.headers["X-API-Version"] == "v1"
@@ -308,7 +316,9 @@ class TestSessionAPI:
     def test_persist_session_new_uuid_on_collision(self, client, test_session):
         """Test persist_session endpoint with UUID collision."""
         # Mock the S3 migration function to prevent AWS errors in tests
-        with mock.patch("app.services.session_service.migrate_s3_files") as mock_migrate:
+        with mock.patch(
+            "app.services.session_service.migrate_s3_files"
+        ) as mock_migrate:
             # First create a session with the test UUID
             response = client.post(
                 "/api/v1/persist_session",
@@ -349,9 +359,11 @@ class TestSessionAPI:
                 is_valid_uuid = False
 
             assert is_valid_uuid
-            
+
             # Verify that S3 migration was called
-            assert mock_migrate.called, "S3 migration should be called for collision handling"
+            assert (
+                mock_migrate.called
+            ), "S3 migration should be called for collision handling"
 
     def test_validate_uuid_nonexistent(self, client):
         """Test validate-uuid endpoint with non-existent but valid UUID."""
@@ -386,7 +398,9 @@ class TestSessionAPI:
     def test_validate_uuid_missing_field(self, client):
         """Test validate-uuid endpoint with missing UUID field."""
         response = client.post(
-            "/api/v1/validate-uuid", json={}, content_type="application/json"  # Empty JSON
+            "/api/v1/validate-uuid",
+            json={},
+            content_type="application/json",  # Empty JSON
         )
 
         assert response.status_code == 400
@@ -623,21 +637,30 @@ class TestSessionRepositoryIntegration:
 
         # Force a small delay to ensure transaction is committed
         import time
+
         time.sleep(0.01)
-        
+
         # Verify the session was stored in the database
         with app.app_context():
             # Force database commit by creating a new session
             from backend.tests.mocks.database import get_db_session
+
             with get_db_session() as db_session:
                 # Query directly using the session to ensure fresh data
                 from backend.tests.mocks.models import UserSession
                 import uuid as uuid_module
+
                 uuid_obj = uuid_module.UUID(generated_uuid)
-                session = db_session.query(UserSession).filter(UserSession.uuid == uuid_obj).first()
+                session = (
+                    db_session.query(UserSession)
+                    .filter(UserSession.uuid == uuid_obj)
+                    .first()
+                )
 
                 assert session is not None
-                assert str(session.uuid) == generated_uuid  # Compare string representations
+                assert (
+                    str(session.uuid) == generated_uuid
+                )  # Compare string representations
                 assert session.name == test_name
                 assert session.email == test_email
 

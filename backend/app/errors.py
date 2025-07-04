@@ -12,7 +12,12 @@ from functools import wraps
 from typing import Any, Callable, Dict, Tuple, TypeVar, cast
 
 from flask import Response, current_app, jsonify, request
-from werkzeug.exceptions import HTTPException, UnsupportedMediaType, MethodNotAllowed, BadRequest
+from werkzeug.exceptions import (
+    HTTPException,
+    UnsupportedMediaType,
+    MethodNotAllowed,
+    BadRequest,
+)
 
 # Type variable for function return type
 F = TypeVar("F", bound=Callable[..., Any])
@@ -123,17 +128,17 @@ def handle_http_error(error: HTTPException) -> Tuple[Response, int]:
 
     response = {"error": message, "message": message, "status": "error", "details": {}}
     resp = jsonify(response)
-    
+
     # Add Allow header for 405 Method Not Allowed responses
     if isinstance(error, MethodNotAllowed):
         # Get allowed methods from the error object if available
-        allowed_methods = getattr(error, 'valid_methods', None)
+        allowed_methods = getattr(error, "valid_methods", None)
         if allowed_methods:
-            resp.headers['Allow'] = ', '.join(sorted(allowed_methods))
+            resp.headers["Allow"] = ", ".join(sorted(allowed_methods))
         else:
             # Fallback to common methods for API endpoints
-            resp.headers['Allow'] = 'POST, OPTIONS'
-    
+            resp.headers["Allow"] = "POST, OPTIONS"
+
     # Add CORS headers to ensure preflight requests pass even on errors
     resp.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
     resp.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")

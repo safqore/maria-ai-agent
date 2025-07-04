@@ -32,6 +32,7 @@ limiter = Limiter(
     storage_uri="memory://",  # Use in-memory storage for tests
 )
 
+
 def is_rate_limiting_disabled():
     """Check if rate limiting is disabled in config."""
     return not current_app.config.get("RATELIMIT_ENABLED", True)
@@ -55,7 +56,7 @@ def setup_session_service():
 @session_bp.route("/validate-uuid", methods=["POST", "OPTIONS"])
 @limiter.limit(
     lambda: current_app.config.get("SESSION_RATE_LIMIT", SESSION_RATE_LIMIT),
-    exempt_when=lambda: request.method == "OPTIONS" or is_rate_limiting_disabled()
+    exempt_when=lambda: request.method == "OPTIONS" or is_rate_limiting_disabled(),
 )
 @api_route
 def validate_uuid():
@@ -111,7 +112,7 @@ def validate_uuid():
 @session_bp.route("/generate-uuid", methods=["POST", "OPTIONS"])
 @limiter.limit(
     lambda: current_app.config.get("SESSION_RATE_LIMIT", SESSION_RATE_LIMIT),
-    exempt_when=lambda: request.method == "OPTIONS" or is_rate_limiting_disabled()
+    exempt_when=lambda: request.method == "OPTIONS" or is_rate_limiting_disabled(),
 )
 @api_route
 def generate_uuid():
@@ -134,7 +135,7 @@ def generate_uuid():
     # Handle OPTIONS requests separately
     if request.method == "OPTIONS":
         return jsonify({"status": "success"}), 200
-    
+
     response_data, status_code = g.session_service.generate_uuid()
     return jsonify(response_data), status_code
 

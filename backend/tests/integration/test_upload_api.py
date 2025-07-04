@@ -22,23 +22,23 @@ from app.database_core import Base, get_engine
 def app():
     """Create a Flask application for testing."""
     import os
-    
+
     # Set up S3 environment variables for testing
     os.environ["AWS_ACCESS_KEY_ID"] = "test_access_key"
     os.environ["AWS_SECRET_ACCESS_KEY"] = "test_secret_key"
     os.environ["AWS_REGION"] = "us-east-1"
     os.environ["S3_BUCKET_NAME"] = "test-bucket"
-    
+
     # Create test configuration
     test_config = {
         "TESTING": True,
         "SKIP_MIDDLEWARE": True,
         "REQUIRE_AUTH": False,
     }
-    
+
     # Create app without test_config parameter
     app = create_app()
-    
+
     # Set test configuration after app creation
     app.config.update(test_config)
 
@@ -66,7 +66,7 @@ def session_uuid(app):
             session_uuid=session_id,
             name="Test User",
             email="test@example.com",
-            consent_user_data=True
+            consent_user_data=True,
         )
     return session_id
 
@@ -74,18 +74,25 @@ def session_uuid(app):
 @pytest.fixture
 def test_file():
     """Create a test file for upload."""
-    return (io.BytesIO(b"test file content"), "test.pdf")  # Changed from test.txt to test.pdf
+    return (
+        io.BytesIO(b"test file content"),
+        "test.pdf",
+    )  # Changed from test.txt to test.pdf
 
 
 class TestUploadAPI:
     """Test suite for upload API endpoints."""
 
-    @patch('backend.app.services.upload_service.s3_client.upload_fileobj')
-    def test_upload_file_legacy(self, mock_upload_fileobj, client, session_uuid, test_file):
+    @patch("backend.app.services.upload_service.s3_client.upload_fileobj")
+    def test_upload_file_legacy(
+        self, mock_upload_fileobj, client, session_uuid, test_file
+    ):
         """Test upload-file endpoint (legacy route)."""
         # Mock the S3 upload to avoid actual S3 calls
-        mock_upload_fileobj.return_value = None  # S3 upload_fileobj returns None on success
-        
+        mock_upload_fileobj.return_value = (
+            None  # S3 upload_fileobj returns None on success
+        )
+
         file_content, file_name = test_file
 
         response = client.post(
@@ -105,12 +112,16 @@ class TestUploadAPI:
         assert "url" in response.json
         assert "X-Correlation-ID" in response.headers
 
-    @patch('backend.app.services.upload_service.s3_client.upload_fileobj')
-    def test_upload_file_versioned(self, mock_upload_fileobj, client, session_uuid, test_file):
+    @patch("backend.app.services.upload_service.s3_client.upload_fileobj")
+    def test_upload_file_versioned(
+        self, mock_upload_fileobj, client, session_uuid, test_file
+    ):
         """Test upload-file endpoint (versioned route)."""
         # Mock the S3 upload to avoid actual S3 calls
-        mock_upload_fileobj.return_value = None  # S3 upload_fileobj returns None on success
-        
+        mock_upload_fileobj.return_value = (
+            None  # S3 upload_fileobj returns None on success
+        )
+
         file_content, file_name = test_file
 
         response = client.post(
@@ -168,14 +179,19 @@ class TestUploadAPI:
         assert "error" in response.json
         assert "X-Correlation-ID" in response.headers
 
-    @patch('backend.app.services.upload_service.s3_client.upload_fileobj')
+    @patch("backend.app.services.upload_service.s3_client.upload_fileobj")
     def test_upload_file_too_large(self, mock_upload_fileobj, client, session_uuid):
         """Test upload-file endpoint with file that's too large."""
         # Mock the S3 upload to avoid actual S3 calls
-        mock_upload_fileobj.return_value = None  # S3 upload_fileobj returns None on success
-        
+        mock_upload_fileobj.return_value = (
+            None  # S3 upload_fileobj returns None on success
+        )
+
         # Create a file that exceeds the limit (1MB + 100 bytes)
-        large_file = (io.BytesIO(b"0" * (1024 * 1024 + 100)), "large_file.pdf")  # Changed from .txt to .pdf
+        large_file = (
+            io.BytesIO(b"0" * (1024 * 1024 + 100)),
+            "large_file.pdf",
+        )  # Changed from .txt to .pdf
 
         try:
             response = client.post(

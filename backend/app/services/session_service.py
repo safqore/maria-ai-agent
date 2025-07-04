@@ -183,7 +183,7 @@ class SessionService:
             tuple: (response_data, status_code)
                 response_data: Dictionary with persistence result
                 status_code: HTTP status code
-                
+
         Status Codes:
             201: Created - New session with original UUID
             200: OK - Session created with new UUID due to collision
@@ -201,10 +201,10 @@ class SessionService:
             with TransactionContext():
                 # Convert string to UUID object for repository calls
                 uuid_obj = uuid.UUID(session_uuid)
-                
+
                 # Track if there was a collision
                 had_collision = False
-                
+
                 # Check if session UUID already exists
                 if self.user_session_repository.exists(uuid_obj):
                     # Generate new UUID and migrate S3 files
@@ -221,7 +221,11 @@ class SessionService:
                 log_audit_event(
                     "session_persisted",
                     user_uuid=str(user_session.uuid),
-                    details={"name": name, "email": email, "had_collision": had_collision},
+                    details={
+                        "name": name,
+                        "email": email,
+                        "had_collision": had_collision,
+                    },
                 )
 
                 # Return different status codes based on collision
@@ -236,8 +240,12 @@ class SessionService:
                 if had_collision:
                     return {
                         "message": message,
-                        "uuid": str(user_session.uuid),  # Consistent field for all responses
-                        "new_uuid": str(user_session.uuid),  # Specific field for collision tests
+                        "uuid": str(
+                            user_session.uuid
+                        ),  # Consistent field for all responses
+                        "new_uuid": str(
+                            user_session.uuid
+                        ),  # Specific field for collision tests
                         "had_collision": had_collision,
                         "user_data": {
                             "name": user_session.name,
@@ -247,8 +255,12 @@ class SessionService:
                 else:
                     return {
                         "message": message,
-                        "uuid": str(user_session.uuid),  # Consistent field for all responses
-                        "session_uuid": str(user_session.uuid),  # Specific field for normal tests
+                        "uuid": str(
+                            user_session.uuid
+                        ),  # Consistent field for all responses
+                        "session_uuid": str(
+                            user_session.uuid
+                        ),  # Specific field for normal tests
                         "had_collision": had_collision,
                         "user_data": {
                             "name": user_session.name,

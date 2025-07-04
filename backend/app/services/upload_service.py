@@ -133,10 +133,10 @@ class UploadService:
                 # For testing, return a mock response
                 filename = secure_filename(file.filename)
                 return {
-                    "filename": filename, 
-                    "url": f"https://test-bucket.s3.test-region.amazonaws.com/uploads/{session_uuid}/{filename}"
+                    "filename": filename,
+                    "url": f"https://test-bucket.s3.test-region.amazonaws.com/uploads/{session_uuid}/{filename}",
                 }, 200
-                
+
             filename = secure_filename(file.filename)
             s3_key = f"uploads/{session_uuid}/{filename}"
 
