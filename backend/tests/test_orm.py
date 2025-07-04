@@ -58,7 +58,7 @@ def test_get_by_uuid(session_uuid):
     user_session = repo.get_by_uuid(session_uuid)
 
     assert user_session is not None
-    assert user_session.uuid == uuid.UUID(session_uuid)
+    assert user_session.uuid == session_uuid  # session_uuid is now a UUID object
     assert user_session.name == "Test User"
     assert user_session.email == "test@example.com"
 

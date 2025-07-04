@@ -64,7 +64,8 @@ class SessionService:
         Returns:
             bool: True if the UUID exists, False otherwise
         """
-        return self.user_session_repository.exists(session_uuid)
+        uuid_obj = uuid.UUID(session_uuid)
+        return self.user_session_repository.exists(uuid_obj)
 
     def validate_uuid(self, session_uuid: str) -> Tuple[Dict[str, Any], int]:
         """
@@ -192,8 +193,11 @@ class SessionService:
         try:
             # Use explicit transaction for atomic session creation
             with TransactionContext():
+                # Convert string to UUID object for repository calls
+                uuid_obj = uuid.UUID(session_uuid)
+                
                 # Check if session UUID already exists
-                if self.user_session_repository.exists(session_uuid):
+                if self.user_session_repository.exists(uuid_obj):
                     new_uuid = str(uuid.uuid4())
                     migrate_s3_files(session_uuid, new_uuid)
                     session_uuid = new_uuid

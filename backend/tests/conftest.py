@@ -123,7 +123,7 @@ def session_uuid(client):
     """
     Create a test user session and return its UUID.
     
-    This fixture creates a test session in the database and returns the UUID.
+    This fixture creates a test session in the database and returns the UUID object.
     After the test completes, it cleans up by deleting the session.
     """
     from backend.app.repositories.factory import get_user_session_repository
@@ -133,23 +133,23 @@ def session_uuid(client):
     Base.metadata.create_all(bind=get_engine())
     
     # Generate a unique UUID for this test
-    test_uuid = str(uuid.uuid4())
+    test_uuid = uuid.uuid4()  # Return UUID object, not string
     
     # Create the test session
     repo = get_user_session_repository()
     user_session = repo.create_session(
-        session_uuid=test_uuid,
+        session_uuid=str(test_uuid),  # create_session still expects string
         name="Test User",
         email="test@example.com",
         consent_user_data=True
     )
     
-    # Yield the UUID to the test
+    # Yield the UUID object to the test
     yield test_uuid
     
     # Clean up after the test
     try:
-        repo.delete_session(test_uuid)
+        repo.delete_session(test_uuid)  # Pass UUID object
     except Exception:
         # If deletion fails, that's okay - we tried to clean up
         pass

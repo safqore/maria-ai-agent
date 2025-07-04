@@ -29,7 +29,7 @@ class UserSessionRepository(BaseRepository[UserSession]):
         """Initialize with the UserSession model class."""
         super().__init__(UserSession)
 
-    def get_by_uuid(self, session_uuid: str) -> Optional[UserSession]:
+    def get_by_uuid(self, session_uuid: uuid.UUID) -> Optional[UserSession]:
         """
         Get a user session by UUID.
 
@@ -42,11 +42,9 @@ class UserSessionRepository(BaseRepository[UserSession]):
         Raises:
             ServerError: If a database error occurs
         """
-        # Convert string UUID to UUID object
-        uuid_obj = uuid.UUID(session_uuid)
-        return self.get_by_id(uuid_obj)
+        return self.get_by_id(session_uuid)
 
-    def exists(self, session_uuid: str) -> bool:
+    def exists(self, session_uuid: uuid.UUID) -> bool:
         """
         Check if a session with the given UUID exists.
 
@@ -59,9 +57,7 @@ class UserSessionRepository(BaseRepository[UserSession]):
         Raises:
             ServerError: If a database error occurs
         """
-        # Convert string UUID to UUID object
-        uuid_obj = uuid.UUID(session_uuid)
-        return super().exists(uuid_obj)
+        return super().exists(session_uuid)
 
     def create_session(
         self,
@@ -98,7 +94,7 @@ class UserSessionRepository(BaseRepository[UserSession]):
         )
 
     def update_session(
-        self, session_uuid: str, data: Dict[str, Any]
+        self, session_uuid: uuid.UUID, data: Dict[str, Any]
     ) -> Optional[UserSession]:
         """
         Update a user session.
@@ -115,16 +111,12 @@ class UserSessionRepository(BaseRepository[UserSession]):
             NotFoundError: If the session does not exist
         """
         try:
-            # Convert string UUID to UUID object
-            uuid_obj = uuid.UUID(session_uuid)
-            return self.update(uuid_obj, data)
+            return self.update(session_uuid, data)
         except Exception as e:
             # Return None for NotFoundError to maintain backward compatibility
-            if hasattr(e, "name") and e.name == "NotFoundError":
-                return None
-            raise
+            return None
 
-    def delete_session(self, session_uuid: str) -> bool:
+    def delete_session(self, session_uuid: uuid.UUID) -> bool:
         """
         Delete a user session.
 
@@ -132,11 +124,13 @@ class UserSessionRepository(BaseRepository[UserSession]):
             session_uuid: The UUID of the session to delete
 
         Returns:
-            True if the session was deleted, False if not found
+            True if the session was deleted, False if it didn't exist
 
         Raises:
             ServerError: If a database error occurs
         """
-        # Convert string UUID to UUID object
-        uuid_obj = uuid.UUID(session_uuid)
-        return self.delete(uuid_obj)
+        try:
+            return self.delete(session_uuid)
+        except Exception as e:
+            # Return False for NotFoundError to maintain backward compatibility
+            return False
