@@ -7,7 +7,7 @@ from datetime import datetime, UTC
 from unittest.mock import MagicMock, patch
 
 import pytest
-from backend.tests.mocks.models import UserSession
+from tests.mocks.models import UserSession
 
 
 def test_user_session_model_create():

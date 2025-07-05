@@ -66,22 +66,28 @@ def init_database():
     """Initialize database engine and session factory."""
     global _engine, _SessionLocal
     db_url = get_database_url()
+    
     engine_kwargs = {
         "pool_pre_ping": True,
         "pool_recycle": 3600,
         "echo": False,
     }
+    
     if db_url.startswith("sqlite://"):
         # SQLite-specific configuration for thread safety
         engine_kwargs["connect_args"] = {
             "check_same_thread": False,
             "isolation_level": None,  # Use autocommit mode
         }
-        # Use StaticPool for in-memory databases to share same database instance
-        # This is essential for :memory: databases to work properly in tests
-        engine_kwargs["poolclass"] = StaticPool
-        # StaticPool doesn't support pool_size and max_overflow parameters
-        # Remove them if they exist
+        
+        # Use StaticPool for in-memory databases to share connections
+        # Use NullPool for file-based databases for better thread safety
+        if ":memory:" in db_url:
+            engine_kwargs["poolclass"] = StaticPool
+        else:
+            engine_kwargs["poolclass"] = NullPool
+        
+        # Remove incompatible parameters for SQLite pools
         engine_kwargs.pop("pool_size", None)
         engine_kwargs.pop("max_overflow", None)
     

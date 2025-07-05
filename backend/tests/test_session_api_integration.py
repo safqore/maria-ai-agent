@@ -24,7 +24,7 @@ from app.routes.session import limiter
 class TestSessionAPIIntegration:
     """Comprehensive API integration tests for session endpoints."""
 
-    @pytest.fixture(scope="class")
+    @pytest.fixture(scope="function")
     def app(self):
         """Create test application."""
         app = create_app()
@@ -57,12 +57,19 @@ class TestSessionAPIIntegration:
         """Reset rate limiter state after each test."""
         try:
             from app.routes.session import limiter
+            from app.routes.upload import limiter as upload_limiter
 
-            # Reset the in-memory storage for rate limiting
-            if hasattr(limiter, "storage") and hasattr(limiter.storage, "storage"):
-                limiter.storage.storage.clear()
-        except Exception:
-            # Ignore any errors during cleanup
+            # Reset the in-memory storage for rate limiting for both limiters
+            for lim in [limiter, upload_limiter]:
+                if hasattr(lim, "_storage") and hasattr(lim._storage, "storage"):
+                    lim._storage.storage.clear()
+                elif hasattr(lim, "storage") and hasattr(lim.storage, "storage"):
+                    lim.storage.storage.clear()
+                elif hasattr(lim, "_storage") and hasattr(lim._storage, "reset"):
+                    lim._storage.reset()
+        except Exception as e:
+            # Ignore any errors during cleanup but print for debugging
+            print(f"Warning: Failed to clear rate limiter storage: {e}")
             pass
 
     # Generate UUID Endpoint Tests

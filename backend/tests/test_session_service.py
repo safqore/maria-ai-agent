@@ -487,7 +487,7 @@ class TestSessionService:
     def test_multiple_service_instances_independent(self):
         """Test that multiple service instances are independent."""
         with patch(
-            "app.repositories.factory.get_user_session_repository"
+            "app.services.session_service.get_user_session_repository"
         ) as mock_factory:
             mock_repo1 = Mock()
             mock_repo2 = Mock()

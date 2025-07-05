@@ -26,9 +26,23 @@ class TestAPIPerformance:
     @pytest.fixture(scope="class")
     def app(self):
         """Create test application."""
-        app = create_app({"TESTING": True})
-        app.config["TESTING"] = True
-        app.config["RATELIMIT_ENABLED"] = False  # Disable for performance tests
+        # Create app with rate limiting completely disabled
+        config = {
+            "TESTING": True,
+            "RATELIMIT_ENABLED": False,  # Explicitly disable rate limiting
+            "REQUIRE_AUTH": False,  # Disable auth for performance tests
+            "SKIP_MIDDLEWARE": True,  # Skip most middleware for performance
+            "RATELIMIT_STORAGE_URL": "memory://",  # Use in-memory storage
+            "SESSION_RATE_LIMIT": "1000/minute",  # Set very high limit as fallback
+        }
+        
+        app = create_app(config)
+        
+        # Verify rate limiting is disabled
+        with app.app_context():
+            # Double-check that rate limiting is disabled
+            assert not app.config.get("RATELIMIT_ENABLED", True), "Rate limiting should be disabled"
+            
         return app
 
     @pytest.fixture

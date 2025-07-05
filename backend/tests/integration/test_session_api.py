@@ -13,7 +13,7 @@ from unittest import mock
 import pytest
 from flask import Flask, current_app, jsonify, request  # Add request import here
 
-from backend.tests.mocks.database import (
+from tests.mocks.database import (
     GUID,
     Base,
     SessionLocal,
@@ -25,8 +25,8 @@ from backend.tests.mocks.database import (
 )
 
 # Import our mocked modules for SQLite compatibility
-from backend.tests.mocks.models import UserSession
-from backend.tests.mocks.repositories import UserSessionRepository
+from tests.mocks.models import UserSession
+from tests.mocks.repositories import UserSessionRepository
 
 
 @pytest.fixture
@@ -40,10 +40,13 @@ def app(request):
     sys.modules["backend.app.models"] = MagicMock()
     sys.modules["backend.app.models"].UserSession = UserSession
 
-    sys.modules["backend.app.repositories.user_session_repository"] = MagicMock()
+    sys.modules["app.repositories.user_session_repository"] = MagicMock()
     sys.modules[
-        "backend.app.repositories.user_session_repository"
+        "app.repositories.user_session_repository"
     ].UserSessionRepository = UserSessionRepository
+    
+    # Only patch for specific collision tests to avoid interfering with regular tests
+    # This patching is moved to the specific test methods that need it
 
     # Patch the database functions
     import app.database as database
@@ -66,6 +69,15 @@ def app(request):
     database_core.init_database = init_database
     database_core.engine = engine
     database_core.SessionLocal = SessionLocal
+
+    # Also patch the transaction module to use the test database
+    import app.database.transaction as transaction_module
+    transaction_module.get_session_local = get_session_local
+    transaction_module.get_engine = get_engine
+    
+    # Replace TransactionContext with test version
+    from tests.mocks.transaction import TransactionContext as TestTransactionContext
+    transaction_module.TransactionContext = TestTransactionContext
 
     # Create database tables
     init_database()
@@ -455,35 +467,46 @@ class TestSessionAPI:
         # Create a new session UUID
         new_test_uuid = str(uuid.uuid4())
 
-        # First ensure the session exists in the database
-        with client.application.app_context():
-            repo = UserSessionRepository()
-            # Make sure we create this UUID in the database
-            repo.create(
-                uuid=new_test_uuid,
-                name="Test User",
-                email="test@example.com",
-                consent_user_data=True,
-                ip_address="127.0.0.1",
+        # Set up repository patching for this specific test
+        from tests.mocks.repositories import UserSessionRepository
+        test_repo = UserSessionRepository()
+        
+        # Patch the service to use our shared mock repository
+        import app.services.session_service as session_service_module
+        original_session_service_init = session_service_module.SessionService.__init__
+        
+        def patched_init(self):
+            self.user_session_repository = test_repo
+        
+        session_service_module.SessionService.__init__ = patched_init
+
+        try:
+            # First ensure the session exists in the database
+            with client.application.app_context():
+                # Use the same repository instance that the service will use
+                test_repo.create(
+                    uuid=new_test_uuid,
+                    name="Test User",
+                    email="test@example.com",
+                    consent_user_data=True,
+                    ip_address="127.0.0.1",
+                )
+                # Check existence the same way the service does - with UUID object
+                uuid_obj = uuid.UUID(new_test_uuid)
+                exists = test_repo.exists(uuid_obj)
+                assert exists is True
+
+            # Test with an existing UUID (should report collision)
+            response = client.post(
+                "/api/v1/validate-uuid",
+                json={"uuid": new_test_uuid},
+                content_type="application/json",
             )
-            # Check existence the same way the service does - with UUID object
-            uuid_obj = uuid.UUID(new_test_uuid)
-            exists = repo.exists(uuid_obj)
-            assert exists is True
 
-        # Test with an existing UUID (should report collision)
-        response = client.post(
-            "/api/v1/validate-uuid",
-            json={"uuid": new_test_uuid},
-            content_type="application/json",
-        )
-
-        # Debug: Print actual response details
-        print(f"DEBUG: Status code: {response.status_code}")
-        print(f"DEBUG: Response JSON: {response.json}")
-        print(f"DEBUG: Response headers: {dict(response.headers)}")
-
-        assert response.status_code == 409
+            assert response.status_code == 409
+        finally:
+            # Restore original SessionService initialization
+            session_service_module.SessionService.__init__ = original_session_service_init
         assert "status" in response.json
         assert response.json["status"] == "collision"
         assert response.json["uuid"] == new_test_uuid
@@ -614,7 +637,7 @@ class TestSessionAPI:
 class TestSessionRepositoryIntegration:
     """Test integration between session API and repository."""
 
-    def test_session_persist_database_update(self, app, client):
+    def test_session_persist_database_update(self, client):
         """Test that session persistence updates the database."""
         # Generate a new UUID
         response = client.post("/api/v1/generate-uuid")
@@ -637,58 +660,52 @@ class TestSessionRepositoryIntegration:
 
         # Force a small delay to ensure transaction is committed
         import time
-
         time.sleep(0.01)
 
-        # Verify the session was stored in the database
-        with app.app_context():
-            # Force database commit by creating a new session
-            from backend.tests.mocks.database import get_db_session
+        # Verify the session was stored in the database using the real database
+        with client.application.app_context():
+            from app.repositories.factory import get_user_session_repository
+            import uuid as uuid_module
 
-            with get_db_session() as db_session:
-                # Query directly using the session to ensure fresh data
-                from backend.tests.mocks.models import UserSession
-                import uuid as uuid_module
+            repo = get_user_session_repository()
+            uuid_obj = uuid_module.UUID(generated_uuid)
+            session = repo.get_by_uuid(uuid_obj)
 
-                uuid_obj = uuid_module.UUID(generated_uuid)
-                session = (
-                    db_session.query(UserSession)
-                    .filter(UserSession.uuid == uuid_obj)
-                    .first()
-                )
+            assert session is not None
+            assert str(session.uuid) == generated_uuid
+            assert session.name == test_name
+            assert session.email == test_email
 
-                assert session is not None
-                assert (
-                    str(session.uuid) == generated_uuid
-                )  # Compare string representations
-                assert session.name == test_name
-                assert session.email == test_email
-
-    def test_session_validation_database_check(self, app, client):
+    def test_session_validation_database_check(self, client):
         """Test that UUID validation checks the database."""
         # Generate a completely new UUID for this test to avoid conflicts
         new_test_uuid = str(uuid.uuid4())
 
-        # Create a session with the new UUID
-        with app.app_context():
-            repo = UserSessionRepository()
+        # Create a session with the new UUID using the real repository
+        with client.application.app_context():
+            from app.repositories.factory import get_user_session_repository
+            import uuid as uuid_module
+
+            repo = get_user_session_repository()
+            uuid_obj = uuid_module.UUID(new_test_uuid)
 
             # First ensure the UUID doesn't already exist
-            if repo.exists(new_test_uuid):
+            if repo.exists(uuid_obj):
                 # If it does, generate another one
                 new_test_uuid = str(uuid.uuid4())
+                uuid_obj = uuid_module.UUID(new_test_uuid)
 
             # Create a new session with our guaranteed unique UUID
-            repo.create(
-                uuid=new_test_uuid,
+            session = repo.create_session(
+                session_uuid=new_test_uuid,
                 name="Test User",
                 email="test@example.com",
                 consent_user_data=True,
-                ip_address="127.0.0.1",
             )
+            assert session is not None
 
             # Verify it exists
-            exists = repo.exists(new_test_uuid)
+            exists = repo.exists(uuid_obj)
             assert exists is True
 
         # Check validation correctly reports collision
@@ -701,8 +718,8 @@ class TestSessionRepositoryIntegration:
         assert response.json["status"] == "collision"
 
         # Now delete the session from the database
-        with app.app_context():
-            repo.delete(new_test_uuid)
+        with client.application.app_context():
+            repo.delete_session(uuid_obj)
 
         # Validation should now report success (no collision)
         response = client.post(

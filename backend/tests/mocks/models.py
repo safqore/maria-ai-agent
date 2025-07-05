@@ -12,7 +12,7 @@ from typing import Optional
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 
 # Import our GUID type that works with SQLite
-from backend.tests.mocks.database import GUID, Base
+from tests.mocks.database import GUID, Base
 
 
 class UserSession(Base):

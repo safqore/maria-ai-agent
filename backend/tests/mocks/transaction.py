@@ -10,7 +10,7 @@ from typing import Iterator
 
 from sqlalchemy.orm import Session
 
-from backend.tests.mocks.database import get_db_session
+from tests.mocks.database import get_db_session
 
 
 class TransactionContext:

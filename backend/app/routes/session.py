@@ -31,12 +31,34 @@ limiter = Limiter(
     key_func=get_remote_address,
     default_limits=[SESSION_RATE_LIMIT],
     storage_uri="memory://",  # Use in-memory storage for tests
+    # Note: enabled status will be set during init_app() based on app config
 )
 
 
 def is_rate_limiting_disabled():
     """Check if rate limiting is disabled in config."""
-    return not current_app.config.get("RATELIMIT_ENABLED", True)
+    # Check if rate limiting is explicitly enabled or disabled
+    ratelimit_enabled = current_app.config.get("RATELIMIT_ENABLED")
+    
+    if ratelimit_enabled is True:
+        # Explicitly enabled - rate limiting should be active
+        return False
+    elif ratelimit_enabled is False:
+        # Explicitly disabled - rate limiting should be inactive
+        return True
+    else:
+        # Default behavior: disable in test mode, enable in production
+        return current_app.config.get("TESTING", False)
+
+
+def cors_options_response():
+    """Return a response with proper CORS headers for OPTIONS requests."""
+    response = jsonify({"status": "success"})
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key, X-Correlation-ID")
+    response.headers.add("Access-Control-Expose-Headers", "X-API-Version, X-Correlation-ID")
+    return response, 200
 
 
 # Create a service instance for each request
@@ -81,11 +103,36 @@ def api_info():
     }), 200
 
 
+def conditional_limiter(rate_limit_func):
+    """
+    Decorator factory that conditionally applies rate limiting.
+    
+    Args:
+        rate_limit_func: Function that returns the rate limit string
+        
+    Returns:
+        Decorator that applies rate limiting only if enabled
+    """
+    def decorator(f):
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            # Check if rate limiting is disabled
+            if is_rate_limiting_disabled():
+                # Rate limiting is disabled, call function directly
+                return f(*args, **kwargs)
+            else:
+                # Rate limiting is enabled, apply the limiter
+                limited_func = limiter.limit(
+                    rate_limit_func(),
+                    exempt_when=lambda: request.method == "OPTIONS"
+                )(f)
+                return limited_func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
 @session_bp.route("/validate-uuid", methods=["POST", "OPTIONS"])
-@limiter.limit(
-    lambda: current_app.config.get("SESSION_RATE_LIMIT", SESSION_RATE_LIMIT),
-    exempt_when=lambda: request.method == "OPTIONS" or is_rate_limiting_disabled(),
-)
+@conditional_limiter(lambda: current_app.config.get("SESSION_RATE_LIMIT", SESSION_RATE_LIMIT))
 @api_route
 def validate_uuid():
     """
@@ -111,7 +158,7 @@ def validate_uuid():
     """
     # Handle OPTIONS requests separately
     if request.method == "OPTIONS":
-        return jsonify({"status": "success"}), 200
+        return cors_options_response()
 
     data = request.get_json()
 
@@ -138,10 +185,7 @@ def validate_uuid():
 
 
 @session_bp.route("/generate-uuid", methods=["POST", "OPTIONS"])
-@limiter.limit(
-    lambda: current_app.config.get("SESSION_RATE_LIMIT", SESSION_RATE_LIMIT),
-    exempt_when=lambda: request.method == "OPTIONS" or is_rate_limiting_disabled(),
-)
+@conditional_limiter(lambda: current_app.config.get("SESSION_RATE_LIMIT", SESSION_RATE_LIMIT))
 @api_route
 def generate_uuid():
     """
@@ -162,7 +206,7 @@ def generate_uuid():
     """
     # Handle OPTIONS requests separately
     if request.method == "OPTIONS":
-        return jsonify({"status": "success"}), 200
+        return cors_options_response()
 
     response_data, status_code = g.session_service.generate_uuid()
     return jsonify(response_data), status_code
@@ -193,7 +237,7 @@ def persist_session():
     """
     # Handle OPTIONS requests separately
     if request.method == "OPTIONS":
-        return jsonify({"status": "success"}), 200
+        return cors_options_response()
 
     data = request.get_json()
 

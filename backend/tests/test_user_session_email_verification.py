@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
-from backend.tests.mocks.models import UserSession
+from tests.mocks.models import UserSession
 
 
 class TestUserSessionEmailVerification:
@@ -183,7 +183,7 @@ class TestUserSessionEmailVerification:
         assert user_session.last_resend_at is None
 
         # Mock current time for consistent testing
-        with patch("backend.tests.mocks.models.datetime") as mock_datetime:
+        with patch("tests.mocks.models.datetime") as mock_datetime:
             mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
 
@@ -250,7 +250,7 @@ class TestUserSessionEmailVerification:
         assert user_session.verification_attempts_remaining == 2
 
         # Simulate resend
-        with patch("backend.tests.mocks.models.datetime") as mock_datetime:
+        with patch("tests.mocks.models.datetime") as mock_datetime:
             mock_now = datetime.now(UTC)
             mock_datetime.now.return_value = mock_now
 

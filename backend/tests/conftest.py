@@ -45,6 +45,13 @@ def initialize_test_database():
     # Make sure all models are imported so their tables are created
     from app.models import UserSession
     
+    # Drop all tables first to ensure clean state
+    try:
+        Base.metadata.drop_all(bind=engine)
+        print("DEBUG: Dropped existing tables")
+    except Exception as e:
+        print(f"DEBUG: Error dropping tables (expected for first run): {e}")
+    
     # Create all tables
     Base.metadata.create_all(bind=engine)
 
@@ -65,58 +72,52 @@ def initialize_test_database():
         print(f"DEBUG: Error cleaning up database: {e}")
 
 
-@pytest.fixture
-def test_app():
+@pytest.fixture(scope="function")
+def app():
     """
-    Create a test-specific Flask app with minimal configuration.
-
-    This can be used when you need more control over the app creation
-    process than the standard create_app function provides.
-    """
-    app = Flask("test_app")
-    app.config["TESTING"] = True
-    app.config["REQUIRE_AUTH"] = False  # Disable auth for testing
-    app.config["SKIP_MIDDLEWARE"] = True  # Skip middleware to avoid conflicts
-
-    yield app
-
-
-@pytest.fixture
-def client():
-    """
-    Create a test client using the create_app function.
-
-    This fixture creates a proper Flask app using the application factory
-    and returns a test client for making requests.
+    Create a test Flask app with proper configuration.
+    
+    This fixture creates a function-scoped app to ensure test isolation
+    and prevent rate limiting carryover between tests.
     """
     from app.app_factory import create_app
 
-    # Create app without test_config parameter
-    app = create_app()
+    # Create app with test configuration
+    flask_app = create_app()
 
-    # Set test configuration after app creation
-    app.config["TESTING"] = True
-    app.config["SKIP_MIDDLEWARE"] = True  # Skip middleware to avoid conflicts
-    app.config["REQUIRE_AUTH"] = False  # Disable authentication for tests
-    app.config["RATELIMIT_ENABLED"] = False  # Disable rate limiting for tests
+    # Set test configuration
+    flask_app.config["TESTING"] = True
+    flask_app.config["SKIP_MIDDLEWARE"] = True  # Skip middleware to avoid conflicts
+    flask_app.config["REQUIRE_AUTH"] = False  # Disable authentication for tests
+    flask_app.config["RATELIMIT_ENABLED"] = False  # Disable rate limiting for tests
 
     # Ensure authentication is disabled at the module level as well
     import app.utils.auth
-
     app.utils.auth.REQUIRE_AUTH = False
 
     # Disable S3 for tests
-    app.config["S3_BUCKET_NAME"] = "test-bucket"
-    app.config["AWS_ACCESS_KEY_ID"] = "test-key"
-    app.config["AWS_SECRET_ACCESS_KEY"] = "test-secret"
-    app.config["AWS_REGION"] = "us-east-1"
+    flask_app.config["S3_BUCKET_NAME"] = "test-bucket"
+    flask_app.config["AWS_ACCESS_KEY_ID"] = "test-key"
+    flask_app.config["AWS_SECRET_ACCESS_KEY"] = "test-secret"
+    flask_app.config["AWS_REGION"] = "us-east-1"
 
-    # Ensure database is initialized
-    with app.app_context():
+    # Ensure database is initialized and tables are created
+    with flask_app.app_context():
         init_database()
         engine = get_engine()
         Base.metadata.create_all(bind=engine)
 
+    yield flask_app
+
+
+@pytest.fixture
+def client(app):
+    """
+    Create a test client using the app fixture.
+
+    This fixture creates a test client from the app fixture,
+    ensuring proper test isolation and configuration.
+    """
     with app.test_client() as client:
         yield client
 

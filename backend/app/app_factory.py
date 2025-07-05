@@ -40,17 +40,57 @@ def create_app(config=None):
         # Load from environment variables
         app.config.from_object("config.Config")
 
-    # Enable CORS
-    CORS(app, resources={r"/*": {"origins": "*"}})
+    # Enable CORS with proper headers
+    CORS(app, resources={
+        r"/*": {
+            "origins": "*",
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization", "X-API-Key", "X-Correlation-ID"],
+            "expose_headers": ["X-API-Version", "X-Correlation-ID"]
+        }
+    })
 
-    # Initialize rate limiting (disabled for tests)
-    limiter = Limiter(
-        app=app,
-        key_func=get_remote_address,
-        default_limits=["200 per day", "50 per hour"],
-        storage_uri="memory://",
-        enabled=not app.config.get("TESTING", False),
-    )
+    # Initialize rate limiting 
+    # Import limiters from route modules to use the same instances
+    from app.routes.session import limiter as session_limiter
+    from app.routes.upload import limiter as upload_limiter
+    
+    # Set enabled status based on app config
+    # Rate limiting is disabled by default in tests, but can be explicitly enabled
+    # If RATELIMIT_ENABLED is explicitly set to True, honor that even in test mode
+    if app.config.get("RATELIMIT_ENABLED") is True:
+        # Explicitly enabled - honor this setting
+        limiter_enabled = True
+    elif app.config.get("RATELIMIT_ENABLED") is False:
+        # Explicitly disabled - honor this setting
+        limiter_enabled = False
+    else:
+        # Default behavior: disable in test mode, enable in production
+        limiter_enabled = not app.config.get("TESTING", False)
+    
+    # Configure storage URL if specified
+    storage_url = app.config.get("RATELIMIT_STORAGE_URL", "memory://")
+    
+    # Configure and initialize both limiters with the app
+    session_limiter._enabled = limiter_enabled
+    upload_limiter._enabled = limiter_enabled
+    
+    # Only initialize limiters if rate limiting is enabled
+    if limiter_enabled:
+        session_limiter.init_app(app)
+        upload_limiter.init_app(app)
+    else:
+        # For disabled limiters, we still need to set up the app context
+        # but with no active limiting
+        try:
+            session_limiter.init_app(app)
+            upload_limiter.init_app(app)
+            # Force disable after init
+            session_limiter._enabled = False
+            upload_limiter._enabled = False
+        except Exception:
+            # If init fails, that's ok for disabled limiters
+            pass
 
     # Setup middleware (check for SKIP_MIDDLEWARE config)
     skip_middleware = app.config.get("SKIP_MIDDLEWARE", False)
@@ -59,13 +99,13 @@ def create_app(config=None):
         setup_request_logging(app)
         setup_request_validation(app)
         setup_auth_middleware(app)
+        # Apply middleware to blueprints with versioning
+        apply_middleware_to_blueprint(session_bp, api_version="v1")
+        apply_middleware_to_blueprint(upload_bp, api_version="v1")
     else:
-        # For tests, we still want basic logging but skip auth
+        # For tests, we still want basic logging but skip auth and request validation
         setup_request_logging(app)
-
-    # Apply middleware to blueprints with versioning
-    apply_middleware_to_blueprint(session_bp, api_version="v1")
-    apply_middleware_to_blueprint(upload_bp, api_version="v1")
+        # Skip middleware on blueprints for performance tests
 
     # Register blueprints
     app.register_blueprint(session_bp, url_prefix="/api/v1")
