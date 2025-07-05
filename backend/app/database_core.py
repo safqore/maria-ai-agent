@@ -52,8 +52,10 @@ def get_database_url():
         db_host = os.getenv("POSTGRES_HOST", "localhost")
         db_port = os.getenv("POSTGRES_PORT", "5432")
         db_name = os.getenv("POSTGRES_DB", "maria_ai")
-        
-        postgres_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+
+        postgres_url = (
+            f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+        )
         print(f"DEBUG: Using PostgreSQL URL: {postgres_url}")
         return postgres_url
 
@@ -62,6 +64,7 @@ def get_database_url():
         print("DEBUG: Using file-based SQLite for local pytest")
         # Use a temporary file that can be shared across connections
         import tempfile
+
         test_db_path = os.path.join(tempfile.gettempdir(), "maria_ai_test.db")
         return f"sqlite:///{test_db_path}"
 
@@ -74,7 +77,9 @@ def get_database_url():
 
     if db_user and db_password and db_name:
         # Use PostgreSQL if environment variables are set
-        postgres_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+        postgres_url = (
+            f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+        )
         print(f"DEBUG: Using PostgreSQL URL: {postgres_url}")
         return postgres_url
     else:
@@ -113,7 +118,7 @@ def init_database():
             engine_kwargs["poolclass"] = StaticPool
             # StaticPool doesn't accept pool_size/max_overflow parameters
             # It maintains a single connection that is shared
-            
+
         # Configure for concurrent access
         engine_kwargs["pool_pre_ping"] = True
 
@@ -129,19 +134,19 @@ def init_database():
         )
 
     _engine = create_engine(db_url, **engine_kwargs)
-    
+
     # For file-based SQLite, set up WAL mode
     if db_url.startswith("sqlite://") and not db_url.endswith(":memory:"):
         from sqlalchemy import event
-        
+
         def enable_wal_mode(dbapi_connection, connection_record):
             dbapi_connection.execute("PRAGMA journal_mode=WAL")
             dbapi_connection.execute("PRAGMA synchronous=NORMAL")
             dbapi_connection.execute("PRAGMA temp_store=memory")
             dbapi_connection.execute("PRAGMA mmap_size=268435456")  # 256MB
-            
+
         event.listen(_engine, "connect", enable_wal_mode)
-    
+
     _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
 
 

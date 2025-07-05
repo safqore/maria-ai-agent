@@ -471,44 +471,48 @@ class TestSessionAPIIntegration:
         """Test concurrent requests to the API."""
         import threading
         import time
-        
+
         results = []
         errors = []
-        
+
         def make_request():
             """Make a request in a separate thread."""
             try:
                 # Create a completely separate client instance for this thread
                 # Do NOT use context manager to avoid nesting issues
                 thread_client = app.test_client()
-                
+
                 response = thread_client.post("/api/v1/generate-uuid")
                 results.append(response.status_code)
-                
+
                 if response.status_code != 200:
-                    errors.append(f"Status {response.status_code}: {response.get_json()}")
-                    
+                    errors.append(
+                        f"Status {response.status_code}: {response.get_json()}"
+                    )
+
             except Exception as e:
                 errors.append(f"Exception: {str(e)}")
-        
+
         # Create and start threads
         threads = []
         for i in range(3):
             thread = threading.Thread(target=make_request)
             threads.append(thread)
             thread.start()
-        
+
         # Wait for all threads to complete
         for thread in threads:
             thread.join(timeout=10)  # 10 second timeout
-        
+
         # Check results
         print(f"Concurrent test results: {results}")
         print(f"Concurrent test errors: {errors}")
-        
+
         # Most requests should succeed (some may fail due to rate limiting)
         successful_requests = [r for r in results if r == 200]
-        assert len(successful_requests) >= 1, f"At least one request should succeed. Results: {results}, Errors: {errors}"
+        assert (
+            len(successful_requests) >= 1
+        ), f"At least one request should succeed. Results: {results}, Errors: {errors}"
 
     # Edge Cases
     def test_empty_json_body(self, client):

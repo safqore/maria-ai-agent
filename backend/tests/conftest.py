@@ -35,23 +35,23 @@ from app import models
 def initialize_test_database():
     """Initialize the test database with proper schema and migrations."""
     print("DEBUG: Initializing test database with migrations...")
-    
+
     # Clean up any existing test database file
     import tempfile
     import os
-    
+
     # Force initialization of database
     init_database()
-    
+
     # Get engine and database URL
     engine = get_engine()
     db_url = str(engine.url)
     print(f"DEBUG: Database URL: {db_url}")
-    
+
     # Check if we're using PostgreSQL or SQLite
     is_postgres = db_url.startswith("postgresql://")
     is_sqlite = db_url.startswith("sqlite://")
-    
+
     if is_postgres:
         print("DEBUG: Using PostgreSQL - migrations should already be applied by CI")
         # In CI, migrations are already applied, just verify tables exist
@@ -59,27 +59,29 @@ def initialize_test_database():
             inspector = inspect(engine)
             table_names = inspector.get_table_names()
             print(f"DEBUG: Existing tables: {table_names}")
-            
+
             # Verify required tables exist
-            required_tables = ['user_sessions']
+            required_tables = ["user_sessions"]
             missing_tables = [t for t in required_tables if t not in table_names]
             if missing_tables:
                 raise Exception(f"Required tables missing: {missing_tables}")
-                
+
         except Exception as e:
             print(f"DEBUG: Error checking PostgreSQL tables: {e}")
             # If verification fails, try creating with ORM
             import app.models
             from app.models import UserSession
+
             Base.metadata.create_all(bind=engine)
-            
+
     elif is_sqlite:
         print("DEBUG: Using SQLite - setting up tables with ORM")
-        
+
         # For file-based SQLite, clean up any existing database file
         if not db_url.endswith(":memory:"):
             import tempfile
             import os
+
             test_db_path = os.path.join(tempfile.gettempdir(), "maria_ai_test.db")
             if os.path.exists(test_db_path):
                 try:
@@ -87,44 +89,48 @@ def initialize_test_database():
                     print(f"DEBUG: Removed existing test database: {test_db_path}")
                 except Exception as e:
                     print(f"DEBUG: Could not remove existing test database: {e}")
-            
+
             # Re-initialize engine after cleanup
             init_database()
             engine = get_engine()
-        
+
         # Make sure all models are imported so their tables are created
         import app.models
         from app.models import UserSession
-        
+
         # Force import of all models by accessing them
-        print(f"DEBUG: Imported models: {[cls.__name__ for cls in Base.registry._class_registry.values() if hasattr(cls, '__table__')]}")
-        
+        print(
+            f"DEBUG: Imported models: {[cls.__name__ for cls in Base.registry._class_registry.values() if hasattr(cls, '__table__')]}"
+        )
+
         # Create all tables (no need to drop for fresh file)
         Base.metadata.create_all(bind=engine)
         print("DEBUG: Created tables with ORM")
-        
+
     # Verify final table state
     inspector = inspect(engine)
     table_names = inspector.get_table_names()
     print(f"DEBUG: Final tables: {table_names}")
-    
+
     # Ensure user_sessions table exists
     if "user_sessions" not in table_names:
         print("DEBUG: user_sessions table missing, creating manually")
         from app.models import UserSession
+
         UserSession.__table__.create(bind=engine, checkfirst=True)
         # Verify again
         table_names = inspector.get_table_names()
         print(f"DEBUG: Tables after manual creation: {table_names}")
-    
+
     print("DEBUG: Database initialization complete!")
-    
+
     yield
-    
+
     # Cleanup - remove test database file
     if is_sqlite and not db_url.endswith(":memory:"):
         import tempfile
         import os
+
         test_db_path = os.path.join(tempfile.gettempdir(), "maria_ai_test.db")
         if os.path.exists(test_db_path):
             try:
@@ -144,51 +150,53 @@ def initialize_test_database():
 def app():
     """
     Create a test Flask app with proper configuration.
-    
+
     This fixture creates a function-scoped app to ensure test isolation
     and prevent issues between tests.
     """
     from app.app_factory import create_app
-    
+
     # Create app with test configuration
     flask_app = create_app()
-    
+
     # Set test configuration
     flask_app.config["TESTING"] = True
     flask_app.config["SKIP_MIDDLEWARE"] = True  # Skip middleware to avoid conflicts
     flask_app.config["REQUIRE_AUTH"] = False  # Disable authentication for tests
     flask_app.config["RATELIMIT_ENABLED"] = False  # Disable rate limiting for tests
-    
+
     # Ensure authentication is disabled at the module level as well
     import app.utils.auth
+
     app.utils.auth.REQUIRE_AUTH = False
-    
+
     # Disable S3 for tests
     flask_app.config["S3_BUCKET_NAME"] = "test-bucket"
     flask_app.config["AWS_ACCESS_KEY_ID"] = "test-key"
     flask_app.config["AWS_SECRET_ACCESS_KEY"] = "test-secret"
     flask_app.config["AWS_REGION"] = "us-east-1"
-    
+
     # For function-scoped tests, we don't need to recreate tables
     # They should already exist from the session-scoped fixture
     with flask_app.app_context():
         init_database()
         engine = get_engine()
-        
+
         # Verify tables exist
         inspector = inspect(engine)
         tables = inspector.get_table_names()
         print(f"DEBUG: App fixture - existing tables: {tables}")
-        
+
         # Only create tables if they don't exist
         if "user_sessions" not in tables:
             print("DEBUG: App fixture - creating missing tables")
             import app.models
             from app.models import UserSession
+
             Base.metadata.create_all(bind=engine)
-    
+
     yield flask_app
-    
+
     # No cleanup needed - session fixture handles database cleanup
 
 
@@ -196,7 +204,7 @@ def app():
 def client(app):
     """
     Create a test client using the app fixture.
-    
+
     This fixture creates a test client from the app fixture,
     ensuring proper test isolation and configuration.
     Each test gets its own client instance to prevent thread sharing.
@@ -209,7 +217,7 @@ def client(app):
 def isolated_client(app):
     """
     Create an isolated test client for concurrent tests.
-    
+
     This fixture creates a completely separate client instance
     for tests that need to run concurrently without sharing state.
     """
@@ -220,7 +228,7 @@ def isolated_client(app):
         yield client
     finally:
         # Ensure client is properly closed
-        if hasattr(client, 'close'):
+        if hasattr(client, "close"):
             client.close()
 
 
