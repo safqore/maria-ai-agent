@@ -34,29 +34,53 @@ def get_database_url():
     """Create database URL from environment variables or use custom URL."""
     # Debug output
     pytest_test = os.getenv("PYTEST_CURRENT_TEST")
+    ci_env = os.getenv("CI")
     print(f"DEBUG: PYTEST_CURRENT_TEST = {repr(pytest_test)}")
+    print(f"DEBUG: CI environment = {repr(ci_env)}")
 
-    # If running under pytest, always use SQLite in-memory database
-    if pytest_test:
-        print("DEBUG: Using SQLite for pytest")
-        return "sqlite:///:memory:"
-
-    # If a custom URL has been set (for testing purposes), use that
+    # If a custom URL has been set (for testing purposes), use that first
     global _custom_database_url
     if _custom_database_url is not None:
         print(f"DEBUG: Using custom URL: {_custom_database_url}")
         return _custom_database_url
 
-    # Otherwise build PostgreSQL URL from environment variables
+    # If running in CI environment, always use PostgreSQL
+    if ci_env:
+        print("DEBUG: Using PostgreSQL for CI environment")
+        db_user = os.getenv("POSTGRES_USER", "postgres")
+        db_password = os.getenv("POSTGRES_PASSWORD", "postgres")
+        db_host = os.getenv("POSTGRES_HOST", "localhost")
+        db_port = os.getenv("POSTGRES_PORT", "5432")
+        db_name = os.getenv("POSTGRES_DB", "maria_ai")
+        
+        postgres_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+        print(f"DEBUG: Using PostgreSQL URL: {postgres_url}")
+        return postgres_url
+
+    # If running under pytest locally, use file-based SQLite for sharing
+    if pytest_test:
+        print("DEBUG: Using file-based SQLite for local pytest")
+        # Use a temporary file that can be shared across connections
+        import tempfile
+        test_db_path = os.path.join(tempfile.gettempdir(), "maria_ai_test.db")
+        return f"sqlite:///{test_db_path}"
+
+    # Check if PostgreSQL environment variables are set
     db_user = os.getenv("POSTGRES_USER")
     db_password = os.getenv("POSTGRES_PASSWORD")
     db_host = os.getenv("POSTGRES_HOST", "localhost")
     db_port = os.getenv("POSTGRES_PORT", "5432")
     db_name = os.getenv("POSTGRES_DB")
 
-    postgres_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
-    print(f"DEBUG: Using PostgreSQL URL: {postgres_url}")
-    return postgres_url
+    if db_user and db_password and db_name:
+        # Use PostgreSQL if environment variables are set
+        postgres_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+        print(f"DEBUG: Using PostgreSQL URL: {postgres_url}")
+        return postgres_url
+    else:
+        # Fallback to SQLite for local development
+        print("DEBUG: Using SQLite for local development")
+        return "sqlite:///maria_ai_dev.db"
 
 
 # Lazy initialization of database components
@@ -80,16 +104,20 @@ def init_database():
             "timeout": 20,  # Connection timeout in seconds
         }
 
-        # For SQLite, use NullPool to avoid connection sharing issues
-        # This creates a new connection for each request
-        engine_kwargs["poolclass"] = NullPool
-
+        # For file-based SQLite, we can use a small pool instead of NullPool
+        if db_url == "sqlite:///:memory:":
+            # In-memory: use NullPool (each connection gets its own database)
+            engine_kwargs["poolclass"] = NullPool
+        else:
+            # File-based: use StaticPool with a single connection for tests
+            engine_kwargs["poolclass"] = StaticPool
+            # StaticPool doesn't accept pool_size/max_overflow parameters
+            # It maintains a single connection that is shared
+            
         # Configure for concurrent access
         engine_kwargs["pool_pre_ping"] = True
 
         # Remove incompatible parameters for SQLite
-        engine_kwargs.pop("pool_size", None)
-        engine_kwargs.pop("max_overflow", None)
         engine_kwargs.pop("pool_recycle", None)
     else:
         # PostgreSQL configuration
@@ -101,6 +129,19 @@ def init_database():
         )
 
     _engine = create_engine(db_url, **engine_kwargs)
+    
+    # For file-based SQLite, set up WAL mode
+    if db_url.startswith("sqlite://") and not db_url.endswith(":memory:"):
+        from sqlalchemy import event
+        
+        def enable_wal_mode(dbapi_connection, connection_record):
+            dbapi_connection.execute("PRAGMA journal_mode=WAL")
+            dbapi_connection.execute("PRAGMA synchronous=NORMAL")
+            dbapi_connection.execute("PRAGMA temp_store=memory")
+            dbapi_connection.execute("PRAGMA mmap_size=268435456")  # 256MB
+            
+        event.listen(_engine, "connect", enable_wal_mode)
+    
     _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
 
 
