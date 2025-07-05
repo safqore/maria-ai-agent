@@ -77,19 +77,26 @@ def init_database():
         # SQLite-specific configuration for thread safety
         engine_kwargs["connect_args"] = {
             "check_same_thread": False,
-            "isolation_level": None,  # Use autocommit mode
+            "timeout": 20,  # Connection timeout in seconds
         }
         
-        # Use StaticPool for in-memory databases to share connections
-        # Use NullPool for file-based databases for better thread safety
-        if ":memory:" in db_url:
-            engine_kwargs["poolclass"] = StaticPool
-        else:
-            engine_kwargs["poolclass"] = NullPool
+        # For SQLite, use NullPool to avoid connection sharing issues
+        # This creates a new connection for each request
+        engine_kwargs["poolclass"] = NullPool
         
-        # Remove incompatible parameters for SQLite pools
+        # Configure for concurrent access
+        engine_kwargs["pool_pre_ping"] = True
+        
+        # Remove incompatible parameters for SQLite
         engine_kwargs.pop("pool_size", None)
         engine_kwargs.pop("max_overflow", None)
+        engine_kwargs.pop("pool_recycle", None)
+    else:
+        # PostgreSQL configuration
+        engine_kwargs.update({
+            "pool_size": 5,
+            "max_overflow": 10,
+        })
     
     _engine = create_engine(db_url, **engine_kwargs)
     _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)

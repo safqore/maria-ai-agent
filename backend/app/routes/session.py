@@ -35,20 +35,16 @@ limiter = Limiter(
 )
 
 
-def is_rate_limiting_disabled():
-    """Check if rate limiting is disabled in config."""
-    # Check if rate limiting is explicitly enabled or disabled
+def is_rate_limiting_enabled():
+    """Check if rate limiting is enabled in config."""
+    # Check app config first, then default to enabled unless in testing
     ratelimit_enabled = current_app.config.get("RATELIMIT_ENABLED")
     
-    if ratelimit_enabled is True:
-        # Explicitly enabled - rate limiting should be active
-        return False
-    elif ratelimit_enabled is False:
-        # Explicitly disabled - rate limiting should be inactive
-        return True
-    else:
-        # Default behavior: disable in test mode, enable in production
-        return current_app.config.get("TESTING", False)
+    if ratelimit_enabled is not None:
+        return ratelimit_enabled
+    
+    # Default: disable in test mode, enable in production
+    return not current_app.config.get("TESTING", False)
 
 
 def cors_options_response():
@@ -103,12 +99,12 @@ def api_info():
     }), 200
 
 
-def conditional_limiter(rate_limit_func):
+def conditional_rate_limit(rate_limit_string):
     """
-    Decorator factory that conditionally applies rate limiting.
+    Decorator that conditionally applies rate limiting based on config.
     
     Args:
-        rate_limit_func: Function that returns the rate limit string
+        rate_limit_string: The rate limit string (e.g., "10/minute")
         
     Returns:
         Decorator that applies rate limiting only if enabled
@@ -116,23 +112,31 @@ def conditional_limiter(rate_limit_func):
     def decorator(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
-            # Check if rate limiting is disabled
-            if is_rate_limiting_disabled():
+            # Check if rate limiting is enabled
+            if not is_rate_limiting_enabled():
                 # Rate limiting is disabled, call function directly
                 return f(*args, **kwargs)
-            else:
-                # Rate limiting is enabled, apply the limiter
-                limited_func = limiter.limit(
-                    rate_limit_func(),
-                    exempt_when=lambda: request.method == "OPTIONS"
-                )(f)
+            
+            # Check if this is an OPTIONS request (always allow)
+            if request.method == "OPTIONS":
+                return f(*args, **kwargs)
+                
+            # Apply rate limiting using Flask-Limiter
+            # Create a temporary view function with limiter applied
+            try:
+                limited_func = limiter.limit(rate_limit_string)(f)
                 return limited_func(*args, **kwargs)
+            except Exception as e:
+                # If rate limiting fails, log and continue without rate limiting
+                current_app.logger.warning(f"Rate limiting error: {e}")
+                return f(*args, **kwargs)
+                
         return wrapper
     return decorator
 
 
 @session_bp.route("/validate-uuid", methods=["POST", "OPTIONS"])
-@conditional_limiter(lambda: current_app.config.get("SESSION_RATE_LIMIT", SESSION_RATE_LIMIT))
+@conditional_rate_limit(SESSION_RATE_LIMIT)
 @api_route
 def validate_uuid():
     """
@@ -185,7 +189,7 @@ def validate_uuid():
 
 
 @session_bp.route("/generate-uuid", methods=["POST", "OPTIONS"])
-@conditional_limiter(lambda: current_app.config.get("SESSION_RATE_LIMIT", SESSION_RATE_LIMIT))
+@conditional_rate_limit(SESSION_RATE_LIMIT)
 @api_route
 def generate_uuid():
     """

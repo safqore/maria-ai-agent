@@ -47,20 +47,20 @@ export function SessionControls({ className = '', showUUID = true }: SessionCont
               state.isLoading
                 ? 'bg-yellow-500'
                 : state.error
-                  ? 'bg-red-500'
-                  : state.sessionUUID
-                    ? 'bg-green-500'
-                    : 'bg-gray-500'
+                ? 'bg-red-500'
+                : state.sessionUUID
+                ? 'bg-green-500'
+                : 'bg-gray-500'
             }`}
           />
           <span className="text-sm">
             {state.isLoading
               ? 'Loading...'
               : state.error
-                ? 'Error'
-                : state.sessionUUID
-                  ? 'Active'
-                  : 'Not initialized'}
+              ? 'Error'
+              : state.sessionUUID
+              ? 'Active'
+              : 'Not initialized'}
           </span>
         </div>
       </div>

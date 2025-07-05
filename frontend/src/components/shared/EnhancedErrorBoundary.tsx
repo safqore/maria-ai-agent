@@ -188,15 +188,23 @@ export class EnhancedErrorBoundary extends Component<
     if (error instanceof ApiError) {
       switch (error.type) {
         case ApiErrorType.NETWORK:
-          return `Network connection issue in ${context || 'the application'}. Please check your internet connection.`;
+          return `Network connection issue in ${
+            context || 'the application'
+          }. Please check your internet connection.`;
         case ApiErrorType.TIMEOUT:
-          return `Request timeout in ${context || 'the application'}. The server is taking too long to respond.`;
+          return `Request timeout in ${
+            context || 'the application'
+          }. The server is taking too long to respond.`;
         case ApiErrorType.UNAUTHORIZED:
-          return `Authentication required for ${context || 'this feature'}. Please refresh and try again.`;
+          return `Authentication required for ${
+            context || 'this feature'
+          }. Please refresh and try again.`;
         case ApiErrorType.SERVER:
           return `Server error in ${context || 'the application'}. Our team has been notified.`;
         case ApiErrorType.VALIDATION:
-          return `Invalid data in ${context || 'the application'}. Please check your input and try again.`;
+          return `Invalid data in ${
+            context || 'the application'
+          }. Please check your input and try again.`;
         default:
           return `An error occurred in ${context || 'the application'}. Please try again.`;
       }
