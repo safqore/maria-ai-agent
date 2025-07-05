@@ -364,7 +364,8 @@ class TestSessionAPIIntegration:
         # IP 1
         for i in range(3):
             response = client.post(
-                "/api/v1/generate-uuid", environ_overrides={"REMOTE_ADDR": "192.168.1.1"}
+                "/api/v1/generate-uuid",
+                environ_overrides={"REMOTE_ADDR": "192.168.1.1"},
             )
             if i < 2:
                 assert response.status_code == 200
