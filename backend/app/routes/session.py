@@ -39,10 +39,10 @@ def is_rate_limiting_enabled():
     """Check if rate limiting is enabled in config."""
     # Check app config first, then default to enabled unless in testing
     ratelimit_enabled = current_app.config.get("RATELIMIT_ENABLED")
-    
+
     if ratelimit_enabled is not None:
         return ratelimit_enabled
-    
+
     # Default: disable in test mode, enable in production
     return not current_app.config.get("TESTING", False)
 
@@ -51,9 +51,16 @@ def cors_options_response():
     """Return a response with proper CORS headers for OPTIONS requests."""
     response = jsonify({"status": "success"})
     response.headers.add("Access-Control-Allow-Origin", "*")
-    response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-    response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key, X-Correlation-ID")
-    response.headers.add("Access-Control-Expose-Headers", "X-API-Version, X-Correlation-ID")
+    response.headers.add(
+        "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"
+    )
+    response.headers.add(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization, X-API-Key, X-Correlation-ID",
+    )
+    response.headers.add(
+        "Access-Control-Expose-Headers", "X-API-Version, X-Correlation-ID"
+    )
     return response, 200
 
 
@@ -87,28 +94,34 @@ def api_info():
         - version: API version
         - endpoints: List of available endpoints
     """
-    return jsonify({
-        "name": "Maria AI Agent API",
-        "version": "v1",
-        "endpoints": [
-            "/api/v1/generate-uuid",
-            "/api/v1/validate-uuid",
-            "/api/v1/persist_session",
-            "/api/info"
-        ]
-    }), 200
+    return (
+        jsonify(
+            {
+                "name": "Maria AI Agent API",
+                "version": "v1",
+                "endpoints": [
+                    "/api/v1/generate-uuid",
+                    "/api/v1/validate-uuid",
+                    "/api/v1/persist_session",
+                    "/api/info",
+                ],
+            }
+        ),
+        200,
+    )
 
 
 def conditional_rate_limit(rate_limit_string):
     """
     Decorator that conditionally applies rate limiting based on config.
-    
+
     Args:
         rate_limit_string: The rate limit string (e.g., "10/minute")
-        
+
     Returns:
         Decorator that applies rate limiting only if enabled
     """
+
     def decorator(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
@@ -116,11 +129,11 @@ def conditional_rate_limit(rate_limit_string):
             if not is_rate_limiting_enabled():
                 # Rate limiting is disabled, call function directly
                 return f(*args, **kwargs)
-            
+
             # Check if this is an OPTIONS request (always allow)
             if request.method == "OPTIONS":
                 return f(*args, **kwargs)
-                
+
             # Apply rate limiting using Flask-Limiter
             # Create a temporary view function with limiter applied
             try:
@@ -130,8 +143,9 @@ def conditional_rate_limit(rate_limit_string):
                 # If rate limiting fails, log and continue without rate limiting
                 current_app.logger.warning(f"Rate limiting error: {e}")
                 return f(*args, **kwargs)
-                
+
         return wrapper
+
     return decorator
 
 

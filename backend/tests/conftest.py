@@ -41,34 +41,36 @@ def initialize_test_database():
 
     # Get engine and create tables
     engine = get_engine()
-    
+
     # Make sure all models are imported so their tables are created
     # This is critical - without imports, the models won't be registered with Base
     import app.models
     from app.models import UserSession
-    
+
     # Force import of all models by accessing them
-    print(f"DEBUG: Imported models: {[cls.__name__ for cls in Base.registry._class_registry.values() if hasattr(cls, '__table__')]}")
-    
+    print(
+        f"DEBUG: Imported models: {[cls.__name__ for cls in Base.registry._class_registry.values() if hasattr(cls, '__table__')]}"
+    )
+
     # Drop all tables first to ensure clean state
     try:
         Base.metadata.drop_all(bind=engine)
         print("DEBUG: Dropped existing tables")
     except Exception as e:
         print(f"DEBUG: Error dropping tables (expected for first run): {e}")
-    
+
     # Create all tables
     Base.metadata.create_all(bind=engine)
 
     print("DEBUG: Database tables created successfully")
-    
+
     # Verify tables were created
     inspector = inspect(engine)
     table_names = inspector.get_table_names()
     print(f"DEBUG: Created tables: {table_names}")
-    
+
     # Ensure user_sessions table exists
-    if 'user_sessions' not in table_names:
+    if "user_sessions" not in table_names:
         print("DEBUG: user_sessions table missing, creating manually")
         UserSession.__table__.create(bind=engine, checkfirst=True)
         # Verify again
@@ -89,7 +91,7 @@ def initialize_test_database():
 def app():
     """
     Create a test Flask app with proper configuration.
-    
+
     This fixture creates a function-scoped app to ensure test isolation
     and prevent rate limiting carryover between tests.
     """
@@ -106,6 +108,7 @@ def app():
 
     # Ensure authentication is disabled at the module level as well
     import app.utils.auth
+
     app.utils.auth.REQUIRE_AUTH = False
 
     # Disable S3 for tests
@@ -118,27 +121,27 @@ def app():
     with flask_app.app_context():
         init_database()
         engine = get_engine()
-        
+
         # Import all models to ensure they're registered with Base
         import app.models
         from app.models import UserSession
-        
+
         # Drop all tables first to ensure clean state
         try:
             Base.metadata.drop_all(bind=engine)
         except Exception:
             # Ignore if tables don't exist
             pass
-        
+
         # Create all tables
         Base.metadata.create_all(bind=engine)
-        
+
         # Verify tables were created
         inspector = inspect(engine)
         tables = inspector.get_table_names()
         print(f"DEBUG: App fixture created tables: {tables}")
-        
-        if 'user_sessions' not in tables:
+
+        if "user_sessions" not in tables:
             # Force table creation if it's still missing
             UserSession.__table__.create(bind=engine, checkfirst=True)
             tables = inspector.get_table_names()

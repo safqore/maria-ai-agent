@@ -36,6 +36,10 @@ interface UseFetchOptions<D = any> {
   retryDelay?: number;
   /** Types of errors that should trigger a retry */
   retryErrorTypes?: ApiErrorType[];
+  /** Custom error handling function */
+  customErrorHandler?: (error: Error) => void;
+  /** Custom data processor function */
+  customDataProcessor?: (data: any) => any;
 }
 
 /**
@@ -92,6 +96,8 @@ export function useFetch<T, P extends any[] = []>(
     retryCount = 3,
     retryDelay = 1000,
     retryErrorTypes = [ApiErrorType.NETWORK, ApiErrorType.TIMEOUT],
+    customErrorHandler,
+    customDataProcessor,
   } = options;
 
   const [state, setState] = useState<UseFetchState<T>>({
@@ -227,7 +233,7 @@ export function useFetch<T, P extends any[] = []>(
       // Execute the fetch without setTimeout - simpler approach
       // React act() should handle this but there are edge cases especially with async operations
       // For testing, we silence act warnings in the specific test rather than making the code more complex
-      (execute as Function)();
+      void execute(...([] as any as P));
     }
 
     // Clean up on unmount
@@ -241,7 +247,7 @@ export function useFetch<T, P extends any[] = []>(
    */
   const retry = useCallback(() => {
     if (state.error && !state.isLoading) {
-      return (execute as Function)();
+      return execute(...([] as unknown as P));
     }
     return Promise.resolve(null);
   }, [state.error, state.isLoading, execute]);

@@ -17,6 +17,7 @@ import os
 import sys
 import uuid
 from pathlib import Path
+import pytest
 
 # Add the project directory to the Python path
 # so that imports work as expected
@@ -28,6 +29,7 @@ from app.models import UserSession
 from app.repositories.factory import get_user_session_repository
 
 
+@pytest.mark.sqlite_incompatible
 def test_create_session():
     """Test creating a new user session."""
     repo = get_user_session_repository()

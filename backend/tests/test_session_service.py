@@ -390,9 +390,7 @@ class TestSessionService:
         assert response["error"] == "Invalid or missing session UUID"
 
     @patch("app.services.session_service.migrate_s3_files")
-    @patch(
-        "app.services.session_service.uuid"
-    )  # Patch the module's uuid import
+    @patch("app.services.session_service.uuid")  # Patch the module's uuid import
     def test_persist_session_uuid_collision(self, mock_uuid_module, mock_migrate):
         """Test session persistence with UUID collision."""
         # Generate a real UUID for testing (not mocked)

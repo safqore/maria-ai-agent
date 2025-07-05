@@ -153,10 +153,16 @@ export function useFocusTrap(containerRef: RefObject<HTMLElement>, options: UseF
     };
   }, [active, autoFocus, getFocusableElements]);
 
-  return {
-    activate: () => {},
-    deactivate: () => {},
+  const focusTrap = {
+    activate: () => {
+      // No-op implementation for focus trap activation
+    },
+    deactivate: () => {
+      // No-op implementation for focus trap deactivation
+    },
   };
+
+  return focusTrap;
 }
 
 /**

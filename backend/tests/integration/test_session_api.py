@@ -41,10 +41,10 @@ def app(request):
     sys.modules["backend.app.models"].UserSession = UserSession
 
     sys.modules["app.repositories.user_session_repository"] = MagicMock()
-    sys.modules[
-        "app.repositories.user_session_repository"
-    ].UserSessionRepository = UserSessionRepository
-    
+    sys.modules["app.repositories.user_session_repository"].UserSessionRepository = (
+        UserSessionRepository
+    )
+
     # Only patch for specific collision tests to avoid interfering with regular tests
     # This patching is moved to the specific test methods that need it
 
@@ -72,11 +72,13 @@ def app(request):
 
     # Also patch the transaction module to use the test database
     import app.database.transaction as transaction_module
+
     transaction_module.get_session_local = get_session_local
     transaction_module.get_engine = get_engine
-    
+
     # Replace TransactionContext with test version
     from tests.mocks.transaction import TransactionContext as TestTransactionContext
+
     transaction_module.TransactionContext = TestTransactionContext
 
     # Create database tables
@@ -469,15 +471,17 @@ class TestSessionAPI:
 
         # Set up repository patching for this specific test
         from tests.mocks.repositories import UserSessionRepository
+
         test_repo = UserSessionRepository()
-        
+
         # Patch the service to use our shared mock repository
         import app.services.session_service as session_service_module
+
         original_session_service_init = session_service_module.SessionService.__init__
-        
+
         def patched_init(self):
             self.user_session_repository = test_repo
-        
+
         session_service_module.SessionService.__init__ = patched_init
 
         try:
@@ -506,7 +510,9 @@ class TestSessionAPI:
             assert response.status_code == 409
         finally:
             # Restore original SessionService initialization
-            session_service_module.SessionService.__init__ = original_session_service_init
+            session_service_module.SessionService.__init__ = (
+                original_session_service_init
+            )
         assert "status" in response.json
         assert response.json["status"] == "collision"
         assert response.json["uuid"] == new_test_uuid
@@ -660,6 +666,7 @@ class TestSessionRepositoryIntegration:
 
         # Force a small delay to ensure transaction is committed
         import time
+
         time.sleep(0.01)
 
         # Verify the session was stored in the database using the real database

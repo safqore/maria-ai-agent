@@ -66,38 +66,40 @@ def init_database():
     """Initialize database engine and session factory."""
     global _engine, _SessionLocal
     db_url = get_database_url()
-    
+
     engine_kwargs = {
         "pool_pre_ping": True,
         "pool_recycle": 3600,
         "echo": False,
     }
-    
+
     if db_url.startswith("sqlite://"):
         # SQLite-specific configuration for thread safety
         engine_kwargs["connect_args"] = {
             "check_same_thread": False,
             "timeout": 20,  # Connection timeout in seconds
         }
-        
+
         # For SQLite, use NullPool to avoid connection sharing issues
         # This creates a new connection for each request
         engine_kwargs["poolclass"] = NullPool
-        
+
         # Configure for concurrent access
         engine_kwargs["pool_pre_ping"] = True
-        
+
         # Remove incompatible parameters for SQLite
         engine_kwargs.pop("pool_size", None)
         engine_kwargs.pop("max_overflow", None)
         engine_kwargs.pop("pool_recycle", None)
     else:
         # PostgreSQL configuration
-        engine_kwargs.update({
-            "pool_size": 5,
-            "max_overflow": 10,
-        })
-    
+        engine_kwargs.update(
+            {
+                "pool_size": 5,
+                "max_overflow": 10,
+            }
+        )
+
     _engine = create_engine(db_url, **engine_kwargs)
     _SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
 

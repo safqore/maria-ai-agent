@@ -14,9 +14,9 @@ from flask_limiter.util import get_remote_address
 from app.routes.session import session_bp, setup_session_service
 from app.routes.upload import upload_bp
 from app.utils.middleware import (
-    setup_request_logging, 
+    setup_request_logging,
     setup_request_validation,
-    apply_middleware_to_blueprint
+    apply_middleware_to_blueprint,
 )
 from app.utils.auth import setup_auth_middleware
 
@@ -41,20 +41,28 @@ def create_app(config=None):
         app.config.from_object("config.Config")
 
     # Enable CORS with proper headers
-    CORS(app, resources={
-        r"/*": {
-            "origins": "*",
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization", "X-API-Key", "X-Correlation-ID"],
-            "expose_headers": ["X-API-Version", "X-Correlation-ID"]
-        }
-    })
+    CORS(
+        app,
+        resources={
+            r"/*": {
+                "origins": "*",
+                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                "allow_headers": [
+                    "Content-Type",
+                    "Authorization",
+                    "X-API-Key",
+                    "X-Correlation-ID",
+                ],
+                "expose_headers": ["X-API-Version", "X-Correlation-ID"],
+            }
+        },
+    )
 
-    # Initialize rate limiting 
+    # Initialize rate limiting
     # Import limiters from route modules to use the same instances
     from app.routes.session import limiter as session_limiter
     from app.routes.upload import limiter as upload_limiter
-    
+
     # Set enabled status based on app config
     # Rate limiting is disabled by default in tests, but can be explicitly enabled
     # If RATELIMIT_ENABLED is explicitly set to True, honor that even in test mode
@@ -67,14 +75,14 @@ def create_app(config=None):
     else:
         # Default behavior: disable in test mode, enable in production
         limiter_enabled = not app.config.get("TESTING", False)
-    
+
     # Configure storage URL if specified
     storage_url = app.config.get("RATELIMIT_STORAGE_URL", "memory://")
-    
+
     # Configure and initialize both limiters with the app
     session_limiter._enabled = limiter_enabled
     upload_limiter._enabled = limiter_enabled
-    
+
     # Only initialize limiters if rate limiting is enabled
     if limiter_enabled:
         session_limiter.init_app(app)
@@ -115,16 +123,18 @@ def create_app(config=None):
     @app.route("/api/info", methods=["GET"])
     def api_info():
         """Get API information."""
-        response = jsonify({
-            "name": "Maria AI Agent API",
-            "version": "v1",
-            "endpoints": [
-                "/api/v1/generate-uuid",
-                "/api/v1/validate-uuid",
-                "/api/v1/persist_session",
-                "/api/info"
-            ]
-        })
+        response = jsonify(
+            {
+                "name": "Maria AI Agent API",
+                "version": "v1",
+                "endpoints": [
+                    "/api/v1/generate-uuid",
+                    "/api/v1/validate-uuid",
+                    "/api/v1/persist_session",
+                    "/api/info",
+                ],
+            }
+        )
         # Add version header for consistency
         response.headers["X-API-Version"] = "v1"
         return response, 200

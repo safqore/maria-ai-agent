@@ -241,7 +241,9 @@ class TestAPIPerformance:
 
         print(f"UUID validation performance: avg={avg_time:.3f}s, max={max_time:.3f}s")
 
-    def test_concurrent_api_requests(self, app):
+    @pytest.mark.sqlite_incompatible
+    @pytest.mark.performance
+    def test_concurrent_api_requests(self, client):
         """Test concurrent API request handling."""
         results = queue.Queue()
 
@@ -249,7 +251,7 @@ class TestAPIPerformance:
             try:
                 start_time = time.time()
                 # Each thread needs its own test client with proper context
-                with app.test_client() as thread_client:
+                with client as thread_client:
                     # Make multiple API calls
                     for i in range(5):
                         response = thread_client.post("/api/v1/generate-uuid")

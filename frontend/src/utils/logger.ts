@@ -172,7 +172,7 @@ export const logger = new Logger();
 /**
  * Performance measurement utility
  */
-export const measurePerformance = (label: string, func: Function): any => {
+export const measurePerformance = (label: string, func: () => any): any => {
   const start = performance.now();
   try {
     return func();

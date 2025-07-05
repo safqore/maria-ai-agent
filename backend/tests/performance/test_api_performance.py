@@ -35,14 +35,16 @@ class TestAPIPerformance:
             "RATELIMIT_STORAGE_URL": "memory://",  # Use in-memory storage
             "SESSION_RATE_LIMIT": "1000/minute",  # Set very high limit as fallback
         }
-        
+
         app = create_app(config)
-        
+
         # Verify rate limiting is disabled
         with app.app_context():
             # Double-check that rate limiting is disabled
-            assert not app.config.get("RATELIMIT_ENABLED", True), "Rate limiting should be disabled"
-            
+            assert not app.config.get(
+                "RATELIMIT_ENABLED", True
+            ), "Rate limiting should be disabled"
+
         return app
 
     @pytest.fixture
@@ -102,6 +104,8 @@ class TestAPIPerformance:
 
         print(f"UUID validation performance: avg={avg_time:.3f}s, max={max_time:.3f}s")
 
+    @pytest.mark.sqlite_incompatible
+    @pytest.mark.performance
     def test_concurrent_api_requests(self, app):
         """Test concurrent API request handling."""
         results = queue.Queue()
@@ -148,6 +152,7 @@ class TestAPIPerformance:
 
         print(f"Concurrent API performance: avg={avg_time:.3f}s, max={max_time:.3f}s")
 
+    @pytest.mark.performance
     def test_api_throughput(self, client):
         """Test API throughput under load."""
         start_time = time.time()

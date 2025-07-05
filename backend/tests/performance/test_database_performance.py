@@ -346,6 +346,8 @@ class TestDatabasePerformance:
             f"Connection pooling performance: avg={avg_time:.3f}s, max={max_time:.3f}s"
         )
 
+    @pytest.mark.sqlite_incompatible
+    @pytest.mark.performance
     def test_concurrent_access_performance(self, setup_test_data):
         """Test concurrent database access performance."""
         import queue
@@ -415,6 +417,7 @@ class TestDatabasePerformance:
             f"Concurrent access performance: avg={avg_time:.3f}s, max={max_time:.3f}s"
         )
 
+    @pytest.mark.performance
     def test_index_usage_verification(self, setup_test_data):
         """Verify that database indexes are being used effectively."""
         # This is a basic verification - in production you'd use EXPLAIN QUERY PLAN
