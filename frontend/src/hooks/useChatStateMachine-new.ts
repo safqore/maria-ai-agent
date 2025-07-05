@@ -16,7 +16,6 @@ const useChatStateMachine = ({
   setIsButtonGroupVisible,
 }: ChatStateMachineOptions) => {
   const [fsm] = useState<StateMachine>(createStateMachine());
-  const [userName, setUserName] = useState<string>('');
 
   const typingCompleteHandler = (messageId: number) => {
     setMessages(prevMessages =>
@@ -129,7 +128,6 @@ const useChatStateMachine = ({
 
     if (fsm.getState() === States.COLLECTING_NAME) {
       if (/^[a-zA-Z\s]+$/.test(userInput)) {
-        setUserName(userInput);
         fsm.transition(Transitions.NAME_PROVIDED);
         const botMessage: Message = {
           text: `Nice to meet you, ${userInput}! Let's build your personalized AI agent.\n\nTo get started, I'll need a document to train on—like a PDF of your business materials, process guides, or product details. This helps me tailor insights just for you!`,
