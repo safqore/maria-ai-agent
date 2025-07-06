@@ -8,9 +8,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { useFetch } from '../hooks/api/useFetch';
-import { useSessionManager } from '../hooks/useSessionManager';
 import { logger } from '../utils/logger';
-import { useAnnouncer, useFocusTrap } from '../hooks/useA11y';
 import { withErrorLogging } from '../utils/apiErrorLogging';
 import { ApiError } from '../api/config';
 
@@ -32,7 +30,7 @@ function TestFetchComponent({
   apiFunction,
   immediate = false,
 }: {
-  apiFunction: (...args: any[]) => Promise<any>;
+  apiFunction: (...args: unknown[]) => Promise<unknown>;
   immediate?: boolean;
 }) {
   const { data, isLoading, error, execute } = useFetch(apiFunction, { immediate });
@@ -45,21 +43,6 @@ function TestFetchComponent({
       <button data-testid="execute" onClick={() => execute()}>
         Execute
       </button>
-    </div>
-  );
-}
-
-// Test component for useSessionManager
-function TestSessionComponent() {
-  const { sessionId, isLoading, error, getSessionHeaders, isSessionValid } = useSessionManager();
-
-  return (
-    <div>
-      <div data-testid="session-id">{sessionId || 'No Session'}</div>
-      <div data-testid="session-loading">{isLoading ? 'Loading' : 'Not Loading'}</div>
-      <div data-testid="session-error">{error || 'No Error'}</div>
-      <div data-testid="session-headers">{JSON.stringify(getSessionHeaders())}</div>
-      <div data-testid="session-valid">{isSessionValid ? 'Valid' : 'Invalid'}</div>
     </div>
   );
 }

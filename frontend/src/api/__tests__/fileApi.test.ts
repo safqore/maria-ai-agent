@@ -18,11 +18,11 @@ class MockXMLHttpRequest {
   setRequestHeader = jest.fn();
   getResponseHeader = jest.fn(() => 'test-correlation-id');
   upload = {
-    onprogress: null as any,
+    onprogress: null as ((event: ProgressEvent) => void) | null,
     addEventListener: jest.fn(),
   };
-  onload = null as any;
-  onerror = null as any;
+  onload = null as ((event: Event) => void) | null;
+  onerror = null as ((event: Event) => void) | null;
   status = 200;
   response = '';
 }
@@ -62,11 +62,11 @@ describe('FileApi', () => {
       };
 
       // Simulate successful response
-      mockXhr.send = jest.fn().mockImplementation(function (this: any) {
+      mockXhr.send = jest.fn().mockImplementation(function (this: MockXMLHttpRequest) {
         setTimeout(() => {
           this.status = 200;
           this.response = JSON.stringify(mockResponse);
-          if (this.onload) this.onload();
+          if (this.onload) this.onload({} as Event);
         }, 0);
       });
 
@@ -94,17 +94,21 @@ describe('FileApi', () => {
       (global.XMLHttpRequest as unknown as jest.Mock).mockReturnValue(mockXhr);
 
       // Setup mock response
-      mockXhr.send = jest.fn().mockImplementation(function (this: any) {
+      mockXhr.send = jest.fn().mockImplementation(function (this: MockXMLHttpRequest) {
         // Simulate progress event
         if (this.upload.onprogress) {
-          this.upload.onprogress({ lengthComputable: true, loaded: 50, total: 100 });
+          this.upload.onprogress({
+            lengthComputable: true,
+            loaded: 50,
+            total: 100,
+          } as ProgressEvent);
         }
 
         // Simulate successful completion
         setTimeout(() => {
           this.status = 200;
           this.response = JSON.stringify({ status: 'success' });
-          if (this.onload) this.onload();
+          if (this.onload) this.onload({} as Event);
         }, 0);
       });
 
@@ -126,10 +130,10 @@ describe('FileApi', () => {
       (global.XMLHttpRequest as unknown as jest.Mock).mockReturnValue(mockXhr);
 
       // Setup mock error response
-      mockXhr.send = jest.fn().mockImplementation(function (this: any) {
+      mockXhr.send = jest.fn().mockImplementation(function (this: MockXMLHttpRequest) {
         setTimeout(() => {
           this.status = 400;
-          if (this.onload) this.onload();
+          if (this.onload) this.onload({} as Event);
         }, 0);
       });
 
@@ -147,9 +151,9 @@ describe('FileApi', () => {
       (global.XMLHttpRequest as unknown as jest.Mock).mockReturnValue(mockXhr);
 
       // Setup mock network error
-      mockXhr.send = jest.fn().mockImplementation(function (this: any) {
+      mockXhr.send = jest.fn().mockImplementation(function (this: MockXMLHttpRequest) {
         setTimeout(() => {
-          if (this.onerror) this.onerror();
+          if (this.onerror) this.onerror({} as Event);
         }, 0);
       });
 
