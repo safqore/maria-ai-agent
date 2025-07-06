@@ -1,0 +1,14 @@
+[core]
+	quotepath = off
+[i18n]
+	logoutputencoding = utf8
+	commitencoding = utf8
+[safe]
+	directory = /home/abbadminhas/code/maria-ai-agent
+[color]
+	ui = auto
+[advice]
+	statusHints = false
+[environment]
+	LC_ALL = C.UTF-8
+	LANG = C.UTF-8

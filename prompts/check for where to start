@@ -1,0 +1,5 @@
+Look at ci-cd folder and review all the files in there. Check progress made against #codebase and let me know what are the next implementation steps.
+
+Let me know if you have any questions or assumptions that require answers before you start implementing
+
+Ensure you make changes in small increments so these can be tested and reverted if things go wrong

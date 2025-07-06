@@ -1,0 +1,19 @@
+pytest
+flask
+python-dotenv
+boto3
+python-multipart
+flask_cors
+psycopg2-binary
+Flask-Limiter
+redis>=4.5.4
+marshmallow
+sqlalchemy
+alembic
+
+# Dev tools
+black
+isort
+flake8
+mypy
+pre-commit
