@@ -74,8 +74,13 @@ export class EnhancedErrorBoundary extends Component<
   static getDerivedStateFromError(error: Error): Partial<EnhancedErrorBoundaryState> {
     // Extract correlation ID from API errors
     let correlationId: string | undefined;
-    if (error instanceof ApiError && error.details?.correlationId) {
-      correlationId = error.details.correlationId;
+    if (
+      error instanceof ApiError &&
+      error.details &&
+      typeof error.details === 'object' &&
+      'correlationId' in error.details
+    ) {
+      correlationId = error.details.correlationId as string;
     }
 
     return {

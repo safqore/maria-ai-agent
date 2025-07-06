@@ -652,11 +652,11 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children, fsm }) => 
 
         if (error instanceof ApiError) {
           // Handle API errors with detailed information
-          setDetailedError(
-            error.message,
-            error.type || ApiErrorType.UNKNOWN,
-            error.details?.correlationId as string | undefined
-          );
+          const correlationId =
+            error.details && typeof error.details === 'object' && 'correlationId' in error.details
+              ? (error.details.correlationId as string)
+              : undefined;
+          setDetailedError(error.message, error.type || ApiErrorType.UNKNOWN, correlationId);
 
           // Show user-friendly error message based on error type
           switch (error.type) {
