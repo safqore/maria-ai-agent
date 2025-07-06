@@ -132,8 +132,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone }) => {
           )
         );
       }
-    } catch (error: any) {
-      const errorMessage = error?.message || 'Network error';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Network error';
 
       // Handle backend invalid/tampered UUID error
       if (errorMessage.includes('invalid session')) {
@@ -165,8 +165,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUploaded, onDone }) => {
           // Handle deletion error, but still remove from UI
           console.warn('File deletion failed:', response.message);
         }
-      } catch (error: any) {
-        const errorMessage = error?.message || '';
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : '';
         if (errorMessage.includes('invalid session')) {
           window.location.reload(); // Reset session on invalid UUID
           return;
