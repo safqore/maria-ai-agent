@@ -49,12 +49,17 @@ export enum SessionActionTypes {
 }
 
 /**
- * Session action interface
+ * Session action interface with discriminated union for type safety
  */
-export interface SessionAction {
-  type: SessionActionTypes;
-  payload?: any;
-}
+export type SessionAction =
+  | { type: SessionActionTypes.SET_LOADING; payload: boolean }
+  | { type: SessionActionTypes.SET_SESSION_UUID; payload: string }
+  | { type: SessionActionTypes.SET_ERROR; payload: string }
+  | { type: SessionActionTypes.SET_INITIALIZED; payload: boolean }
+  | { type: SessionActionTypes.CLEAR_ERROR }
+  | { type: SessionActionTypes.SHOW_RESET_MODAL }
+  | { type: SessionActionTypes.HIDE_RESET_MODAL }
+  | { type: SessionActionTypes.RESET_SESSION };
 
 /**
  * Session context interface
