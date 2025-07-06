@@ -7,7 +7,7 @@
  * - Session persistence
  */
 import { ApiError } from './config';
-import { post, get } from './apiClient';
+import { post } from './apiClient';
 
 /**
  * UUID response from the backend API

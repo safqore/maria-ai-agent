@@ -248,7 +248,7 @@ export const get = <T>(endpoint: string, options?: ApiRequestConfig): Promise<Ap
 
 export const post = <T>(
   endpoint: string,
-  data?: any,
+  data?: Record<string, unknown> | unknown[] | string | number | boolean | null,
   options?: ApiRequestConfig
 ): Promise<ApiResponse<T>> => {
   return apiClient<T>(endpoint, {
@@ -260,7 +260,7 @@ export const post = <T>(
 
 export const put = <T>(
   endpoint: string,
-  data?: any,
+  data?: Record<string, unknown> | unknown[] | string | number | boolean | null,
   options?: ApiRequestConfig
 ): Promise<ApiResponse<T>> => {
   return apiClient<T>(endpoint, {
@@ -272,7 +272,7 @@ export const put = <T>(
 
 export const patch = <T>(
   endpoint: string,
-  data?: any,
+  data?: Record<string, unknown> | unknown[] | string | number | boolean | null,
   options?: ApiRequestConfig
 ): Promise<ApiResponse<T>> => {
   return apiClient<T>(endpoint, {

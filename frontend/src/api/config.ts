@@ -38,14 +38,19 @@ export interface ApiResponse<T = unknown> {
 }
 
 /**
+ * Error details type for API errors
+ */
+export type ApiErrorDetails = Record<string, unknown> | string | null;
+
+/**
  * Generic API error for handling failed requests
  */
 export class ApiError extends Error {
   status: number;
   type: ApiErrorType;
-  details?: any;
+  details?: ApiErrorDetails;
 
-  constructor(message: string, status = 500, details?: any) {
+  constructor(message: string, status = 500, details?: ApiErrorDetails) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
