@@ -20,13 +20,14 @@ This document provides an overview of the Email Verification System implementati
 
 ## 🎯 Implementation Status
 
-**The Email Verification System is ready for implementation with all specifications finalized as of December 2024.**
+**The Email Verification System is ready for implementation with FSM integration clarified as of December 2024.**
 
 ### 📋 **READY FOR IMPLEMENTATION**
 
 - **Documentation**: All requirements, architecture, and implementation plans complete
 - **Testing Strategy**: Comprehensive testing approach defined
 - **Code Examples**: Detailed implementation code provided in plan.md
+- **FSM Integration**: Email verification states and flow clarified
 - **Dependencies Identified**: SMTP configuration and database migration requirements clear
 
 ### 🚀 **IMPLEMENTATION PHASES**
@@ -64,12 +65,12 @@ This document provides an overview of the Email Verification System implementati
 
 The Email Verification System implements several key features:
 
-- **Email Format Validation** (🟡 In Progress)
-- **Verification Code Generation and Sending** (📋 Planned)
-- **Chat Interface Integration** (📋 Planned)
-- **Retry and Rate Limiting** (📋 Planned)
-- **Session Management** (📋 Planned)
-- **UI Enhancements** (📋 Planned)
+- **Email Format Validation** (✅ Confirmed) - Blocking validation until correct format entered
+- **Verification Code Generation and Sending** (📋 Planned) - 6-digit numeric codes via email
+- **Chat Interface Integration** (✅ Confirmed) - Additional FSM states for verification flow
+- **Retry and Rate Limiting** (📋 Planned) - 3 attempts with 30-second cooldown
+- **Session Management** (📋 Planned) - Integration with existing session system
+- **UI Enhancements** (📋 Planned) - Button positioning and messaging improvements
 
 ## Implementation Approach
 
@@ -84,14 +85,26 @@ The implementation follows a state machine architecture with clean separation of
 2. **Frontend Components**:
    - **Email Verification Component** (📋 Planned): Handles email input and validation
    - **Verification Code Component** (📋 Planned): Manages code entry and verification
-   - **FSM Integration** (🟡 In Progress): Integrates with existing chat state machine
+   - **FSM Integration** (✅ Confirmed): Additional states added to existing chat state machine
+
+## FSM Integration Design
+
+The email verification flow integrates with the existing FSM by adding new states:
+
+- **COLLECTING_EMAIL** - Initial email input state (existing)
+- **EMAIL_FORMAT_VALIDATION** - Email format validation state (new)
+- **EMAIL_VERIFICATION** - 6-digit code entry state (new)
+- **EMAIL_VERIFIED** - Successful verification state (new)
+- **CREATE_BOT** - Final state (existing)
+
+**Flow**: User enters email → Format validation (blocks until valid) → Verification code sent → User enters code → Verification complete → Proceed to bot creation
 
 ## Implementation Decisions
 
 ### Email Verification Flow
 
-- **FSM Integration**: Integrate with existing finite state machine for seamless user experience (🟡 In Progress)
-- **Email Format Validation**: Real-time validation with continuous feedback (📋 Planned)
+- **FSM Integration**: Additional states added to existing FSM for email verification flow (✅ Confirmed)
+- **Email Format Validation**: Blocking validation - user cannot proceed until valid email format is entered (✅ Confirmed)
 - **Verification Code**: 6-digit numeric for optimal user experience and mobile usability (✅ Confirmed)
 - **Success Flow**: Automatic progression to next chat state after verification (✅ Confirmed)
 - **SMTP Configuration**: Gmail SMTP (smtp.gmail.com:587) with App Password (✅ Confirmed)

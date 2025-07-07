@@ -29,11 +29,11 @@
 - **Test Cases Defined**: 100% coverage planned
 - **Dependencies Identified**: All dependencies mapped
 
-### 🟡 **IN PROGRESS FEATURES**
+### ✅ **CONFIRMED FEATURES**
 
-- **Email Format Validation**: Real-time email format validation with user feedback
-- **FSM Integration**: Integration with existing chat finite state machine
-- **Documentation**: Comprehensive documentation and planning
+- **Email Format Validation**: Blocking validation - user cannot proceed until valid email format is entered
+- **FSM Integration**: Additional states added to existing chat finite state machine
+- **Documentation**: Comprehensive documentation and planning complete
 
 ### 📋 **PLANNED FEATURES**
 
@@ -593,26 +593,50 @@ export const CodeInput: React.FC<CodeInputProps> = ({
 
 ```typescript
 // src/state/FiniteStateMachine.ts - Email verification states
-export enum ChatState {
+export enum States {
   // ... existing states
-  EMAIL_INPUT = "EMAIL_INPUT",
-  EMAIL_VERIFICATION = "EMAIL_VERIFICATION",
-  EMAIL_VERIFIED = "EMAIL_VERIFIED",
+  COLLECTING_EMAIL = 'COLLECTING_EMAIL',
+  EMAIL_FORMAT_VALIDATION = 'EMAIL_FORMAT_VALIDATION',
+  EMAIL_VERIFICATION = 'EMAIL_VERIFICATION',
+  EMAIL_VERIFIED = 'EMAIL_VERIFIED',
+  CREATE_BOT = 'CREATE_BOT',
 }
 
-export const emailVerificationTransitions = {
-  [ChatState.EMAIL_INPUT]: {
-    VALID_EMAIL: ChatState.EMAIL_VERIFICATION,
-    INVALID_EMAIL: ChatState.EMAIL_INPUT,
+export enum Transitions {
+  // ... existing transitions
+  EMAIL_PROVIDED = 'EMAIL_PROVIDED',
+  EMAIL_FORMAT_VALID = 'EMAIL_FORMAT_VALID',
+  EMAIL_FORMAT_INVALID = 'EMAIL_FORMAT_INVALID',
+  VERIFICATION_CODE_SENT = 'VERIFICATION_CODE_SENT',
+  CODE_VERIFIED = 'CODE_VERIFIED',
+  CODE_INVALID = 'CODE_INVALID',
+  RESEND_CODE = 'RESEND_CODE',
+  EMAIL_VERIFICATION_COMPLETE = 'EMAIL_VERIFICATION_COMPLETE',
+}
+
+// Updated state transition map
+const stateTransitionMap: { [key in State]?: { [key in Transition]?: State } } = {
+  // ... existing transitions
+  [States.UPLOAD_DOCS]: {
+    [Transitions.DOCS_UPLOADED]: States.COLLECTING_EMAIL,
   },
-  [ChatState.EMAIL_VERIFICATION]: {
-    CODE_VERIFIED: ChatState.EMAIL_VERIFIED,
-    CODE_INVALID: ChatState.EMAIL_VERIFICATION,
-    MAX_ATTEMPTS: ChatState.INITIAL, // Reset session
-    RESEND_CODE: ChatState.EMAIL_VERIFICATION,
+  [States.COLLECTING_EMAIL]: {
+    [Transitions.EMAIL_PROVIDED]: States.EMAIL_FORMAT_VALIDATION,
   },
-  [ChatState.EMAIL_VERIFIED]: {
-    CONTINUE: ChatState.NEXT_STATE,
+  [States.EMAIL_FORMAT_VALIDATION]: {
+    [Transitions.EMAIL_FORMAT_VALID]: States.EMAIL_VERIFICATION,
+    [Transitions.EMAIL_FORMAT_INVALID]: States.COLLECTING_EMAIL,
+  },
+  [States.EMAIL_VERIFICATION]: {
+    [Transitions.CODE_VERIFIED]: States.EMAIL_VERIFIED,
+    [Transitions.CODE_INVALID]: States.EMAIL_VERIFICATION,
+    [Transitions.RESEND_CODE]: States.EMAIL_VERIFICATION,
+  },
+  [States.EMAIL_VERIFIED]: {
+    [Transitions.EMAIL_VERIFICATION_COMPLETE]: States.CREATE_BOT,
+  },
+  [States.CREATE_BOT]: {
+    [Transitions.BOT_CREATION_INITIALISED]: States.END_WORKFLOW,
   },
 };
 ```

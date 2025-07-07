@@ -59,6 +59,12 @@ This document outlines the current tasks and future implementation phases for th
 
 ### Phase 3: Frontend Components (Week 3)
 
+#### FSM Integration (Ready to Start)
+
+- 🟢 **State Updates**: Ready to add new email verification states to existing FSM
+- 🟢 **Transition Logic**: Ready to implement email format validation and verification transitions
+- 🟢 **Component Integration**: Ready to integrate verification components with FSM states
+
 #### Email Verification Hook (Ready to Start)
 
 - 🟢 **State Management**: Ready to implement useEmailVerification hook
@@ -67,7 +73,7 @@ This document outlines the current tasks and future implementation phases for th
 
 #### UI Components (Ready to Start)
 
-- 🟢 **Email Input**: Ready to implement email input component with real-time validation
+- 🟢 **Email Input**: Ready to implement email input component with blocking validation
 - 🟢 **Code Input**: Ready to implement 6-digit code input with attempt tracking
 - 🟢 **Resend Button**: Ready to implement button with cooldown timer
 

@@ -34,14 +34,14 @@ Comprehensive testing plan and procedures for the Email Verification System impl
 
 ### Email Verification Flow Architecture
 
-- **Email Format Validation**: Real-time validation with user feedback loop
+- **Email Format Validation**: Blocking validation - user cannot proceed until valid email format is entered
 - **Verification Code Generation**: 6-digit numeric code with expiration
 - **Attempt Management**: 3-attempt system with session reset on failure
 
 ### Chat Interface Integration
 
-- **FSM Integration**: Seamless integration with existing finite state machine
-- **User Experience**: Continuous feedback and clear error messaging
+- **FSM Integration**: Additional states added to existing finite state machine for email verification flow
+- **User Experience**: Blocking validation with clear error messaging
 - **UI Enhancements**: Improved button positioning and messaging
 
 ### Security and Rate Limiting
@@ -58,6 +58,8 @@ Comprehensive testing plan and procedures for the Email Verification System impl
 
 ## Recent Updates
 
+- December 2024: FSM integration clarified - additional states approach confirmed
+- December 2024: Email format validation confirmed as blocking validation
 - December 2024: Documentation review completed - confirmed 100% complete
 - December 2024: Implementation status clarified - ready to start
 - December 2024: Critical blockers identified - SMTP and database approval
