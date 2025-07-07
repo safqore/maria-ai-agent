@@ -1,7 +1,7 @@
 # Email Verification System - Implementation Plan
 
 **Status: Complete - Ready for Implementation**  
-**Critical Blockers: SMTP Configuration + Database Migration Approval**
+**Critical Blockers: SMTP Configuration + Database Migration**
 
 ## Implementation Overview
 
@@ -10,12 +10,18 @@
 - **FSM Integration**: Additional states added to existing chat finite state machine
 - **Verification Code System**: 6-digit numeric code generation and email sending
 - **Attempt Management**: 3-attempt system with session reset on failure
-- **Rate Limiting**: 30-second cooldown between resend requests with 3 max attempts
+- **Rate Limiting**: Database-based using PostgreSQL timestamps
 - **Code Expiration**: 10-minute expiration for verification codes
+
+### Technical Specifications ✅
+- **Rate Limiting**: Database-based using existing PostgreSQL infrastructure
+- **Security**: bcrypt hashing with salt rounds=12, database audit logging
+- **Error Handling**: Standard HTTP codes with user-friendly messages
+- **Testing**: Real Gmail integration with personal email for development
 
 ### Implementation Phases
 - **Phase 1**: Backend Foundation (EmailVerification model, services)
-- **Phase 2**: API Endpoints (email verification and validation)
+- **Phase 2**: API Endpoints (email verification and validation)  
 - **Phase 3**: Frontend Components (React components and FSM integration)
 - **Phase 4**: Testing & Deployment (end-to-end testing and production deployment)
 
@@ -28,13 +34,15 @@
 from datetime import datetime, timedelta
 from sqlalchemy import Column, String, DateTime, Integer, Boolean
 from app.database import Base
+import uuid
 
 class EmailVerification(Base):
     __tablename__ = 'email_verifications'
 
-    id = Column(String, primary_key=True)
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     session_id = Column(String, nullable=False)
-    email = Column(String, nullable=False)
+    email_hash = Column(String, nullable=False)  # bcrypt hashed email
+    email_plain = Column(String, nullable=False)  # for sending (will be cleaned up)
     verification_code = Column(String, nullable=False)
     attempts = Column(Integer, default=0)
     max_attempts = Column(Integer, default=3)
@@ -44,6 +52,11 @@ class EmailVerification(Base):
     resend_attempts = Column(Integer, default=0)
     max_resend_attempts = Column(Integer, default=3)
     last_resend_at = Column(DateTime)
+    
+    # Audit fields
+    ip_address = Column(String)
+    user_agent = Column(String)
+    verification_attempts_log = Column(String)  # JSON string for attempt history
 ```
 
 ### Email Service Implementation
@@ -54,8 +67,12 @@ import smtplib
 import secrets
 import string
 import os
+import bcrypt
+import logging
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
+logger = logging.getLogger(__name__)
 
 class EmailService:
     def __init__(self):
@@ -70,6 +87,10 @@ class EmailService:
     def generate_verification_code(self) -> str:
         """Generate a 6-digit numeric verification code"""
         return ''.join(secrets.choice(string.digits) for _ in range(6))
+
+    def hash_email(self, email: str) -> str:
+        """Hash email address using bcrypt"""
+        return bcrypt.hashpw(email.encode('utf-8'), bcrypt.gensalt(rounds=12)).decode('utf-8')
 
     def send_verification_email(self, email: str, code: str) -> bool:
         """Send verification email with code"""
@@ -103,9 +124,10 @@ class EmailService:
             server.send_message(msg)
             server.quit()
 
+            logger.info(f"Verification email sent successfully to {email[:3]}***@{email.split('@')[1]}")
             return True
         except Exception as e:
-            print(f"Email sending failed: {str(e)}")
+            logger.error(f"Email sending failed: {str(e)}")
             return False
 ```
 
@@ -117,85 +139,173 @@ from datetime import datetime, timedelta
 from app.models.email_verification import EmailVerification
 from app.services.email_service import EmailService
 from app.database import db_session
+from flask import request
+import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 class VerificationService:
     def __init__(self):
         self.email_service = EmailService()
 
-    def send_verification_code(self, session_id: str, email: str) -> dict:
-        """Send verification code to email"""
-        existing = db_session.query(EmailVerification).filter_by(
-            session_id=session_id, email=email
-        ).first()
-
-        if existing:
-            # Check resend limits and cooldown
-            if existing.resend_attempts >= existing.max_resend_attempts:
-                return {'success': False, 'error': 'Please try again later. Thank you for your patience!'}
-            
-            if existing.last_resend_at and \
-               datetime.utcnow() - existing.last_resend_at < timedelta(seconds=30):
-                return {'success': False, 'error': 'Please wait 30 seconds before requesting another code. Thank you!'}
-
-        # Generate and send new code
-        code = self.email_service.generate_verification_code()
+    def _check_rate_limit(self, existing_verification) -> dict:
+        """Check if user is rate limited for resending"""
+        if existing_verification.resend_attempts >= existing_verification.max_resend_attempts:
+            return {
+                'limited': True, 
+                'error': 'Please try again later. Thank you for your patience!',
+                'status_code': 429
+            }
         
-        if self.email_service.send_verification_email(email, code):
+        if existing_verification.last_resend_at and \
+           datetime.utcnow() - existing_verification.last_resend_at < timedelta(seconds=30):
+            return {
+                'limited': True,
+                'error': 'Please wait 30 seconds before requesting another code. Thank you!',
+                'status_code': 429
+            }
+        
+        return {'limited': False}
+
+    def send_verification_code(self, session_id: str, email: str) -> dict:
+        """Send verification code to email with rate limiting"""
+        try:
+            existing = db_session.query(EmailVerification).filter_by(
+                session_id=session_id, email_plain=email
+            ).first()
+
             if existing:
-                existing.verification_code = code
-                existing.resend_attempts += 1
-                existing.last_resend_at = datetime.utcnow()
-                existing.expires_at = datetime.utcnow() + timedelta(minutes=10)
-                existing.attempts = 0
-            else:
-                verification = EmailVerification(
-                    session_id=session_id,
-                    email=email,
-                    verification_code=code
-                )
-                db_session.add(verification)
+                rate_check = self._check_rate_limit(existing)
+                if rate_check['limited']:
+                    return {
+                        'success': False, 
+                        'error': rate_check['error'],
+                        'status_code': rate_check['status_code']
+                    }
+
+            # Generate and send new code
+            code = self.email_service.generate_verification_code()
             
-            db_session.commit()
-            return {'success': True}
-        else:
-            return {'success': False, 'error': 'Failed to send email'}
+            if self.email_service.send_verification_email(email, code):
+                if existing:
+                    existing.verification_code = code
+                    existing.resend_attempts += 1
+                    existing.last_resend_at = datetime.utcnow()
+                    existing.expires_at = datetime.utcnow() + timedelta(minutes=10)
+                    existing.attempts = 0
+                else:
+                    verification = EmailVerification(
+                        session_id=session_id,
+                        email_plain=email,
+                        email_hash=self.email_service.hash_email(email),
+                        verification_code=code,
+                        ip_address=request.environ.get('REMOTE_ADDR'),
+                        user_agent=request.environ.get('HTTP_USER_AGENT'),
+                        verification_attempts_log=json.dumps([])
+                    )
+                    db_session.add(verification)
+                
+                db_session.commit()
+                logger.info(f"Verification code sent for session {session_id}")
+                return {'success': True, 'status_code': 200}
+            else:
+                logger.error(f"Failed to send verification email for session {session_id}")
+                return {'success': False, 'error': 'Failed to send email', 'status_code': 500}
+                
+        except Exception as e:
+            logger.error(f"Error in send_verification_code: {str(e)}")
+            return {'success': False, 'error': 'Internal server error', 'status_code': 500}
 
     def verify_code(self, session_id: str, code: str) -> dict:
-        """Verify the entered code"""
-        verification = db_session.query(EmailVerification).filter_by(
-            session_id=session_id
-        ).first()
+        """Verify the entered code with attempt tracking"""
+        try:
+            verification = db_session.query(EmailVerification).filter_by(
+                session_id=session_id
+            ).first()
 
-        if not verification:
-            return {'success': False, 'error': 'No verification found'}
+            if not verification:
+                return {'success': False, 'error': 'No verification found', 'status_code': 400}
 
-        if datetime.utcnow() > verification.expires_at:
-            return {'success': False, 'error': 'Verification code expired'}
+            if datetime.utcnow() > verification.expires_at:
+                logger.info(f"Verification code expired for session {session_id}")
+                return {'success': False, 'error': 'Verification code expired', 'status_code': 400}
 
-        if verification.attempts >= verification.max_attempts:
-            return {'success': False, 'error': 'Maximum attempts exceeded'}
+            if verification.attempts >= verification.max_attempts:
+                logger.warning(f"Maximum attempts exceeded for session {session_id}")
+                return {'success': False, 'error': 'Maximum attempts exceeded', 'status_code': 400}
 
-        if verification.verification_code == code.upper():
-            verification.is_verified = True
-            db_session.commit()
-            return {'success': True}
-        else:
-            verification.attempts += 1
-            db_session.commit()
-            
-            attempts_remaining = verification.max_attempts - verification.attempts
-            if attempts_remaining == 0:
-                return {
-                    'success': False,
-                    'error': 'Maximum attempts exceeded. Session will be reset.',
-                    'reset_session': True
-                }
+            # Log attempt
+            attempts_log = json.loads(verification.verification_attempts_log or '[]')
+            attempts_log.append({
+                'timestamp': datetime.utcnow().isoformat(),
+                'code_entered': code,
+                'ip_address': request.environ.get('REMOTE_ADDR')
+            })
+            verification.verification_attempts_log = json.dumps(attempts_log)
+
+            if verification.verification_code == code.upper():
+                verification.is_verified = True
+                db_session.commit()
+                logger.info(f"Email verified successfully for session {session_id}")
+                return {'success': True, 'status_code': 200}
             else:
-                return {
-                    'success': False,
-                    'error': 'Invalid code',
-                    'attempts_remaining': attempts_remaining
-                }
+                verification.attempts += 1
+                db_session.commit()
+                
+                attempts_remaining = verification.max_attempts - verification.attempts
+                logger.warning(f"Invalid code entered for session {session_id}, attempts remaining: {attempts_remaining}")
+                
+                if attempts_remaining == 0:
+                    return {
+                        'success': False,
+                        'error': 'Maximum attempts exceeded. Session will be reset.',
+                        'reset_session': True,
+                        'status_code': 400
+                    }
+                else:
+                    return {
+                        'success': False,
+                        'error': 'Invalid code',
+                        'attempts_remaining': attempts_remaining,
+                        'status_code': 400
+                    }
+                    
+        except Exception as e:
+            logger.error(f"Error in verify_code: {str(e)}")
+            return {'success': False, 'error': 'Internal server error', 'status_code': 500}
+```
+
+### Data Cleanup Service
+
+```python
+# app/services/cleanup_service.py
+from datetime import datetime, timedelta
+from app.models.email_verification import EmailVerification
+from app.database import db_session
+import logging
+
+logger = logging.getLogger(__name__)
+
+class CleanupService:
+    def cleanup_expired_verifications(self):
+        """Clean up expired verification records (24-hour retention)"""
+        try:
+            cutoff_time = datetime.utcnow() - timedelta(hours=24)
+            
+            expired_records = db_session.query(EmailVerification).filter(
+                EmailVerification.created_at < cutoff_time
+            ).all()
+            
+            for record in expired_records:
+                db_session.delete(record)
+            
+            db_session.commit()
+            logger.info(f"Cleaned up {len(expired_records)} expired verification records")
+            
+        except Exception as e:
+            logger.error(f"Error during cleanup: {str(e)}")
+            db_session.rollback()
 ```
 
 ## API Endpoints
@@ -207,50 +317,102 @@ class VerificationService:
 from flask import Blueprint, request, jsonify
 from app.services.verification_service import VerificationService
 from app.utils.auth import require_session
+import re
+import logging
 
+logger = logging.getLogger(__name__)
 email_verification_bp = Blueprint('email_verification', __name__)
+
+def is_valid_email(email: str) -> bool:
+    """Validate email format"""
+    email_regex = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
+    return re.match(email_regex, email) is not None
 
 @email_verification_bp.route('/verify-email', methods=['POST'])
 @require_session
 def initiate_email_verification():
     """Initiate email verification process"""
-    data = request.get_json()
-    email = data.get('email')
-    session_id = data.get('session_id')
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        session_id = data.get('session_id')
 
-    # Validate email format
-    if not is_valid_email(email):
-        return jsonify({'error': 'Please enter a valid email address. Thank you!'}), 400
+        # Validate email format
+        if not is_valid_email(email):
+            return jsonify({
+                'error': 'Please enter a valid email address. Thank you!',
+                'field': 'email'
+            }), 400
 
-    verification_service = VerificationService()
-    result = verification_service.send_verification_code(session_id, email)
+        verification_service = VerificationService()
+        result = verification_service.send_verification_code(session_id, email)
 
-    if result['success']:
-        return jsonify({'message': 'Verification code sent successfully'}), 200
-    else:
-        return jsonify({'error': result['error']}), 400
+        if result['success']:
+            return jsonify({'message': 'Verification code sent successfully'}), result['status_code']
+        else:
+            return jsonify({'error': result['error']}), result['status_code']
+            
+    except Exception as e:
+        logger.error(f"Error in initiate_email_verification: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 @email_verification_bp.route('/verify-code', methods=['POST'])
 @require_session
 def verify_code():
     """Verify the entered code"""
-    data = request.get_json()
-    session_id = data.get('session_id')
-    code = data.get('code')
+    try:
+        data = request.get_json()
+        session_id = data.get('session_id')
+        code = data.get('code', '').strip()
 
-    verification_service = VerificationService()
-    result = verification_service.verify_code(session_id, code)
+        # Validate code format
+        if not code or len(code) != 6 or not code.isdigit():
+            return jsonify({
+                'error': 'Please enter a valid 6-digit code',
+                'field': 'code'
+            }), 400
 
-    if result['success']:
-        return jsonify({
-            'message': 'Email verified successfully',
-            'verified': True
-        }), 200
-    else:
-        return jsonify({
-            'error': result['error'],
-            'attempts_remaining': result.get('attempts_remaining', 0)
-        }), 400
+        verification_service = VerificationService()
+        result = verification_service.verify_code(session_id, code)
+
+        if result['success']:
+            return jsonify({
+                'message': 'Email verified successfully',
+                'verified': True
+            }), result['status_code']
+        else:
+            response_data = {'error': result['error']}
+            if 'attempts_remaining' in result:
+                response_data['attempts_remaining'] = result['attempts_remaining']
+            if 'reset_session' in result:
+                response_data['reset_session'] = result['reset_session']
+            
+            return jsonify(response_data), result['status_code']
+            
+    except Exception as e:
+        logger.error(f"Error in verify_code: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@email_verification_bp.route('/resend-code', methods=['POST'])
+@require_session
+def resend_verification_code():
+    """Resend verification code"""
+    try:
+        data = request.get_json()
+        session_id = data.get('session_id')
+        email = data.get('email', '').strip().lower()
+
+        verification_service = VerificationService()
+        result = verification_service.send_verification_code(session_id, email)
+
+        if result['success']:
+            return jsonify({'message': 'Verification code resent successfully'}), result['status_code']
+        else:
+            return jsonify({'error': result['error']}), result['status_code']
+            
+    except Exception as e:
+        logger.error(f"Error in resend_verification_code: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
 ```
 
 ## Frontend Implementation
@@ -259,7 +421,7 @@ def verify_code():
 
 ```typescript
 // src/hooks/useEmailVerification.ts
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { emailVerificationApi } from "../api/emailVerificationApi";
 
 export interface EmailVerificationState {
@@ -285,6 +447,20 @@ export const useEmailVerification = (sessionId: string) => {
     resendCooldown: 0,
   });
 
+  // Countdown timer for resend cooldown
+  useEffect(() => {
+    if (state.resendCooldown > 0) {
+      const timer = setTimeout(() => {
+        setState(prev => ({
+          ...prev,
+          resendCooldown: prev.resendCooldown - 1,
+          canResend: prev.resendCooldown - 1 === 0
+        }));
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [state.resendCooldown]);
+
   const sendVerificationCode = useCallback(async (email: string) => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
     
@@ -301,7 +477,7 @@ export const useEmailVerification = (sessionId: string) => {
       setState((prev) => ({
         ...prev,
         isLoading: false,
-        error: error.message || "Failed to send verification code",
+        error: error.response?.data?.error || "Failed to send verification code",
       }));
     }
   }, [sessionId]);
@@ -327,12 +503,35 @@ export const useEmailVerification = (sessionId: string) => {
       }));
       
       if (errorData?.reset_session) {
+        // Reset session by reloading page
         window.location.reload();
       }
     }
   }, [sessionId]);
 
-  return { state, sendVerificationCode, verifyCode };
+  const resendCode = useCallback(async () => {
+    if (!state.email || !state.canResend) return;
+    
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+    
+    try {
+      await emailVerificationApi.resendCode(sessionId, state.email);
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        canResend: false,
+        resendCooldown: 30,
+      }));
+    } catch (error: any) {
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: error.response?.data?.error || "Failed to resend verification code",
+      }));
+    }
+  }, [sessionId, state.email, state.canResend]);
+
+  return { state, sendVerificationCode, verifyCode, resendCode };
 };
 ```
 
@@ -359,11 +558,24 @@ export const EmailInput: React.FC<EmailInputProps> = ({ onSubmit, isLoading, err
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateEmail(email)) {
+    const trimmedEmail = email.trim().toLowerCase();
+    
+    if (!validateEmail(trimmedEmail)) {
       setIsValid(false);
       return;
     }
-    onSubmit(email);
+    
+    onSubmit(trimmedEmail);
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEmail(value);
+    
+    // Reset validation state when user starts typing
+    if (!isValid && value.length > 0) {
+      setIsValid(true);
+    }
   };
 
   return (
@@ -377,21 +589,25 @@ export const EmailInput: React.FC<EmailInputProps> = ({ onSubmit, isLoading, err
             type="email"
             id="email"
             value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setIsValid(validateEmail(e.target.value) || e.target.value === "");
-            }}
+            onChange={handleEmailChange}
             placeholder="Enter your email address"
             className={`form-control ${!isValid ? "is-invalid" : ""}`}
             disabled={isLoading}
             required
+            aria-describedby={!isValid ? "email-error" : undefined}
           />
           {!isValid && (
-            <div className="invalid-feedback">Please enter a valid email address</div>
+            <div id="email-error" className="invalid-feedback">
+              Please enter a valid email address
+            </div>
           )}
         </div>
         
-        {error && <div className="alert alert-danger" role="alert">{error}</div>}
+        {error && (
+          <div className="alert alert-danger" role="alert">
+            {error}
+          </div>
+        )}
         
         <button
           type="submit"
@@ -434,6 +650,13 @@ export const CodeInput: React.FC<CodeInputProps> = ({
     }
   };
 
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9]/g, "");
+    if (value.length <= 6) {
+      setCode(value);
+    }
+  };
+
   return (
     <div className="code-input-container">
       <form onSubmit={handleSubmit}>
@@ -445,24 +668,26 @@ export const CodeInput: React.FC<CodeInputProps> = ({
             type="text"
             id="code"
             value={code}
-            onChange={(e) => {
-              const value = e.target.value.replace(/[^0-9]/g, "");
-              if (value.length <= 6) setCode(value);
-            }}
+            onChange={handleCodeChange}
             placeholder="Enter 6-digit code"
             className="form-control code-input"
             disabled={isLoading}
             maxLength={6}
             required
+            aria-describedby="code-help"
           />
           {attemptsRemaining > 0 && (
-            <small className="form-text text-muted">
+            <small id="code-help" className="form-text text-muted">
               {attemptsRemaining} attempts remaining
             </small>
           )}
         </div>
         
-        {error && <div className="alert alert-danger" role="alert">{error}</div>}
+        {error && (
+          <div className="alert alert-danger" role="alert">
+            {error}
+          </div>
+        )}
         
         <div className="button-group">
           <button
@@ -488,80 +713,55 @@ export const CodeInput: React.FC<CodeInputProps> = ({
 };
 ```
 
-## FSM Integration
-
-### State Updates
-
-```typescript
-// src/state/FiniteStateMachine.ts
-export enum States {
-  // ... existing states
-  COLLECTING_EMAIL = 'COLLECTING_EMAIL',
-  EMAIL_FORMAT_VALIDATION = 'EMAIL_FORMAT_VALIDATION',
-  EMAIL_VERIFICATION = 'EMAIL_VERIFICATION',
-  EMAIL_VERIFIED = 'EMAIL_VERIFIED',
-  CREATE_BOT = 'CREATE_BOT',
-}
-
-export enum Transitions {
-  // ... existing transitions
-  EMAIL_PROVIDED = 'EMAIL_PROVIDED',
-  EMAIL_FORMAT_VALID = 'EMAIL_FORMAT_VALID',
-  EMAIL_FORMAT_INVALID = 'EMAIL_FORMAT_INVALID',
-  VERIFICATION_CODE_SENT = 'VERIFICATION_CODE_SENT',
-  CODE_VERIFIED = 'CODE_VERIFIED',
-  CODE_INVALID = 'CODE_INVALID',
-  RESEND_CODE = 'RESEND_CODE',
-  EMAIL_VERIFICATION_COMPLETE = 'EMAIL_VERIFICATION_COMPLETE',
-}
-
-// State transition map
-const stateTransitionMap = {
-  [States.UPLOAD_DOCS]: {
-    [Transitions.DOCS_UPLOADED]: States.COLLECTING_EMAIL,
-  },
-  [States.COLLECTING_EMAIL]: {
-    [Transitions.EMAIL_PROVIDED]: States.EMAIL_FORMAT_VALIDATION,
-  },
-  [States.EMAIL_FORMAT_VALIDATION]: {
-    [Transitions.EMAIL_FORMAT_VALID]: States.EMAIL_VERIFICATION,
-    [Transitions.EMAIL_FORMAT_INVALID]: States.COLLECTING_EMAIL,
-  },
-  [States.EMAIL_VERIFICATION]: {
-    [Transitions.CODE_VERIFIED]: States.EMAIL_VERIFIED,
-    [Transitions.CODE_INVALID]: States.EMAIL_VERIFICATION,
-    [Transitions.RESEND_CODE]: States.EMAIL_VERIFICATION,
-  },
-  [States.EMAIL_VERIFIED]: {
-    [Transitions.EMAIL_VERIFICATION_COMPLETE]: States.CREATE_BOT,
-  },
-};
-```
-
 ## Database Migration
 
-### Email Verification Schema
+### PostgreSQL Email Verification Schema
 
 ```sql
 -- migrations/002_create_email_verification.sql
 CREATE TABLE email_verifications (
-    id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid(),
     session_id VARCHAR(36) NOT NULL,
-    email VARCHAR(255) NOT NULL,
+    email_hash VARCHAR(255) NOT NULL,
+    email_plain VARCHAR(255) NOT NULL,
     verification_code VARCHAR(6) NOT NULL,
     attempts INTEGER DEFAULT 0,
     max_attempts INTEGER DEFAULT 3,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL 10 MINUTE),
+    expires_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL '10 minutes'),
     is_verified BOOLEAN DEFAULT FALSE,
     resend_attempts INTEGER DEFAULT 0,
     max_resend_attempts INTEGER DEFAULT 3,
     last_resend_at TIMESTAMP,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    verification_attempts_log TEXT,
     
     INDEX idx_session_id (session_id),
-    INDEX idx_email (email),
-    INDEX idx_expires_at (expires_at)
+    INDEX idx_email_hash (email_hash),
+    INDEX idx_expires_at (expires_at),
+    INDEX idx_created_at (created_at)
 );
+
+-- Create cleanup job (can be run manually or via cron)
+-- DELETE FROM email_verifications WHERE created_at < NOW() - INTERVAL '24 hours';
+```
+
+## Configuration
+
+### Environment Variables
+
+```env
+# SMTP Configuration
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+SMTP_FROM_EMAIL=noreply@yourcompany.com
+SMTP_FROM_NAME=Maria AI Agent
+
+# Environment-specific email subjects
+EMAIL_SUBJECT_PREFIX=[DEV]  # [DEV] for development, [UAT] for UAT, empty for production
 ```
 
 ## Implementation Timeline
@@ -570,3 +770,17 @@ CREATE TABLE email_verifications (
 - **Week 2**: API Endpoints (routes, validation, integration)
 - **Week 3**: Frontend Components (hooks, components, FSM)
 - **Week 4**: Testing, optimization, deployment
+
+## Testing Strategy
+
+### Development Testing
+- **Email Configuration**: Use personal Gmail account in .env
+- **Database**: Use existing PostgreSQL test database
+- **Integration**: Real SMTP integration (no mocking)
+- **Cleanup**: Automatic test data cleanup after each run
+
+### Production Testing
+- **Email Delivery**: Monitor Gmail sending quotas
+- **Error Handling**: Test all error scenarios
+- **Performance**: API response time monitoring
+- **Security**: Rate limiting and audit logging verification

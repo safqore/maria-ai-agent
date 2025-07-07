@@ -1,7 +1,7 @@
 # Email Verification System
 
 **Status: Ready for Implementation**  
-**Critical Blockers: SMTP Configuration + Database Migration Approval**
+**Critical Blockers: SMTP Configuration + Database Migration**
 
 ## Core Requirements
 
@@ -23,6 +23,33 @@
 - **Button Position**: Move "done and continue" button to bottom of document upload area
 - **Email Request Text**: "please enter your email address so I can notify you once your AI agent is ready"
 
+## Technical Specifications ✅
+
+### Rate Limiting Strategy
+- **Implementation**: Database-based using existing PostgreSQL infrastructure
+- **Storage**: Use `email_verifications` table timestamps for cooldown tracking
+- **Cleanup**: Automatic via record expiration (no additional infrastructure needed)
+
+### Security Implementation
+- **Email Hashing**: bcrypt with salt rounds=12 for stored email addresses
+- **Audit Logging**: Database logging in `email_verifications` table with IP and user agent
+- **Data Retention**: 24-hour auto-cleanup via scheduled job
+- **Code Storage**: Plain text in database (short-lived, 10-minute expiration)
+
+### Error Handling
+- **HTTP Status Codes**: 
+  - 400: Invalid email format, invalid code
+  - 429: Rate limit exceeded  
+  - 500: Email sending failure
+- **Error Messages**: User-friendly format with consistent structure
+- **Logging**: Python logging module with structured format
+
+### Testing Setup
+- **Development Email**: Personal email address in .env for testing
+- **Test Database**: Use existing PostgreSQL test database setup
+- **Mock Services**: No SMTP mocking - use real Gmail for integration testing
+- **Test Data**: Auto-cleanup after each test run using existing patterns
+
 ## Implementation Approach
 
 ### FSM Integration
@@ -30,14 +57,14 @@ Additional states added to existing chat finite state machine:
 - `COLLECTING_EMAIL` → `EMAIL_FORMAT_VALIDATION` → `EMAIL_VERIFICATION` → `EMAIL_VERIFIED` → `CREATE_BOT`
 
 ### Backend Services
-- **Email Service**: SMTP integration and code generation
-- **Verification Service**: Code validation and attempt tracking
-- **Rate Limiting**: 30-second cooldown enforcement
+- **Email Service**: SMTP integration, code generation, and bcrypt hashing
+- **Verification Service**: Code validation, attempt tracking, and rate limiting
+- **Cleanup Service**: 24-hour data retention and automatic cleanup
 
 ### Frontend Components
 - **Email Input**: Real-time validation with blocking behavior
-- **Code Input**: 6-digit entry with attempt tracking
-- **Resend Button**: Cooldown timer and attempt limits
+- **Code Input**: 6-digit entry with attempt tracking and cooldown timer
+- **Resend Button**: Cooldown timer and attempt limits with real-time countdown
 
 ## Technical Decisions
 
@@ -45,27 +72,46 @@ Additional states added to existing chat finite state machine:
 - **SMTP**: Gmail SMTP (smtp.gmail.com:587) via .env configuration
 - **Email Template**: HTML template with environment-specific subject prefixes
 - **Environment Handling**: [DEV]/[UAT] prefixes for lower environments, no prefix for PROD
-- **Database**: email_verifications table with proper indexing
+- **Database**: PostgreSQL email_verifications table with proper indexing and audit fields
 
 ### Security Requirements
 - **Code Expiration**: 10-minute expiration balances security with user convenience
 - **Attempt Limits**: 3 attempts to prevent abuse while allowing for user errors
 - **Session Integration**: Reuse existing session reset mechanism
+- **Audit Trail**: Complete logging of verification attempts with IP tracking
 
 ## Implementation Files
 
 ### Backend
-- `app/models/email_verification.py` - EmailVerification model
-- `app/services/email_service.py` - Email sending service
-- `app/services/verification_service.py` - Verification logic service
-- `app/routes/email_verification.py` - Email verification endpoints
-- `migrations/002_create_email_verification.sql` - Database schema
+- `app/models/email_verification.py` - EmailVerification model with audit fields
+- `app/services/email_service.py` - Email sending service with bcrypt hashing
+- `app/services/verification_service.py` - Verification logic with rate limiting
+- `app/services/cleanup_service.py` - Data cleanup and retention service
+- `app/routes/email_verification.py` - Email verification endpoints with error handling
+- `migrations/002_create_email_verification.sql` - PostgreSQL database schema
 
 ### Frontend
-- `src/hooks/useEmailVerification.ts` - Email verification hook
+- `src/hooks/useEmailVerification.ts` - Email verification hook with countdown timer
 - `src/components/emailVerification/EmailInput.tsx` - Email input component
 - `src/components/emailVerification/CodeInput.tsx` - Code input component
+- `src/api/emailVerificationApi.ts` - API client for email verification
 - `src/state/FiniteStateMachine.ts` - FSM state updates
+
+## Configuration
+
+### Environment Variables
+```env
+# SMTP Configuration
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+SMTP_FROM_EMAIL=noreply@yourcompany.com
+SMTP_FROM_NAME=Maria AI Agent
+
+# Environment-specific email subjects
+EMAIL_SUBJECT_PREFIX=[DEV]  # [DEV] for development, [UAT] for UAT, empty for production
+```
 
 ## Documentation Links
 
