@@ -71,11 +71,16 @@ This document is the single source of truth for all current, actively relevant q
 | 2   | Should email templates be HTML or plain text?              | HTML templates with branding                                                                   | User preference                       |
 | 3   | What should be the sender email address?                   | noreply@safqore.com (Maria sender name)                                                        | User specified                        |
 | 4   | What is the user flow after successful email verification? | Show success message with automatic progression to next chat state (no manual continue button) | User confirmed automatic progression  |
-| 5   | How should session reset integrate with verification?      | Use same mechanism as UUID deletion - clear localStorage, generate new UUID, show reset modal  | Reuse existing session reset logic    |
+| 5   | How should session reset integrate with verification?      | Use existing SessionContext.resetSession() pattern - no window.location.reload                | Reuse existing session reset pattern    |
 | 6   | Are proposed rate limits appropriate?                      | 30-second cooldown and 3 resend attempts are acceptable                                        | User confirmed, updated to 30 seconds |
-| 7   | How long should verification records be retained?          | Indefinitely with 1:1 relationship to user record, clean up expired codes only                 | For audit/compliance purposes         |
+| 7   | How long should verification records be retained?          | 24-hour auto-cleanup via repository cleanup method                                             | For audit/compliance purposes         |
 | 8   | Should verification codes be numeric or alphanumeric?      | 6-digit numeric confirmed for better UX (easier typing, less confusion)                        | User confirmed recommendation         |
 | 9   | What tone should error messages use?                       | User-friendly with "please" and "thanks" for polite, helpful messaging                         | More courteous user experience        |
+| 10  | Should email verification follow existing repository pattern? | Yes - EmailVerificationRepository must extend BaseRepository pattern                           | Architectural alignment required      |
+| 11  | How should database transactions be handled?               | Use existing TransactionContext for all operations (atomic)                                    | Follow existing service patterns     |
+| 12  | How should FSM integration work?                           | Use nextTransition property in API responses (not nextState)                                   | Follow existing ChatContext pattern  |
+| 13  | Which database should be used for testing?                 | SQLite for all test environments (following questions-and-assumptions.md)                      | Consistency with existing setup      |
+| 14  | How should session resets be triggered?                    | Use SessionContext.resetSession() and SessionResetModal (no window.reload)                     | Follow existing UX patterns          |
 
 ### Assumptions
 
@@ -85,14 +90,19 @@ This document is the single source of truth for all current, actively relevant q
 | 2   | 10-minute code expiration is appropriate                           | Validated         | User confirmed: brilliant, industry standard  |
 | 3   | 3 verification attempts before session reset is sufficient         | Validated         | User confirmed                                |
 | 4   | 30-second resend cooldown is appropriate                           | Validated         | User confirmed: better UX than 1 minute       |
-| 5   | Existing session reset mechanism can be reused                     | Validated         | User confirmed 100%                           |
+| 5   | Existing session reset mechanism can be reused                     | Validated         | User confirmed - use SessionContext pattern  |
 | 6   | Real-time email validation provides better user experience         | Validated         | Immediate feedback as user types              |
 | 7   | Continuous prompting for correct email format is acceptable        | Validated         | User confirmed                                |
 | 8   | Moving "done and continue" button to bottom won't conflict with UI | Validated         | User confirmed                                |
 | 9   | Message text changes align with brand voice                        | Validated         | User confirmed                                |
-| 10  | FSM integration can be added without major refactoring             | Validated         | User confirmed 100%                           |
-| 11  | Database migration can be approved and deployed                    | Validated         | Vanilla database, user confirmed              |
+| 10  | FSM integration can be added without major refactoring             | Validated         | User confirmed - follows existing patterns   |
+| 11  | Database migration can be approved and deployed                    | Validated         | SQLite migration, user confirmed              |
 | 12  | Backend/frontend deployment can be coordinated                     | Validated         | User referenced ci/cd folder                  |
+| 13  | Repository pattern must be followed for email verification         | Validated         | Architectural consistency required            |
+| 14  | TransactionContext must be used for database operations            | Validated         | Follow existing service layer patterns       |
+| 15  | nextTransition property must be used for FSM integration           | Validated         | Follow existing API response patterns        |
+| 16  | SQLite must be used for all testing environments                   | Validated         | Consistency with existing database strategy   |
+| 17  | SessionContext pattern must be used for session resets             | Validated         | Consistency with existing UX patterns        |
 
 ---
 

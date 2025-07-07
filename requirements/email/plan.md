@@ -13,27 +13,179 @@
 - **Rate Limiting**: Database-based using PostgreSQL timestamps
 - **Code Expiration**: 10-minute expiration for verification codes
 
-### Technical Specifications ✅
-- **Rate Limiting**: Database-based using existing PostgreSQL infrastructure
-- **Security**: bcrypt hashing with salt rounds=12, database audit logging
-- **Error Handling**: Standard HTTP codes with user-friendly messages
-- **Testing**: Real Gmail integration with personal email for development
+### Technical Specifications ✅ **ALIGNED WITH EXISTING PATTERNS**
+- **Repository Pattern**: EmailVerificationRepository following BaseRepository pattern
+- **Transaction Management**: TransactionContext for all database operations
+- **Session Reset**: SessionContext pattern (no window.location.reload)
+- **FSM Integration**: nextTransition property in API responses
+- **Testing Database**: SQLite for all test environments
+- **Rate Limiting**: 10 requests/minute pattern (consistent with session)
 
 ### Implementation Phases
-- **Phase 1**: Backend Foundation (EmailVerification model, services)
+- **Phase 1**: Backend Foundation (EmailVerification model, repository, services)
 - **Phase 2**: API Endpoints (email verification and validation)  
 - **Phase 3**: Frontend Components (React components and FSM integration)
 - **Phase 4**: Testing & Deployment (end-to-end testing and production deployment)
 
 ## Backend Implementation
 
+### Email Verification Repository
+
+```python
+# app/repositories/email_verification_repository.py
+"""
+Repository for EmailVerification model.
+
+This module provides a repository class for the EmailVerification model,
+following the same pattern as UserSessionRepository.
+"""
+
+import uuid
+from datetime import datetime, timedelta
+from typing import Optional, List
+
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
+from app.database_core import get_db_session
+from app.errors import ServerError
+from app.models import EmailVerification
+from app.repositories.base_repository import BaseRepository
+
+
+class EmailVerificationRepository(BaseRepository[EmailVerification]):
+    """
+    Repository for EmailVerification-related database operations.
+
+    This class provides an abstraction over the database operations
+    for the EmailVerification model, following established patterns.
+    """
+
+    def __init__(self):
+        """Initialize with the EmailVerification model class."""
+        super().__init__(EmailVerification)
+
+    def get_by_session_id(self, session_id: str) -> Optional[EmailVerification]:
+        """
+        Get email verification by session ID.
+
+        Args:
+            session_id: The session ID to search for
+
+        Returns:
+            EmailVerification object if found, None otherwise
+
+        Raises:
+            ServerError: If a database error occurs
+        """
+        try:
+            with get_db_session() as session:
+                verification = session.query(EmailVerification).filter_by(
+                    session_id=session_id
+                ).first()
+
+                if verification:
+                    # Load all attributes to avoid detached instance errors
+                    for column in EmailVerification.__table__.columns:
+                        getattr(verification, column.name)
+                    
+                    # Expunge the instance from the session to make it detached
+                    session.expunge(verification)
+
+                return verification
+        except SQLAlchemyError as e:
+            raise ServerError(f"Database error in get_by_session_id: {str(e)}")
+
+    def get_by_session_and_email(self, session_id: str, email: str) -> Optional[EmailVerification]:
+        """
+        Get email verification by session ID and email.
+
+        Args:
+            session_id: The session ID to search for
+            email: The email address to search for
+
+        Returns:
+            EmailVerification object if found, None otherwise
+
+        Raises:
+            ServerError: If a database error occurs
+        """
+        try:
+            with get_db_session() as session:
+                verification = session.query(EmailVerification).filter_by(
+                    session_id=session_id, email_plain=email
+                ).first()
+
+                if verification:
+                    # Load all attributes to avoid detached instance errors
+                    for column in EmailVerification.__table__.columns:
+                        getattr(verification, column.name)
+                    
+                    # Expunge the instance from the session to make it detached
+                    session.expunge(verification)
+
+                return verification
+        except SQLAlchemyError as e:
+            raise ServerError(f"Database error in get_by_session_and_email: {str(e)}")
+
+    def cleanup_expired_records(self, hours: int = 24) -> int:
+        """
+        Clean up expired verification records.
+
+        Args:
+            hours: Number of hours to retain records
+
+        Returns:
+            Number of records deleted
+
+        Raises:
+            ServerError: If a database error occurs
+        """
+        try:
+            with get_db_session() as session:
+                cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+                
+                expired_records = session.query(EmailVerification).filter(
+                    EmailVerification.created_at < cutoff_time
+                ).all()
+                
+                count = len(expired_records)
+                
+                for record in expired_records:
+                    session.delete(record)
+                
+                session.commit()
+                return count
+        except SQLAlchemyError as e:
+            raise ServerError(f"Database error in cleanup_expired_records: {str(e)}")
+```
+
+### Repository Factory Update
+
+```python
+# app/repositories/factory.py (additions)
+from app.models import UserSession, EmailVerification
+from app.repositories.user_session_repository import UserSessionRepository
+from app.repositories.email_verification_repository import EmailVerificationRepository
+
+
+def get_email_verification_repository() -> EmailVerificationRepository:
+    """
+    Get an EmailVerificationRepository instance.
+
+    Returns:
+        EmailVerificationRepository: A repository for EmailVerification operations
+    """
+    return EmailVerificationRepository()
+```
+
 ### Email Verification Model
 
 ```python
 # app/models/email_verification.py
 from datetime import datetime, timedelta
-from sqlalchemy import Column, String, DateTime, Integer, Boolean
-from app.database import Base
+from sqlalchemy import Column, String, DateTime, Integer, Boolean, Text
+from app.database_core import Base
 import uuid
 
 class EmailVerification(Base):
@@ -53,10 +205,10 @@ class EmailVerification(Base):
     max_resend_attempts = Column(Integer, default=3)
     last_resend_at = Column(DateTime)
     
-    # Audit fields
+    # Audit fields following existing patterns
     ip_address = Column(String)
     user_agent = Column(String)
-    verification_attempts_log = Column(String)  # JSON string for attempt history
+    verification_attempts_log = Column(Text)  # JSON string for attempt history
 ```
 
 ### Email Service Implementation
@@ -136,20 +288,32 @@ class EmailService:
 ```python
 # app/services/verification_service.py
 from datetime import datetime, timedelta
-from app.models.email_verification import EmailVerification
-from app.services.email_service import EmailService
-from app.database import db_session
+from typing import Dict, Any
 from flask import request
 import json
 import logging
 
+from app.database.transaction import TransactionContext
+from app.repositories.factory import get_email_verification_repository
+from app.services.email_service import EmailService
+from app.models import EmailVerification
+from app.utils.audit_utils import log_audit_event
+
 logger = logging.getLogger(__name__)
 
 class VerificationService:
+    """
+    Service class for email verification operations.
+    
+    Uses TransactionContext for atomic operations and follows
+    established repository patterns.
+    """
+
     def __init__(self):
         self.email_service = EmailService()
+        self.email_verification_repository = get_email_verification_repository()
 
-    def _check_rate_limit(self, existing_verification) -> dict:
+    def _check_rate_limit(self, existing_verification: EmailVerification) -> Dict[str, Any]:
         """Check if user is rate limited for resending"""
         if existing_verification.resend_attempts >= existing_verification.max_resend_attempts:
             return {
@@ -168,12 +332,16 @@ class VerificationService:
         
         return {'limited': False}
 
-    def send_verification_code(self, session_id: str, email: str) -> dict:
-        """Send verification code to email with rate limiting"""
+    def send_verification_code(self, session_id: str, email: str) -> Dict[str, Any]:
+        """
+        Send verification code to email with rate limiting.
+        
+        Uses TransactionContext for atomic operations.
+        """
         try:
-            existing = db_session.query(EmailVerification).filter_by(
-                session_id=session_id, email_plain=email
-            ).first()
+            existing = self.email_verification_repository.get_by_session_and_email(
+                session_id, email
+            )
 
             if existing:
                 rate_check = self._check_rate_limit(existing)
@@ -188,26 +356,37 @@ class VerificationService:
             code = self.email_service.generate_verification_code()
             
             if self.email_service.send_verification_email(email, code):
-                if existing:
-                    existing.verification_code = code
-                    existing.resend_attempts += 1
-                    existing.last_resend_at = datetime.utcnow()
-                    existing.expires_at = datetime.utcnow() + timedelta(minutes=10)
-                    existing.attempts = 0
-                else:
-                    verification = EmailVerification(
-                        session_id=session_id,
-                        email_plain=email,
-                        email_hash=self.email_service.hash_email(email),
-                        verification_code=code,
-                        ip_address=request.environ.get('REMOTE_ADDR'),
-                        user_agent=request.environ.get('HTTP_USER_AGENT'),
-                        verification_attempts_log=json.dumps([])
-                    )
-                    db_session.add(verification)
+                # Use TransactionContext for atomic database operations
+                with TransactionContext():
+                    if existing:
+                        # Update existing record
+                        update_data = {
+                            'verification_code': code,
+                            'resend_attempts': existing.resend_attempts + 1,
+                            'last_resend_at': datetime.utcnow(),
+                            'expires_at': datetime.utcnow() + timedelta(minutes=10),
+                            'attempts': 0
+                        }
+                        self.email_verification_repository.update(existing.id, update_data)
+                    else:
+                        # Create new record
+                        verification_data = {
+                            'session_id': session_id,
+                            'email_plain': email,
+                            'email_hash': self.email_service.hash_email(email),
+                            'verification_code': code,
+                            'ip_address': request.environ.get('REMOTE_ADDR'),
+                            'user_agent': request.environ.get('HTTP_USER_AGENT'),
+                            'verification_attempts_log': json.dumps([])
+                        }
+                        self.email_verification_repository.create(**verification_data)
                 
-                db_session.commit()
-                logger.info(f"Verification code sent for session {session_id}")
+                log_audit_event(
+                    "verification_code_sent",
+                    session_id=session_id,
+                    details={"email_hash": self.email_service.hash_email(email)}
+                )
+                
                 return {'success': True, 'status_code': 200}
             else:
                 logger.error(f"Failed to send verification email for session {session_id}")
@@ -217,12 +396,14 @@ class VerificationService:
             logger.error(f"Error in send_verification_code: {str(e)}")
             return {'success': False, 'error': 'Internal server error', 'status_code': 500}
 
-    def verify_code(self, session_id: str, code: str) -> dict:
-        """Verify the entered code with attempt tracking"""
+    def verify_code(self, session_id: str, code: str) -> Dict[str, Any]:
+        """
+        Verify the entered code with attempt tracking.
+        
+        Uses TransactionContext for atomic operations.
+        """
         try:
-            verification = db_session.query(EmailVerification).filter_by(
-                session_id=session_id
-            ).first()
+            verification = self.email_verification_repository.get_by_session_id(session_id)
 
             if not verification:
                 return {'success': False, 'error': 'No verification found', 'status_code': 400}
@@ -233,79 +414,68 @@ class VerificationService:
 
             if verification.attempts >= verification.max_attempts:
                 logger.warning(f"Maximum attempts exceeded for session {session_id}")
-                return {'success': False, 'error': 'Maximum attempts exceeded', 'status_code': 400}
+                return {
+                    'success': False, 
+                    'error': 'Maximum attempts exceeded. Session will be reset.',
+                    'reset_session': True,
+                    'status_code': 400
+                }
 
-            # Log attempt
-            attempts_log = json.loads(verification.verification_attempts_log or '[]')
-            attempts_log.append({
-                'timestamp': datetime.utcnow().isoformat(),
-                'code_entered': code,
-                'ip_address': request.environ.get('REMOTE_ADDR')
-            })
-            verification.verification_attempts_log = json.dumps(attempts_log)
+            # Log attempt using TransactionContext
+            with TransactionContext():
+                attempts_log = json.loads(verification.verification_attempts_log or '[]')
+                attempts_log.append({
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'code_entered': code,
+                    'ip_address': request.environ.get('REMOTE_ADDR')
+                })
 
-            if verification.verification_code == code.upper():
-                verification.is_verified = True
-                db_session.commit()
-                logger.info(f"Email verified successfully for session {session_id}")
-                return {'success': True, 'status_code': 200}
-            else:
-                verification.attempts += 1
-                db_session.commit()
-                
-                attempts_remaining = verification.max_attempts - verification.attempts
-                logger.warning(f"Invalid code entered for session {session_id}, attempts remaining: {attempts_remaining}")
-                
-                if attempts_remaining == 0:
-                    return {
-                        'success': False,
-                        'error': 'Maximum attempts exceeded. Session will be reset.',
-                        'reset_session': True,
-                        'status_code': 400
+                if verification.verification_code == code.upper():
+                    # Successful verification
+                    update_data = {
+                        'is_verified': True,
+                        'verification_attempts_log': json.dumps(attempts_log)
                     }
+                    self.email_verification_repository.update(verification.id, update_data)
+                    
+                    log_audit_event(
+                        "email_verified_successfully",
+                        session_id=session_id,
+                        details={"email_hash": verification.email_hash}
+                    )
+                    
+                    return {'success': True, 'status_code': 200}
                 else:
-                    return {
-                        'success': False,
-                        'error': 'Invalid code',
-                        'attempts_remaining': attempts_remaining,
-                        'status_code': 400
+                    # Failed verification
+                    new_attempts = verification.attempts + 1
+                    attempts_remaining = verification.max_attempts - new_attempts
+                    
+                    update_data = {
+                        'attempts': new_attempts,
+                        'verification_attempts_log': json.dumps(attempts_log)
                     }
+                    self.email_verification_repository.update(verification.id, update_data)
+                    
+                    logger.warning(f"Invalid code entered for session {session_id}, attempts remaining: {attempts_remaining}")
+                    
+                    if attempts_remaining == 0:
+                        return {
+                            'success': False,
+                            'error': 'Maximum attempts exceeded. Session will be reset.',
+                            'reset_session': True,
+                            'status_code': 400
+                        }
+                    else:
+                        return {
+                            'success': False,
+                            'error': 'Invalid code',
+                            'attempts_remaining': attempts_remaining,
+                            'status_code': 400
+                        }
                     
         except Exception as e:
             logger.error(f"Error in verify_code: {str(e)}")
             return {'success': False, 'error': 'Internal server error', 'status_code': 500}
-```
-
-### Data Cleanup Service
-
-```python
-# app/services/cleanup_service.py
-from datetime import datetime, timedelta
-from app.models.email_verification import EmailVerification
-from app.database import db_session
-import logging
-
-logger = logging.getLogger(__name__)
-
-class CleanupService:
-    def cleanup_expired_verifications(self):
-        """Clean up expired verification records (24-hour retention)"""
-        try:
-            cutoff_time = datetime.utcnow() - timedelta(hours=24)
-            
-            expired_records = db_session.query(EmailVerification).filter(
-                EmailVerification.created_at < cutoff_time
-            ).all()
-            
-            for record in expired_records:
-                db_session.delete(record)
-            
-            db_session.commit()
-            logger.info(f"Cleaned up {len(expired_records)} expired verification records")
-            
-        except Exception as e:
-            logger.error(f"Error during cleanup: {str(e)}")
-            db_session.rollback()
 ```
 
 ## API Endpoints
@@ -331,7 +501,11 @@ def is_valid_email(email: str) -> bool:
 @email_verification_bp.route('/verify-email', methods=['POST'])
 @require_session
 def initiate_email_verification():
-    """Initiate email verification process"""
+    """
+    Initiate email verification process.
+    
+    Returns nextTransition for FSM integration following established patterns.
+    """
     try:
         data = request.get_json()
         email = data.get('email', '').strip().lower()
@@ -340,6 +514,7 @@ def initiate_email_verification():
         # Validate email format
         if not is_valid_email(email):
             return jsonify({
+                'status': 'error',
                 'error': 'Please enter a valid email address. Thank you!',
                 'field': 'email'
             }), 400
@@ -348,18 +523,31 @@ def initiate_email_verification():
         result = verification_service.send_verification_code(session_id, email)
 
         if result['success']:
-            return jsonify({'message': 'Verification code sent successfully'}), result['status_code']
+            return jsonify({
+                'status': 'success',
+                'message': {
+                    'text': 'Verification code sent successfully. Please check your email.',
+                    'nextTransition': 'VERIFICATION_CODE_SENT'  # FSM integration
+                }
+            }), result['status_code']
         else:
-            return jsonify({'error': result['error']}), result['status_code']
+            return jsonify({
+                'status': 'error',
+                'error': result['error']
+            }), result['status_code']
             
     except Exception as e:
         logger.error(f"Error in initiate_email_verification: {str(e)}")
-        return jsonify({'error': 'Internal server error'}), 500
+        return jsonify({'status': 'error', 'error': 'Internal server error'}), 500
 
 @email_verification_bp.route('/verify-code', methods=['POST'])
 @require_session
 def verify_code():
-    """Verify the entered code"""
+    """
+    Verify the entered code.
+    
+    Returns nextTransition for FSM integration and reset_session for SessionContext.
+    """
     try:
         data = request.get_json()
         session_id = data.get('session_id')
@@ -368,6 +556,7 @@ def verify_code():
         # Validate code format
         if not code or len(code) != 6 or not code.isdigit():
             return jsonify({
+                'status': 'error',
                 'error': 'Please enter a valid 6-digit code',
                 'field': 'code'
             }), 400
@@ -377,52 +566,45 @@ def verify_code():
 
         if result['success']:
             return jsonify({
-                'message': 'Email verified successfully',
+                'status': 'success',
+                'message': {
+                    'text': 'Thank you for verifying your email address. We will email you once your AI agent is ready.',
+                    'nextTransition': 'CODE_VERIFIED'  # FSM integration
+                },
                 'verified': True
             }), result['status_code']
         else:
-            response_data = {'error': result['error']}
+            response_data = {
+                'status': 'error',
+                'error': result['error']
+            }
+            
             if 'attempts_remaining' in result:
                 response_data['attempts_remaining'] = result['attempts_remaining']
+            
             if 'reset_session' in result:
-                response_data['reset_session'] = result['reset_session']
+                # Signal frontend to use SessionContext reset instead of window.reload
+                response_data['reset_session'] = True
+                response_data['message'] = {
+                    'nextTransition': 'SESSION_RESET_REQUIRED'
+                }
             
             return jsonify(response_data), result['status_code']
             
     except Exception as e:
         logger.error(f"Error in verify_code: {str(e)}")
-        return jsonify({'error': 'Internal server error'}), 500
-
-@email_verification_bp.route('/resend-code', methods=['POST'])
-@require_session
-def resend_verification_code():
-    """Resend verification code"""
-    try:
-        data = request.get_json()
-        session_id = data.get('session_id')
-        email = data.get('email', '').strip().lower()
-
-        verification_service = VerificationService()
-        result = verification_service.send_verification_code(session_id, email)
-
-        if result['success']:
-            return jsonify({'message': 'Verification code resent successfully'}), result['status_code']
-        else:
-            return jsonify({'error': result['error']}), result['status_code']
-            
-    except Exception as e:
-        logger.error(f"Error in resend_verification_code: {str(e)}")
-        return jsonify({'error': 'Internal server error'}), 500
+        return jsonify({'status': 'error', 'error': 'Internal server error'}), 500
 ```
 
 ## Frontend Implementation
 
-### Email Verification Hook
+### Email Verification Hook (Updated for SessionContext)
 
 ```typescript
 // src/hooks/useEmailVerification.ts
 import { useState, useCallback, useEffect } from "react";
 import { emailVerificationApi } from "../api/emailVerificationApi";
+import { useSession } from "../contexts/SessionContext";
 
 export interface EmailVerificationState {
   email: string;
@@ -436,6 +618,8 @@ export interface EmailVerificationState {
 }
 
 export const useEmailVerification = (sessionId: string) => {
+  const { resetSession } = useSession(); // Use SessionContext for resets
+  
   const [state, setState] = useState<EmailVerificationState>({
     email: "",
     code: "",
@@ -502,12 +686,12 @@ export const useEmailVerification = (sessionId: string) => {
         attemptsRemaining: errorData?.attempts_remaining || 0,
       }));
       
+      // Use SessionContext for session reset instead of window.location.reload
       if (errorData?.reset_session) {
-        // Reset session by reloading page
-        window.location.reload();
+        resetSession(true); // Show confirmation modal
       }
     }
-  }, [sessionId]);
+  }, [sessionId, resetSession]);
 
   const resendCode = useCallback(async () => {
     if (!state.email || !state.canResend) return;
@@ -715,44 +899,94 @@ export const CodeInput: React.FC<CodeInputProps> = ({
 
 ## Database Migration
 
-### PostgreSQL Email Verification Schema
+### SQLite Email Verification Schema (Aligned with Testing Strategy)
 
 ```sql
--- migrations/002_create_email_verification.sql
+-- migrations/002_create_email_verification_sqlite.sql
 CREATE TABLE email_verifications (
-    id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid(),
-    session_id VARCHAR(36) NOT NULL,
-    email_hash VARCHAR(255) NOT NULL,
-    email_plain VARCHAR(255) NOT NULL,
-    verification_code VARCHAR(6) NOT NULL,
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    session_id TEXT NOT NULL,
+    email_hash TEXT NOT NULL,
+    email_plain TEXT NOT NULL,
+    verification_code TEXT NOT NULL,
     attempts INTEGER DEFAULT 0,
     max_attempts INTEGER DEFAULT 3,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL '10 minutes'),
+    expires_at TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, '+10 minutes')),
     is_verified BOOLEAN DEFAULT FALSE,
     resend_attempts INTEGER DEFAULT 0,
     max_resend_attempts INTEGER DEFAULT 3,
     last_resend_at TIMESTAMP,
-    ip_address VARCHAR(45),
+    ip_address TEXT,
     user_agent TEXT,
-    verification_attempts_log TEXT,
-    
-    INDEX idx_session_id (session_id),
-    INDEX idx_email_hash (email_hash),
-    INDEX idx_expires_at (expires_at),
-    INDEX idx_created_at (created_at)
+    verification_attempts_log TEXT
 );
 
--- Create cleanup job (can be run manually or via cron)
--- DELETE FROM email_verifications WHERE created_at < NOW() - INTERVAL '24 hours';
+CREATE INDEX idx_ev_session_id ON email_verifications(session_id);
+CREATE INDEX idx_ev_email_hash ON email_verifications(email_hash);
+CREATE INDEX idx_ev_expires_at ON email_verifications(expires_at);
+CREATE INDEX idx_ev_created_at ON email_verifications(created_at);
+```
+
+## FSM Integration
+
+### State Updates (Aligned with nextTransition Pattern)
+
+```typescript
+// src/state/FiniteStateMachine.ts (additions)
+export enum States {
+  // ... existing states
+  COLLECTING_EMAIL = 'COLLECTING_EMAIL',
+  EMAIL_FORMAT_VALIDATION = 'EMAIL_FORMAT_VALIDATION', 
+  EMAIL_VERIFICATION = 'EMAIL_VERIFICATION',
+  EMAIL_VERIFIED = 'EMAIL_VERIFIED',
+  CREATE_BOT = 'CREATE_BOT',
+}
+
+export enum Transitions {
+  // ... existing transitions
+  EMAIL_PROVIDED = 'EMAIL_PROVIDED',
+  EMAIL_FORMAT_VALID = 'EMAIL_FORMAT_VALID',
+  EMAIL_FORMAT_INVALID = 'EMAIL_FORMAT_INVALID',
+  VERIFICATION_CODE_SENT = 'VERIFICATION_CODE_SENT',
+  CODE_VERIFIED = 'CODE_VERIFIED',
+  CODE_INVALID = 'CODE_INVALID',
+  RESEND_CODE = 'RESEND_CODE',
+  SESSION_RESET_REQUIRED = 'SESSION_RESET_REQUIRED',
+  EMAIL_VERIFICATION_COMPLETE = 'EMAIL_VERIFICATION_COMPLETE',
+}
+
+// State transition map (aligned with existing pattern)
+const stateTransitionMap = {
+  [States.UPLOAD_DOCS]: {
+    [Transitions.DOCS_UPLOADED]: States.COLLECTING_EMAIL,
+  },
+  [States.COLLECTING_EMAIL]: {
+    [Transitions.EMAIL_PROVIDED]: States.EMAIL_FORMAT_VALIDATION,
+  },
+  [States.EMAIL_FORMAT_VALIDATION]: {
+    [Transitions.EMAIL_FORMAT_VALID]: States.EMAIL_VERIFICATION,
+    [Transitions.EMAIL_FORMAT_INVALID]: States.COLLECTING_EMAIL,
+  },
+  [States.EMAIL_VERIFICATION]: {
+    [Transitions.VERIFICATION_CODE_SENT]: States.EMAIL_VERIFICATION,
+    [Transitions.CODE_VERIFIED]: States.EMAIL_VERIFIED,
+    [Transitions.CODE_INVALID]: States.EMAIL_VERIFICATION,
+    [Transitions.RESEND_CODE]: States.EMAIL_VERIFICATION,
+    [Transitions.SESSION_RESET_REQUIRED]: States.WELCOME_MSG, // Reset to beginning
+  },
+  [States.EMAIL_VERIFIED]: {
+    [Transitions.EMAIL_VERIFICATION_COMPLETE]: States.CREATE_BOT,
+  },
+};
 ```
 
 ## Configuration
 
-### Environment Variables
+### Environment Variables (Aligned with Existing Patterns)
 
 ```env
-# SMTP Configuration
+# SMTP Configuration (following existing config pattern)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USERNAME=your-email@gmail.com
@@ -760,27 +994,28 @@ SMTP_PASSWORD=your-app-password
 SMTP_FROM_EMAIL=noreply@yourcompany.com
 SMTP_FROM_NAME=Maria AI Agent
 
-# Environment-specific email subjects
+# Environment-specific email subjects (following existing pattern)
 EMAIL_SUBJECT_PREFIX=[DEV]  # [DEV] for development, [UAT] for UAT, empty for production
+
+# Database (following existing pattern)
+DATABASE_URL=sqlite:///maria_ai_dev.db  # SQLite for all environments
+TEST_DATABASE_URL=sqlite:///maria_ai_test.db
 ```
+
+## Testing Strategy (Aligned with Existing Patterns)
+
+### Test Database Configuration
+- **All Tests**: SQLite (following questions-and-assumptions.md)
+- **Migration Tests**: Automatic migration before tests
+- **Repository Tests**: Following UserSessionRepository test patterns
+- **Integration Tests**: Real Gmail SMTP (no mocking)
+- **Cleanup**: Automatic test data cleanup using existing patterns
 
 ## Implementation Timeline
 
-- **Week 1**: Backend Foundation (model, services, database)
-- **Week 2**: API Endpoints (routes, validation, integration)
-- **Week 3**: Frontend Components (hooks, components, FSM)
+- **Week 1**: Backend Foundation (repository, model, services with TransactionContext)
+- **Week 2**: API Endpoints (routes with nextTransition integration)
+- **Week 3**: Frontend Components (hooks with SessionContext integration)
 - **Week 4**: Testing, optimization, deployment
 
-## Testing Strategy
-
-### Development Testing
-- **Email Configuration**: Use personal Gmail account in .env
-- **Database**: Use existing PostgreSQL test database
-- **Integration**: Real SMTP integration (no mocking)
-- **Cleanup**: Automatic test data cleanup after each run
-
-### Production Testing
-- **Email Delivery**: Monitor Gmail sending quotas
-- **Error Handling**: Test all error scenarios
-- **Performance**: API response time monitoring
-- **Security**: Rate limiting and audit logging verification
+**All implementation now follows existing architectural patterns and eliminates conflicts.**
