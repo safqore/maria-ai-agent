@@ -99,6 +99,81 @@ The email verification flow integrates with the existing FSM by adding new state
 
 **Flow**: User enters email → Format validation (blocks until valid) → Verification code sent → User enters code → Verification complete → Proceed to bot creation
 
+## Configuration & Environment Management
+
+### SMTP Configuration (✅ Confirmed)
+
+- **Gmail Account**: Configurable via .env file for flexibility
+- **Environment Consistency**: Same Gmail account across dev/staging/production
+- **Subject Prefixes**: Environment-specific email subject prefixes
+  - **DEV**: `[DEV] Email Verification - Maria AI Agent`
+  - **UAT**: `[UAT] Email Verification - Maria AI Agent`
+  - **PROD**: `Email Verification - Maria AI Agent` (no prefix)
+- **Rate Limits**: Standard Gmail quotas (will address as encountered)
+- **Deployment**: CI/CD during off-peak times
+- **Reliability**: Depend on Gmail SMTP - no fallback plan needed
+
+### Environment Variables
+
+```env
+# SMTP Configuration
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+SMTP_FROM_EMAIL=noreply@safqore.com
+SMTP_FROM_NAME=Maria AI Agent
+
+# Environment
+NODE_ENV=development|staging|production
+EMAIL_SUBJECT_PREFIX=[DEV]|[UAT]|
+```
+
+## Data Privacy & Security Compliance
+
+### Proposed Security Defaults
+
+- **Data Retention**: Email addresses and verification codes automatically deleted after 24 hours
+- **Email Encryption**: Email addresses hashed using bcrypt before database storage
+- **Audit Logging**: All verification attempts logged with timestamp, IP, and outcome
+- **GDPR Compliance**: 
+  - Data processing consent implied through email verification initiation
+  - Right to be forgotten: automatic cleanup after 24 hours
+  - Data portability: minimal data collection (only email and verification status)
+- **Sensitive Data Protection**: No email addresses or verification codes in application logs
+- **Session Security**: Email verification tied to secure session tokens
+
+### Security Monitoring
+
+- **Failed Verification Attempts**: Alert after 10 failed attempts from same IP
+- **Email Delivery Failures**: Immediate alert for SMTP failures
+- **Database Anomalies**: Monitor for unusual verification patterns
+- **Rate Limiting**: Track and alert on rate limit violations
+
+## Error Handling & Edge Cases
+
+### System Resilience
+
+- **Email Delivery Failures**: 
+  - Immediate user notification with retry option
+  - System alerts for SMTP failures (showstopper scenario)
+  - Detailed error logging for debugging
+- **Database Unavailability**: 
+  - Graceful degradation with user-friendly error messages
+  - Automatic retry mechanism with exponential backoff
+  - Cache verification state temporarily in session storage
+- **System Downtime**: 
+  - Verification codes remain valid across system restarts
+  - Session persistence maintains verification state
+  - Clear user communication about temporary unavailability
+
+### User Experience Edge Cases
+
+- **Browser Refresh**: Email remains unverified, handled by session cleanup
+- **Code Expiration**: Clear messaging and easy resend functionality
+- **Maximum Attempts**: Graceful session reset with clear explanation
+- **Network Issues**: Retry mechanisms with user feedback
+
 ## Implementation Decisions
 
 ### Email Verification Flow
@@ -107,8 +182,10 @@ The email verification flow integrates with the existing FSM by adding new state
 - **Email Format Validation**: Blocking validation - user cannot proceed until valid email format is entered (✅ Confirmed)
 - **Verification Code**: 6-digit numeric for optimal user experience and mobile usability (✅ Confirmed)
 - **Success Flow**: Automatic progression to next chat state after verification (✅ Confirmed)
-- **SMTP Configuration**: Gmail SMTP (smtp.gmail.com:587) with App Password (✅ Confirmed)
-- **Email Template**: HTML template with branding from noreply@safqore.com (✅ Confirmed)
+- **SMTP Configuration**: Gmail SMTP (smtp.gmail.com:587) configurable via .env file (✅ Confirmed)
+- **Email Template**: HTML template with environment-specific subject prefixes (✅ Confirmed)
+- **Environment Handling**: [DEV]/[UAT] prefixes for lower environments, no prefix for PROD (✅ Confirmed)
+- **Email Delivery**: Reliable delivery required - silent failures are showstoppers (✅ Confirmed)
 
 ### Security and User Experience
 

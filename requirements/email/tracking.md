@@ -42,6 +42,11 @@ This document tracks the progress of the Email Verification System feature imple
 
 | Date     | Update                                                                 |
 | -------- | ---------------------------------------------------------------------- |
+| Dec 2024 | Configuration & Environment Management clarified - .env file approach confirmed |
+| Dec 2024 | Data Privacy & Security defaults proposed - 24hr retention, email hashing, audit logging |
+| Dec 2024 | Error Handling & Edge Cases addressed - system resilience strategies defined |
+| Dec 2024 | SMTP Configuration confirmed - Gmail via .env, environment-specific subject prefixes |
+| Dec 2024 | Email Delivery Requirements clarified - silent failures are showstoppers |
 | Dec 2024 | FSM integration clarified - additional states approach confirmed       |
 | Dec 2024 | Email format validation confirmed as blocking (user cannot proceed until valid) |
 | Dec 2024 | Comprehensive documentation review completed - confirmed 100% complete |
@@ -53,7 +58,9 @@ This document tracks the progress of the Email Verification System feature imple
 
 | Issue                          | Impact | Resolution Plan                                  | Status      |
 | ------------------------------ | ------ | ------------------------------------------------ | ----------- |
-| SMTP Configuration Details     | High   | Obtain Gmail app password and SMTP configuration | 🔴 Blocking |
+| SMTP Configuration Details     | High   | Gmail .env configuration approach confirmed       | ✅ Resolved |
+| Data Privacy & Security Policy | High   | Security defaults proposed - awaiting confirmation | 🟡 In Progress |
+| Error Handling Strategy        | Medium | System resilience strategies defined              | ✅ Resolved |
 | Database Migration Approval    | High   | Get approval for email_verifications table       | 🔴 Blocking |
 | Session Management Integration | Medium | Coordinate with existing session system          | 📋 Ready    |
 | Email Template Design          | Low    | Implement HTML templates per specifications      | 📋 Ready    |
@@ -61,7 +68,7 @@ This document tracks the progress of the Email Verification System feature imple
 
 ## Next Steps Priority
 
-1. 🔴 **SMTP Configuration** - Obtain and configure Gmail SMTP credentials
+1. 🟡 **Data Privacy & Security Confirmation** - Confirm proposed security defaults
 2. 🔴 **Database Migration Approval** - Get approval for email_verifications table
 3. 🟢 **Implement EmailVerification Model** - Create SQLAlchemy model (Ready to start)
 4. 🟢 **Build Email Service** - Code generation and SMTP integration (Ready to start)

@@ -87,28 +87,40 @@ class EmailVerification(Base):
 import smtplib
 import secrets
 import string
+import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import str
 
 class EmailService:
-    def __init__(self, smtp_server: str, smtp_port: int, username: str, password: str):
-        self.smtp_server = smtp_server
-        self.smtp_port = smtp_port
-        self.username = username
-        self.password = password
+    def __init__(self):
+        self.smtp_server = os.getenv('SMTP_HOST', 'smtp.gmail.com')
+        self.smtp_port = int(os.getenv('SMTP_PORT', '587'))
+        self.username = os.getenv('SMTP_USERNAME')
+        self.password = os.getenv('SMTP_PASSWORD')
+        self.from_email = os.getenv('SMTP_FROM_EMAIL', 'noreply@safqore.com')
+        self.from_name = os.getenv('SMTP_FROM_NAME', 'Maria AI Agent')
+        self.environment = os.getenv('NODE_ENV', 'development')
+        self.subject_prefix = os.getenv('EMAIL_SUBJECT_PREFIX', '')
 
     def generate_verification_code(self) -> str:
         """Generate a 6-digit numeric verification code"""
         return ''.join(secrets.choice(string.digits) for _ in range(6))
 
+    def _get_email_subject(self) -> str:
+        """Get email subject with environment-specific prefix"""
+        base_subject = "Email Verification - Maria AI Agent"
+        if self.subject_prefix:
+            return f"{self.subject_prefix} {base_subject}"
+        return base_subject
+
     def send_verification_email(self, email: str, code: str) -> bool:
         """Send verification email with code"""
         try:
             msg = MIMEMultipart()
-            msg['From'] = "Maria <noreply@safqore.com>"
+            msg['From'] = f"{self.from_name} <{self.from_email}>"
             msg['To'] = email
-            msg['Subject'] = "Email Verification - Maria AI Agent"
+            msg['Subject'] = self._get_email_subject()
 
             # HTML email template with branding
             html_body = f"""
@@ -132,7 +144,7 @@ class EmailService:
             msg.attach(MIMEText(html_body, 'html'))
 
             # Gmail SMTP configuration
-            server = smtplib.SMTP("smtp.gmail.com", 587)
+            server = smtplib.SMTP(self.smtp_server, self.smtp_port)
             server.starttls()
             server.login(self.username, self.password)
             server.send_message(msg)
@@ -140,7 +152,9 @@ class EmailService:
 
             return True
         except Exception as e:
-            print(f"Email sending failed: {e}")
+            # Log error but don't expose sensitive details
+            print(f"Email sending failed: {str(e)}")
+            # In production, this should trigger alerts
             return False
 ```
 
