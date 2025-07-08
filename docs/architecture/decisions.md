@@ -198,6 +198,46 @@ This file will contain all major architectural decisions made across the project
 - **Decision**: Use SQLite with proper initialization for concurrent database access
 - **Rationale**: Prevents "no such table" errors in concurrent scenarios
 - **Implementation**: Initialize database tables before concurrent tests, use proper session management
+
+## CI/CD Infrastructure Decisions
+
+### SQLite Threading Configuration
+- **Decision**: Use StaticPool for file-based SQLite, NullPool for in-memory databases
+- **Rationale**: Thread safety for concurrent test execution, proper connection management
+- **Implementation**: check_same_thread: False, isolation_level: None, environment-specific pool selection
+- **Established**: January 2025
+
+### Cross-Platform Database Support
+- **Decision**: Support both PostgreSQL and SQLite for development flexibility
+- **Rationale**: Development uses SQLite, production uses PostgreSQL, CI supports both
+- **Implementation**: Environment-specific database configuration with migration automation
+- **Established**: January 2025
+
+### Test Client Isolation
+- **Decision**: Use isolated test clients for concurrent testing scenarios
+- **Rationale**: Prevents "Cannot nest client invocations" errors in concurrent tests
+- **Implementation**: Function-scoped fixtures with separate client instances
+- **Established**: January 2025
+
+## Session Management Decisions
+
+### UUID Management Strategy
+- **Decision**: Frontend generates UUIDs with backend validation and collision handling
+- **Rationale**: Reduces server load, provides offline capability, ensures uniqueness
+- **Implementation**: UUID v4 generation with localStorage persistence, backend validation
+- **Established**: January 2025
+
+### React Context Architecture
+- **Decision**: Use React Context with reducer pattern for centralized state management
+- **Rationale**: Eliminates prop drilling, provides single source of truth for session state
+- **Implementation**: SessionContext with reducer, toast notifications, modal integration
+- **Established**: January 2025
+
+### Rate Limiting Implementation
+- **Decision**: Use Flask-Limiter with 10 requests/minute per IP address
+- **Rationale**: Prevents abuse while allowing normal usage, configurable for test environments
+- **Implementation**: In-memory storage with test exemptions, proper error responses
+- **Established**: January 2025
 - **Established**: December 2024
 
 ---

@@ -198,6 +198,105 @@ class EmailService:
     def __init__(self):
         self.smtp_server = os.getenv('SMTP_HOST', 'smtp.gmail.com')
         self.smtp_port = int(os.getenv('SMTP_PORT', '587'))
+
+## CI/CD Infrastructure Patterns
+
+### SQLite Database Configuration Pattern
+```python
+# SQLite configuration must follow this pattern for thread safety
+def create_engine(db_url: str, **engine_kwargs):
+    if db_url.startswith("sqlite://"):
+        engine_kwargs["connect_args"] = {
+            "check_same_thread": False,
+            "isolation_level": None,
+        }
+        if ":memory:" in db_url:
+            engine_kwargs["poolclass"] = StaticPool
+        else:
+            engine_kwargs["poolclass"] = NullPool
+        engine_kwargs.pop("pool_size", None)
+        engine_kwargs.pop("max_overflow", None)
+    return create_engine(db_url, **engine_kwargs)
+```
+
+### Test Client Isolation Pattern
+```python
+# Test clients must be isolated for concurrent testing
+@pytest.fixture(scope="function")
+def app():
+    app = create_app()
+    app.config["TESTING"] = True
+    app.config["RATELIMIT_ENABLED"] = False
+    return app
+
+def teardown_method(self):
+    # Reset rate limiter state after each test
+    try:
+        from app.routes.session import limiter
+        if hasattr(limiter, "_storage"):
+            limiter._storage.storage.clear()
+    except Exception:
+        pass
+```
+
+## Session Management Patterns
+
+### UUID Validation Pattern
+```python
+# UUID validation must follow this pattern
+def validate_uuid_format(uuid_str):
+    if not uuid_str or not isinstance(uuid_str, str):
+        return False
+    uuid_pattern = re.compile(
+        r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+        re.IGNORECASE
+    )
+    return bool(uuid_pattern.match(uuid_str))
+```
+
+### React Context Pattern
+```typescript
+// Session context must follow this pattern
+interface SessionContextType {
+  sessionId: string | null;
+  isLoading: boolean;
+  error: string | null;
+  isResetRequired: boolean;
+  resetSession: (showMessage?: boolean) => Promise<void>;
+}
+
+const SessionContext = createContext<SessionContextType | undefined>(undefined);
+
+export const SessionProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
+  const sessionData = useSessionUUID();
+  return (
+    <SessionContext.Provider value={sessionData}>
+      {children}
+    </SessionContext.Provider>
+  );
+};
+```
+
+### Rate Limiting Pattern
+```python
+# Rate limiting must follow this pattern
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["10/minute"],
+    storage_uri="memory://",
+)
+
+@session_bp.route("/validate-uuid", methods=["POST"])
+@limiter.limit("10/minute")
+def validate_uuid():
+    # Implementation
+    pass
+```
 ```
 
 ### Test Database Initialization Pattern

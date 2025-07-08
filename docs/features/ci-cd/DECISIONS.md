@@ -1,6 +1,6 @@
 # CI/CD Decisions
 
-**Last Updated:** December 2024
+**Last Updated:** January 8, 2025
 
 ## Platform & Architecture
 
@@ -16,10 +16,15 @@
 
 ## Testing Strategy
 
-### SQLite for CI Testing
-- **Decision**: Use SQLite in-memory for CI, PostgreSQL for production
-- **Rationale**: Self-contained testing without external dependencies, faster execution
-- **Implementation**: pytest with SQLite fixtures, production uses PostgreSQL
+### SQLite Threading Configuration
+- **Decision**: Use StaticPool for file-based SQLite, NullPool for in-memory
+- **Rationale**: Thread safety for concurrent test execution, proper connection management
+- **Implementation**: check_same_thread: False, isolation_level: None
+
+### Cross-Platform Database Support
+- **Decision**: Support both PostgreSQL and SQLite for flexibility
+- **Rationale**: Development uses SQLite, production uses PostgreSQL
+- **Implementation**: Environment-specific database configuration
 
 ### Quality Tools Selection
 - **Decision**: Use industry-standard formatting and linting tools
