@@ -17,9 +17,14 @@ Please help me by:
    - Directory structure and organization principles
    - Quality standards and design principles
 
-2. **Assess Existing Documentation**: I have documentation that needs cleanup located at:
-   [USER TO SPECIFY: Path to existing documentation]
-
+2. **Assess Existing Documentation**: 
+   
+   **REQUIRED: You must specify the exact path to documentation that needs cleanup.**
+   
+   Documentation path: [USER TO SPECIFY: Path to existing documentation]
+   
+   **If no path is provided, STOP and ask the user to specify the exact folder path before proceeding.**
+   
    Please analyze this documentation and:
    - Identify what type of content exists
    - Categorize content by the new system (architecture, features, decisions, etc.)
@@ -27,7 +32,7 @@ Please help me by:
    - Identify any conflicts with existing documentation
    - Extract cross-feature architectural information that belongs in /docs/architecture/ (decisions.md, integration-map.md, patterns.md)
 
-3. **Create Migration Plan**: Based on your analysis, create a step-by-step plan that:
+3. **Create Migration Plan**: Based on your analysis of the specified folder, create a step-by-step plan that:
    - Shows what content will be migrated to each new location
    - Identifies content that exceeds line limits (STATUS: 50 lines, DECISIONS: 30 lines, IMPLEMENTATION: 100 lines, BLOCKERS: 20 lines) and shows how to restate/summarize to preserve ALL key messages within limits
    - Suggests what should be deleted vs migrated to reduce noise
@@ -36,6 +41,7 @@ Please help me by:
    - Identifies cases where features may be too complex for line limits and should be broken down
    - Estimates time and effort required
    - Identifies potential conflicts or issues and how to resolve them through code review
+   - **Only addresses content from the specified folder path**
 
 4. **Cleanup Strategy**: Include in your plan:
    - What content will be hard deleted after validation
@@ -56,17 +62,21 @@ Please help me by:
 
 **CRITICAL: STOP AND WAIT FOR APPROVAL**
 
+**If no documentation path is specified, STOP immediately and ask the user to provide the exact folder path.**
+
 Present the detailed plan for my review and then STOP. Do NOT proceed with any implementation until I explicitly approve by saying "APPROVED - PROCEED WITH MIGRATION".
 
-Only after I give explicit approval should you proceed with implementation including creating directory structures and migrating content.
+Only after I give explicit approval should you proceed with implementation including creating directory structures and migrating content from the specified folder only.
 
 ## Approval Process
 
 You must:
-1. Present the complete migration plan
-2. Wait for my review
-3. Only proceed when I respond with "APPROVED - PROCEED WITH MIGRATION"
-4. Do NOT make any changes until you receive explicit approval
+1. **If no documentation path is specified, STOP and ask user to provide the exact folder path**
+2. Present the complete migration plan for the specified folder only
+3. Wait for my review
+4. Only proceed when I respond with "APPROVED - PROCEED WITH MIGRATION"
+5. Do NOT make any changes until you receive explicit approval
+6. **Only clean up the exact folder specified by the user**
 
 Additional Context:
 [ANY SPECIFIC REQUIREMENTS OR CONSTRAINTS]
@@ -131,6 +141,7 @@ Timeline: [When this needs to be completed]
 
 ## Red Flags to Watch For
 
+- **No specific folder path provided by user**
 - Content that doesn't fit new structure
 - Dependencies between scattered documents
 - Information that spans multiple features (should go to architecture registry)
@@ -143,6 +154,7 @@ Timeline: [When this needs to be completed]
 - Same information appearing in multiple places (consolidate into architecture registry as single source)
 - Features that seem too complex for line limits (**recommend breaking into smaller features**)
 - **Aggressive trimming that removes essential information instead of restating it more concisely**
+- **Attempting to process folders outside the specified path**
 
 ## Post-Migration Checklist
 
@@ -158,11 +170,13 @@ Timeline: [When this needs to be completed]
 
 ## Migration Order Requirements
 
-1. **Architecture Registry First**: Update /docs/architecture/ documents before feature docs
-2. **Feature Documentation Second**: Create feature docs that reference architecture registry
-3. **Cross-Validation**: Ensure consistency between architecture and feature documentation
-4. **Conflict Resolution**: Review actual codebase when documentation conflicts arise
-5. **Hard Deletion Last**: Only delete original content after successful migration and validation
+1. **Path Specification**: User must specify exact folder path before any analysis
+2. **Architecture Registry First**: Update /docs/architecture/ documents before feature docs
+3. **Feature Documentation Second**: Create feature docs that reference architecture registry
+4. **Cross-Validation**: Ensure consistency between architecture and feature documentation
+5. **Conflict Resolution**: Review actual codebase when documentation conflicts arise
+6. **Hard Deletion Last**: Only delete original content after successful migration and validation
+7. **Scope Limitation**: Only process content from the specified folder path
 
 ## Conflict Resolution Principles
 
