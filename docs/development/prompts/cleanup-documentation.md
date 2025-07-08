@@ -30,10 +30,12 @@ Please help me by:
    - Categorize content by the new system (architecture, features, decisions, etc.)
    - Assess content quality and relevance
    - Identify any conflicts with existing documentation
+   - Check if feature documentation already exists in /docs/features/ and plan for merging rather than overwriting
    - Extract cross-feature architectural information that belongs in /docs/architecture/ (decisions.md, integration-map.md, patterns.md)
 
 3. **Create Migration Plan**: Based on your analysis of the specified folder, create a step-by-step plan that:
    - Shows what content will be migrated to each new location
+   - **If feature documentation already exists, shows how to merge new content with existing docs rather than overwrite**
    - Identifies content that exceeds line limits (STATUS: 50 lines, DECISIONS: 30 lines, IMPLEMENTATION: 100 lines, BLOCKERS: 20 lines) and shows how to restate/summarize to preserve ALL key messages within limits
    - Suggests what should be deleted vs migrated to reduce noise
    - Identifies any missing documentation that should be created
@@ -59,6 +61,8 @@ Please help me by:
    - When conflicts arise, resolve by reviewing actual codebase implementation
    - Architecture registry serves as single source of truth for cross-feature decisions
    - **No essential information was lost during summarization**
+   - **Existing feature documentation was merged rather than overwritten (if applicable)**
+   - **Previously migrated content was preserved during new migration**
 
 **CRITICAL: STOP AND WAIT FOR APPROVAL**
 
@@ -132,6 +136,13 @@ Timeline: [When this needs to be completed]
 - Break complex content into appropriate sections
 - Delete content that can't be meaningfully categorized
 
+### For Existing Feature Documentation
+- **Check if feature folder already exists in /docs/features/**
+- **If exists, merge new content with existing docs rather than overwrite**
+- **Preserve all existing information while adding new content**
+- **Ensure line limits are still respected after merging**
+- **Update existing docs with new information while maintaining structure**
+
 ### For Cross-Feature Architectural Content
 - Extract architectural decisions → /docs/architecture/decisions.md
 - Extract integration points → /docs/architecture/integration-map.md  
@@ -155,6 +166,8 @@ Timeline: [When this needs to be completed]
 - Features that seem too complex for line limits (**recommend breaking into smaller features**)
 - **Aggressive trimming that removes essential information instead of restating it more concisely**
 - **Attempting to process folders outside the specified path**
+- **Overwriting existing feature documentation instead of merging**
+- **Losing previously migrated content during new migration**
 
 ## Post-Migration Checklist
 
@@ -163,10 +176,12 @@ Timeline: [When this needs to be completed]
 - [ ] Feature documentation is complete and current
 - [ ] All line limits are respected (STATUS: 50, DECISIONS: 30, IMPLEMENTATION: 100, BLOCKERS: 20)
 - [ ] **CRITICAL: All key messages from original documentation are preserved (even if restated differently)**
+- [ ] **Existing feature documentation was merged rather than overwritten (if applicable)**
 - [ ] Old documentation has been hard deleted
 - [ ] Documentation noise has been significantly reduced
 - [ ] Claude context is optimized for AI assistance
 - [ ] **No essential technical details or business requirements were lost during migration**
+- [ ] **Previously migrated content was preserved during new migration**
 
 ## Migration Order Requirements
 
@@ -184,4 +199,5 @@ Timeline: [When this needs to be completed]
 - **Architecture Registry**: Serves as single source of truth for cross-feature decisions
 - **Feature Complexity**: If feature can't fit line limits without losing critical details, recommend breaking into smaller features
 - **Content Overlap**: Consolidate duplicate information into architecture registry, have feature docs reference it
-- **Content Preservation**: **CRITICAL - When trimming content, focus on more concise language rather than removing information. Every important point must be captured, even if restated differently.** 
+- **Content Preservation**: **CRITICAL - When trimming content, focus on more concise language rather than removing information. Every important point must be captured, even if restated differently.**
+- **Existing Feature Docs**: **CRITICAL - If feature documentation already exists, merge new content with existing docs rather than overwrite. Preserve all existing information while adding new content.** 
