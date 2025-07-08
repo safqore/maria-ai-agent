@@ -238,7 +238,24 @@ This file will contain all major architectural decisions made across the project
 - **Rationale**: Prevents abuse while allowing normal usage, configurable for test environments
 - **Implementation**: In-memory storage with test exemptions, proper error responses
 - **Established**: January 2025
-- **Established**: December 2024
+
+### CI/CD Test Environment Configuration
+- **Decision**: Standardize pytest configuration with SQLite StaticPool for concurrent testing
+- **Rationale**: Ensures consistent test execution across environments, prevents threading issues
+- **Implementation**: pytest.ini standardization, database isolation, path resolution fixes
+- **Established**: January 2025
+
+### Session Repository Pattern Implementation
+- **Decision**: Use UserSessionRepository extending BaseRepository for session persistence
+- **Rationale**: Provides abstraction, testability, and consistent data access patterns
+- **Implementation**: CRUD operations with UUID validation, query optimization for session retrieval
+- **Established**: January 2025
+
+### Frontend Session Integration Strategy
+- **Decision**: Use React Context with localStorage persistence for seamless session management
+- **Rationale**: Provides offline capability, automatic session restoration, zero props drilling
+- **Implementation**: SessionContext with reducer pattern, localStorage integration, automatic restoration
+- **Established**: January 2025
 
 ---
 *This file will be populated as architectural decisions are made* 
