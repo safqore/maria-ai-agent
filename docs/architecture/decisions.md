@@ -257,5 +257,37 @@ This file will contain all major architectural decisions made across the project
 - **Implementation**: SessionContext with reducer pattern, localStorage integration, automatic restoration
 - **Established**: January 2025
 
+## File Upload Architecture Decisions
+
+### S3 Integration Strategy
+- **Decision**: Use AWS S3 for file storage with boto3 integration
+- **Rationale**: Scalable, reliable cloud storage with proper access controls
+- **Implementation**: S3 bucket with environment variables, boto3 client, file key generation
+- **Established**: December 2024
+
+### File Validation Architecture
+- **Decision**: Enforce PDF-only uploads with 5MB size limit and 3-file maximum
+- **Rationale**: Prevents malicious uploads, ensures system security, manages storage costs
+- **Implementation**: Backend validation with clear error messages, frontend pre-validation
+- **Established**: December 2024
+
+### Frontend-Backend Decoupling
+- **Decision**: Complete separation with configuration-based URL management
+- **Rationale**: Enables independent deployment, follows microservices principles
+- **Implementation**: Environment variables for API URLs, no hardcoded dependencies
+- **Established**: December 2024
+
+### Progress Tracking Architecture
+- **Decision**: Implement per-file progress tracking with upload status management
+- **Rationale**: Provides user feedback, enables retry mechanisms, improves UX
+- **Implementation**: Frontend progress bars, backend status tracking, error handling
+- **Established**: December 2024
+
+### File Upload Workflow Integration
+- **Decision**: Integrate file upload into chat FSM with state transitions
+- **Rationale**: Provides seamless user experience, maintains workflow consistency
+- **Implementation**: Upload state in FSM, "Done & Continue" button, nextTransition responses
+- **Established**: December 2024
+
 ---
 *This file will be populated as architectural decisions are made* 

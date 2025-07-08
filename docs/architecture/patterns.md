@@ -648,5 +648,204 @@ def add_correlation_id():
     logger.info(f"Request started: {correlation_id}")
 ```
 
+## File Upload Patterns
+
+### S3 File Upload Pattern
+```python
+# File upload with validation and S3 integration
+@upload_bp.route('/upload', methods=['POST'])
+@require_session
+def upload_file():
+    try:
+        if 'file' not in request.files:
+            raise ValidationError("No file provided")
+        
+        file = request.files['file']
+        if file.filename == '':
+            raise ValidationError("No file selected")
+        
+        # Validate file type and size
+        if not allowed_file(file.filename):
+            raise ValidationError("Invalid file type")
+        
+        if file.content_length > MAX_FILE_SIZE:
+            raise ValidationError("File too large")
+        
+        # Upload to S3
+        file_key = upload_file_to_s3(file, g.session_id)
+        
+        return jsonify({
+            'status': 'success',
+            'file_key': file_key,
+            'filename': file.filename
+        })
+    except ValidationError as e:
+        return jsonify({'status': 'error', 'error': str(e)}), 400
+```
+
+### File Validation Pattern
+```python
+# File validation utilities
+ALLOWED_EXTENSIONS = {'pdf'}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def validate_file_size(file):
+    file.seek(0, 2)  # Seek to end
+    size = file.tell()
+    file.seek(0)  # Reset to beginning
+    return size <= MAX_FILE_SIZE
+```
+
+### Frontend File Upload Pattern
+```typescript
+// File upload hook with progress tracking
+export const useFileUpload = (sessionId: string) => {
+  const [uploadState, setUploadState] = useState<UploadState>({
+    files: [],
+    uploading: false,
+    progress: {}
+  });
+
+  const uploadFile = useCallback(async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      setUploadState(prev => ({
+        ...prev,
+        uploading: true,
+        progress: { ...prev.progress, [file.name]: 0 }
+      }));
+      
+      const response = await apiClient.post('/api/v1/upload/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        params: { session_id: sessionId },
+        onUploadProgress: (progressEvent) => {
+          const progress = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setUploadState(prev => ({
+            ...prev,
+            progress: { ...prev.progress, [file.name]: progress }
+          }));
+        }
+      });
+      
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }, [sessionId]);
+
+  return { uploadState, uploadFile };
+};
+```
+
+### File Upload Component Pattern
+```typescript
+// File upload component with drag-and-drop
+interface FileUploadProps {
+  onFileSelect: (files: File[]) => void;
+  maxFiles?: number;
+  maxSize?: number;
+  allowedTypes?: string[];
+}
+
+export const FileUpload: React.FC<FileUploadProps> = ({
+  onFileSelect,
+  maxFiles = 3,
+  maxSize = 5 * 1024 * 1024, // 5MB
+  allowedTypes = ['.pdf']
+}) => {
+  const [dragActive, setDragActive] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
+
+  const validateFiles = (files: FileList): File[] => {
+    const validFiles: File[] = [];
+    const newErrors: string[] = [];
+
+    Array.from(files).forEach(file => {
+      if (file.size > maxSize) {
+        newErrors.push(`${file.name} is too large`);
+        return;
+      }
+      
+      const extension = '.' + file.name.split('.').pop()?.toLowerCase();
+      if (!allowedTypes.includes(extension)) {
+        newErrors.push(`${file.name} is not a supported file type`);
+        return;
+      }
+      
+      validFiles.push(file);
+    });
+
+    setErrors(newErrors);
+    return validFiles;
+  };
+
+  return (
+    <div className="file-upload-container">
+      {/* Drag and drop implementation */}
+    </div>
+  );
+};
+```
+
+### Progress Tracking Pattern
+```typescript
+// Progress tracking with status management
+interface FileStatus {
+  name: string;
+  status: 'pending' | 'uploading' | 'success' | 'error';
+  progress: number;
+  error?: string;
+}
+
+export const FileStatusList: React.FC<{ files: FileStatus[] }> = ({ files }) => {
+  return (
+    <div className="file-status-list">
+      {files.map(file => (
+        <div key={file.name} className={`file-status ${file.status}`}>
+          <span className="filename">{file.name}</span>
+          {file.status === 'uploading' && (
+            <div className="progress-bar">
+              <div 
+                className="progress-fill" 
+                style={{ width: `${file.progress}%` }}
+              />
+            </div>
+          )}
+          {file.status === 'success' && <span className="status-icon">✅</span>}
+          {file.status === 'error' && (
+            <span className="error-message">{file.error}</span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+```
+
+### Error Handling Pattern
+```typescript
+// File upload error handling
+export const handleUploadError = (error: any, filename: string): string => {
+  if (error.response?.status === 413) {
+    return `${filename}: File too large (max 5MB)`;
+  }
+  if (error.response?.status === 400) {
+    return `${filename}: ${error.response.data.error}`;
+  }
+  if (error.code === 'NETWORK_ERROR') {
+    return `${filename}: Network error, please retry`;
+  }
+  return `${filename}: Upload failed, please retry`;
+};
+```
+
 ---
 *All new code must follow these established patterns* 
