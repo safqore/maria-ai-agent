@@ -48,19 +48,29 @@ This file tracks how features integrate with each other to prevent conflicts and
 - **Database Tables**: `email_verifications` (new table)
 - **API Endpoints**: `/api/v1/email-verification/verify-email`, `/api/v1/email-verification/verify-code`, `/api/v1/email-verification/resend-code`
 
-### [Feature A]
-- **Depends On**: [List of features/systems this depends on]
-- **Used By**: [List of features that depend on this one]
-- **Shared Components**: [List of shared components]
-- **Database Tables**: [List of database tables]
-- **API Endpoints**: [List of API endpoints]
+### Refactor Project
+- **Depends On**: Database Core, Authentication System
+- **Used By**: All future features (foundation)
+- **Shared Components**: `BaseRepository`, `TransactionContext`, SQLAlchemy ORM
+- **Database Tables**: All existing tables (user_sessions, etc.)
+- **API Endpoints**: All existing endpoints with improved architecture
+- **Status**: 60% complete, 163/168 tests passing, another dev working
 
-### [Feature B]
-- **Depends On**: [List of features/systems this depends on]
-- **Used By**: [List of features that depend on this one]
-- **Shared Components**: [List of shared components]
-- **Database Tables**: [List of database tables]
-- **API Endpoints**: [List of API endpoints]
+### CI/CD Pipeline
+- **Depends On**: All features (infrastructure)
+- **Used By**: All features (deployment and testing)
+- **Shared Components**: GitHub Actions, pytest, jest, Docker
+- **Database Tables**: Test databases (SQLite in CI, PostgreSQL in production)
+- **API Endpoints**: All endpoints (testing and deployment)
+- **Status**: CI complete, CD planning phase
+
+### AI Agent Creation Process
+- **Depends On**: Email Verification, File Upload, Session Management
+- **Used By**: End user workflow
+- **Shared Components**: `SessionContext`, `FileUploadContext`, `EmailVerificationRepository`
+- **Database Tables**: user_sessions, email_verifications, uploaded files
+- **API Endpoints**: TBD (AI agent creation endpoints)
+- **Status**: 60% complete, backend logic needed
 
 ## Shared Services
 

@@ -180,5 +180,25 @@ This file will contain all major architectural decisions made across the project
 - **Implementation**: SQLite database with automatic migration before tests
 - **Established**: December 2024
 
+## Testing Architecture Decisions
+
+### Concurrent Testing Strategy
+- **Decision**: Use isolated test clients and proper database initialization for concurrent tests
+- **Rationale**: Prevents test interference and ensures reliable concurrent testing
+- **Implementation**: Create separate test clients, initialize database before concurrent tests
+- **Established**: December 2024
+
+### Performance Testing Methodology
+- **Decision**: Use proper throughput calculation and isolated test environments
+- **Rationale**: Provides accurate performance metrics and prevents test interference
+- **Implementation**: Measure actual throughput, use isolated test clients, proper timing
+- **Established**: December 2024
+
+### Database Threading Strategy
+- **Decision**: Use SQLite with proper initialization for concurrent database access
+- **Rationale**: Prevents "no such table" errors in concurrent scenarios
+- **Implementation**: Initialize database tables before concurrent tests, use proper session management
+- **Established**: December 2024
+
 ---
 *This file will be populated as architectural decisions are made* 
