@@ -44,6 +44,26 @@ This file will contain all major architectural decisions made across the project
 - **Implementation**: Call `resetSession()` instead of `window.reload`
 - **Established**: [Date when this was established]
 
+## Configuration Architecture
+
+### Service Separation
+- **Decision**: Use separate configuration files for each service (frontend/backend)
+- **Rationale**: Reflects deployment reality, prevents conflicts, follows stack standards
+- **Implementation**: `backend/.env` and `frontend/.env` with service-specific variables
+- **Established**: Current system standard
+
+### Environment Variable Strategy
+- **Decision**: Use standard environment variable names per technology stack
+- **Rationale**: Follows established conventions, reduces configuration complexity
+- **Implementation**: Backend uses `PORT=5000`, Frontend uses `PORT=3000` and `REACT_APP_*` prefix
+- **Established**: Current system standard
+
+### Configuration Loading
+- **Decision**: No cross-service configuration sharing or propagation
+- **Rationale**: Maintains clean separation of concerns and deployment independence
+- **Implementation**: Each service loads only its own configuration file
+- **Established**: Current system standard
+
 ## Security Architecture
 
 ### Authentication

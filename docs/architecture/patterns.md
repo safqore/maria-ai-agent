@@ -162,5 +162,41 @@ CREATE INDEX idx_features_session_id ON features(session_id);
 CREATE INDEX idx_features_created_at ON features(created_at);
 ```
 
+## Configuration Patterns
+
+### Environment File Pattern
+```bash
+# Backend configuration (.env)
+PORT=5000
+DATABASE_URL=sqlite:///maria_ai_dev.db
+OPENAI_API_KEY=your_key_here
+
+# Frontend configuration (.env)
+PORT=3000
+REACT_APP_API_BASE_URL=http://localhost:5000
+```
+
+### Configuration Loading Pattern
+```python
+# Backend configuration loading
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Loads from .env file in same directory
+
+PORT = os.getenv('PORT', '5000')
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///maria_ai_dev.db')
+```
+
+### Port Configuration Pattern
+```bash
+# Development server commands
+# Backend (ensure ports don't conflict)
+cd backend && python wsgi.py --port 5000
+
+# Frontend (React handles PORT automatically)
+cd frontend && npm start  # Uses PORT=3000 from .env
+```
+
 ---
 *All new code must follow these established patterns* 
