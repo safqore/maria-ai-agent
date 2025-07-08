@@ -29,7 +29,7 @@ Please help me by:
 
 3. **Create Migration Plan**: Based on your analysis, create a step-by-step plan that:
    - Shows what content will be migrated to each new location
-   - Identifies content that exceeds line limits (STATUS: 50 lines, DECISIONS: 30 lines, IMPLEMENTATION: 100 lines, BLOCKERS: 20 lines) and shows how to restate/summarize without losing key messages
+   - Identifies content that exceeds line limits (STATUS: 50 lines, DECISIONS: 30 lines, IMPLEMENTATION: 100 lines, BLOCKERS: 20 lines) and shows how to restate/summarize to preserve ALL key messages within limits
    - Suggests what should be deleted vs migrated to reduce noise
    - Identifies any missing documentation that should be created
    - Shows how to update architecture registry (/docs/architecture/decisions.md, integration-map.md, patterns.md) with cross-feature information
@@ -46,11 +46,13 @@ Please help me by:
 5. **Validation Steps**: Include steps to ensure:
    - Migrated content follows established patterns
    - Line limits are respected
+   - **CRITICAL: All key messages from original documentation are preserved (even if restated differently)**
    - Architecture registry is updated BEFORE feature docs to avoid conflicts
    - No conflicts with existing feature documentation
    - Cross-references between architecture and feature docs are consistent
    - When conflicts arise, resolve by reviewing actual codebase implementation
    - Architecture registry serves as single source of truth for cross-feature decisions
+   - **No essential information was lost during summarization**
 
 **CRITICAL: STOP AND WAIT FOR APPROVAL**
 
@@ -85,12 +87,14 @@ Timeline: [When this needs to be completed]
 
 ## Migration Success Criteria
 
+- **CRITICAL: ALL key messages from original documentation are preserved (even if restated more concisely)**
 - Only essential content is preserved within strict line limits
 - New documentation follows line limits and structure
 - Architecture registry is updated with new patterns
 - No conflicts with existing feature documentation
 - Documentation noise is significantly reduced
 - Claude context is optimized for better AI assistance
+- **No essential technical details or business requirements are lost**
 
 ## Common Migration Patterns
 
@@ -102,10 +106,11 @@ Timeline: [When this needs to be completed]
 
 ### For Bloated Documentation
 - Identify core content for migration
-- Restate and summarize to fit line limits without losing key messages
-- Delete detailed examples and lengthy discussions
-- Create focused, essential-only versions
+- **CRITICAL: Restate and summarize to fit line limits while preserving ALL key messages - do NOT lose essential information**
+- Delete detailed examples and lengthy discussions only if they don't contain key information
+- Create focused, essential-only versions that retain all critical details
 - **If critical technical details would be lost due to line limits, recommend breaking the feature into smaller features**
+- **Use more concise language but ensure every important point is captured**
 
 ### For Duplicate Content
 - Consolidate into single source of truth
@@ -129,7 +134,7 @@ Timeline: [When this needs to be completed]
 - Content that doesn't fit new structure
 - Dependencies between scattered documents
 - Information that spans multiple features (should go to architecture registry)
-- Critical context that might be lost during summarization
+- **CRITICAL: Any summarization that would lose key technical details or business requirements**
 - Outdated or conflicting information
 - Architectural decisions buried in feature docs
 - Integration points not captured in integration-map.md
@@ -137,6 +142,7 @@ Timeline: [When this needs to be completed]
 - Conflicts between existing architecture docs and migrated content (**resolve by reviewing actual codebase**)
 - Same information appearing in multiple places (consolidate into architecture registry as single source)
 - Features that seem too complex for line limits (**recommend breaking into smaller features**)
+- **Aggressive trimming that removes essential information instead of restating it more concisely**
 
 ## Post-Migration Checklist
 
@@ -144,9 +150,11 @@ Timeline: [When this needs to be completed]
 - [ ] Architecture registry (decisions.md, integration-map.md, patterns.md) is updated with cross-feature information
 - [ ] Feature documentation is complete and current
 - [ ] All line limits are respected (STATUS: 50, DECISIONS: 30, IMPLEMENTATION: 100, BLOCKERS: 20)
+- [ ] **CRITICAL: All key messages from original documentation are preserved (even if restated differently)**
 - [ ] Old documentation has been hard deleted
 - [ ] Documentation noise has been significantly reduced
 - [ ] Claude context is optimized for AI assistance
+- [ ] **No essential technical details or business requirements were lost during migration**
 
 ## Migration Order Requirements
 
@@ -161,4 +169,5 @@ Timeline: [When this needs to be completed]
 - **Documentation Conflicts**: When existing docs contradict migrated content, review actual codebase implementation
 - **Architecture Registry**: Serves as single source of truth for cross-feature decisions
 - **Feature Complexity**: If feature can't fit line limits without losing critical details, recommend breaking into smaller features
-- **Content Overlap**: Consolidate duplicate information into architecture registry, have feature docs reference it 
+- **Content Overlap**: Consolidate duplicate information into architecture registry, have feature docs reference it
+- **Content Preservation**: **CRITICAL - When trimming content, focus on more concise language rather than removing information. Every important point must be captured, even if restated differently.** 
