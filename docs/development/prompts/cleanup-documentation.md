@@ -7,6 +7,8 @@ Use this prompt to migrate existing documentation to the new layered documentati
 ```
 Hey Claude, I need to clean up and migrate existing documentation to align with our new layered documentation system.
 
+**IMPORTANT: Present your plan and wait for my explicit approval before proceeding with any implementation.**
+
 Please help me by:
 
 1. **Review Current System**: First, review /docs/README.md to understand:
@@ -50,7 +52,19 @@ Please help me by:
    - When conflicts arise, resolve by reviewing actual codebase implementation
    - Architecture registry serves as single source of truth for cross-feature decisions
 
-**Present the plan for my review before any execution. Once I approve the plan, proceed with implementation including creating directory structures and migrating content without asking for additional permissions.**
+**CRITICAL: STOP AND WAIT FOR APPROVAL**
+
+Present the detailed plan for my review and then STOP. Do NOT proceed with any implementation until I explicitly approve by saying "APPROVED - PROCEED WITH MIGRATION".
+
+Only after I give explicit approval should you proceed with implementation including creating directory structures and migrating content.
+
+## Approval Process
+
+You must:
+1. Present the complete migration plan
+2. Wait for my review
+3. Only proceed when I respond with "APPROVED - PROCEED WITH MIGRATION"
+4. Do NOT make any changes until you receive explicit approval
 
 Additional Context:
 [ANY SPECIFIC REQUIREMENTS OR CONSTRAINTS]
@@ -67,6 +81,7 @@ Timeline: [When this needs to be completed]
 - ✅ Maintains architectural consistency
 - ✅ Prevents documentation conflicts
 - ✅ Creates clear migration roadmap
+- ✅ **Requires explicit user approval before any implementation**
 
 ## Migration Success Criteria
 
