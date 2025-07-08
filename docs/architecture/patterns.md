@@ -162,6 +162,79 @@ CREATE INDEX idx_features_session_id ON features(session_id);
 CREATE INDEX idx_features_created_at ON features(created_at);
 ```
 
+### Email Verification Repository Pattern
+```python
+# Email verification repositories must follow this pattern
+class EmailVerificationRepository(BaseRepository[EmailVerification]):
+    def __init__(self):
+        super().__init__(EmailVerification)
+    
+    def get_by_session_id(self, session_id: str) -> Optional[EmailVerification]:
+        with get_db_session() as session:
+            verification = session.query(EmailVerification).filter_by(
+                session_id=session_id
+            ).first()
+            if verification:
+                session.expunge(verification)
+            return verification
+    
+    def cleanup_expired_records(self, hours: int = 24) -> int:
+        with get_db_session() as session:
+            cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+            expired_records = session.query(EmailVerification).filter(
+                EmailVerification.created_at < cutoff_time
+            ).all()
+            count = len(expired_records)
+            for record in expired_records:
+                session.delete(record)
+            session.commit()
+            return count
+```
+
+### Email Service Pattern
+```python
+# Email services must follow this pattern
+class EmailService:
+    def __init__(self):
+        self.smtp_server = os.getenv('SMTP_HOST', 'smtp.gmail.com')
+        self.smtp_port = int(os.getenv('SMTP_PORT', '587'))
+        self.username = os.getenv('SMTP_USERNAME')
+        self.password = os.getenv('SMTP_PASSWORD')
+    
+    def generate_verification_code(self) -> str:
+        return ''.join(secrets.choice(string.digits) for _ in range(6))
+    
+    def hash_email(self, email: str) -> str:
+        return bcrypt.hashpw(email.encode('utf-8'), bcrypt.gensalt(rounds=12)).decode('utf-8')
+    
+    def send_verification_email(self, email: str, code: str) -> bool:
+        # SMTP implementation with proper error handling
+        pass
+```
+
+### Verification Service Pattern
+```python
+# Verification services must follow this pattern
+class VerificationService:
+    def __init__(self):
+        self.email_service = EmailService()
+        self.email_verification_repository = get_email_verification_repository()
+    
+    def send_verification_code(self, session_id: str, email: str) -> Dict[str, Any]:
+        with TransactionContext():
+            # Rate limiting check
+            # Code generation and sending
+            # Database storage
+            pass
+    
+    def verify_code(self, session_id: str, code: str) -> Dict[str, Any]:
+        with TransactionContext():
+            # Code validation
+            # Attempt tracking
+            # Success/failure handling
+            pass
+```
+
 ## Configuration Patterns
 
 ### Environment File Pattern

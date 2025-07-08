@@ -2,99 +2,59 @@
 
 **Last Updated:** 2024-12-21
 ## Implementation Overview
-Email verification integrates with existing chat interface via finite state machine.
+Email verification integrates with existing chat interface via finite state machine using established patterns.
+
 ## Core Implementation Components
 
-### 1. Chat Interface Integration
-**Integration Point:** Existing chat finite state machine
-**New States Required:**
-- `EMAIL_VERIFICATION_PENDING` - After valid email entered
-- `EMAIL_CODE_ENTRY` - Waiting for verification code
-- `EMAIL_VERIFIED` - Successful verification complete
+### 1. Backend Foundation
+**EmailVerification Model:** SQLAlchemy model with audit fields and indexing
+**EmailVerificationRepository:** Extends BaseRepository pattern with session-based queries
+**EmailService:** SMTP integration with bcrypt hashing and code generation
+**VerificationService:** TransactionContext-based operations with rate limiting
 
-**State Transitions:**
-- Valid email format → Send verification email → Request code entry
-- Invalid email → Keep asking for correct format
-- Code entry → Validate → Success or retry/reset
+### 2. API Endpoints
+**POST /api/v1/email-verification/verify-email:** Email format validation and code sending
+**POST /api/v1/email-verification/verify-code:** Code validation with attempt tracking
+**POST /api/v1/email-verification/resend-code:** Rate-limited code resending
 
-### 2. Email Service Integration
-**Service Requirements:**
-- Send verification emails with 6-digit codes
-- Template-based email generation
-- Delivery tracking and error handling
+**Response Pattern:** All endpoints return nextTransition for FSM integration
 
-**Email Template Structure:**
-```
-Subject: Verify your email address
-Body: Your verification code is: [6-DIGIT-CODE]
-Code expires in 10 minutes.
-```
+### 3. Frontend Components
+**Email Input Component:** Real-time validation with blocking behavior
+**Code Input Component:** 6-digit entry with attempt tracking and cooldown timer
+**Email Verification Hook:** useEmailVerification with SessionContext integration
+**FSM Integration:** Additional states added to existing FiniteStateMachine.ts
 
-### 3. Code Generation and Validation
-**Generation Logic:**
-- 6-character alphanumeric (A-Z, 0-9)
-- Cryptographically secure random generation
-- Server-side storage with expiration timestamp
-
-**Validation Logic:**
-- Case-insensitive comparison
-- Expiration check (10-minute window)
-- Attempt counting (max 3 failures)
-- Rate limiting for resend requests
-
-### 4. UI/UX Changes
-**Button Positioning:**
-- Move "Done" and "Continue" buttons to bottom instead of right side of uploaded documents
-- Add "Resend Code" button with 1-minute cooldown indicator
-
-**Text Updates:**
-- Original: "Nice to meet you, fu wu! Let's build your personalised AI agent..."
-- Updated: Make more concise and precise (specific text TBD)
-- Original: "Great! Now, please enter your email address so I can send you updates and results."
-- Updated: "Please enter your email address so I can notify you once your AI agent is ready."
+### 4. Database Migration
+**SQLite Schema:** email_verifications table with audit fields and proper indexing
+**Migration Script:** Simple SQL script following existing Alembic pattern
+**Data Retention:** 24-hour auto-cleanup via repository cleanup method
 
 ### 5. Session Management Integration
-**Reset Trigger:** Use existing session reset functionality
-**Reset Conditions:**
-- 3 failed code verification attempts
-- Session timeout during verification
-- User-initiated reset
+**Reset Pattern:** Use SessionContext.resetSession() instead of window.location.reload
+**Reset Conditions:** 3 failed verification attempts, session timeout, user-initiated
+**Modal Integration:** Leverage existing SessionResetModal for user confirmation
 
-**Reset Implementation:**
-- Call existing `resetSession()` method
-- Show remaining attempts to user
-
-### 6. Error Handling
-**Email Format Validation:**
-- Real-time validation in chat interface
-- Clear error messages for invalid formats
-- Continue prompting until valid format received
-
-**Code Verification Errors:**
-- Display remaining attempts after each failure
-- Show clear error messages for invalid codes
-- Automatic session reset after 3 failures
-
-**Email Delivery Errors:**
-- Handle service unavailability
-- Provide fallback messaging
-- Enable manual retry mechanisms
+### 6. Security Implementation
+**Email Hashing:** bcrypt with salt rounds=12 for stored email addresses
+**Audit Logging:** Use existing audit_utils.log_audit_event pattern
+**Rate Limiting:** Database-based with 30-second cooldown and 3-attempt limits
+**Code Storage:** Plain text in database (short-lived, 10-minute expiration)
 
 ## Integration Points
 
 **Existing Systems:**
-- Chat interface and finite state machine
-- Session management and reset functionality
-- File upload flow (button positioning changes)
+- SessionContext for session management
+- TransactionContext for atomic operations
+- BaseRepository pattern for database access
+- FiniteStateMachine for state transitions
+- Audit logging for security tracking
 
-**New Dependencies:** Email service provider, code generation service, email template system
+**New Dependencies:** Gmail SMTP service, email template system, verification code generation
+
 ## Testing Strategy
 
-**Unit Tests:**
-- Code generation and validation logic
-- Email format validation
-- Attempt counting and rate limiting
-
-**Integration Tests:** Chat interface state transitions, email service integration, session reset integration
-
-**End-to-End Tests:** Complete verification flow, error scenarios and recovery, UI/UX changes validation 
+**Backend Testing:** pytest with SQLite fixtures, real Gmail integration
+**Frontend Testing:** Jest + React Testing Library with component isolation
+**Integration Testing:** End-to-end verification flow with error scenarios
+**Performance Testing:** API response time <200ms, component render <100ms 

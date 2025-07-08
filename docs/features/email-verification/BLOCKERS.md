@@ -3,18 +3,36 @@
 **Last Updated:** 2024-12-21
 ## Critical Blockers
 
-### 1. Email Service Provider Selection
-**Status:** 🔴 Unresolved
+### 1. SMTP Configuration
+**Status:** 🔴 Blocking Implementation
 **Impact:** Cannot implement email sending functionality
-**Details:** Need to choose and configure email service (SendGrid, AWS SES, etc.)
+**Details:** Need Gmail SMTP credentials in .env file
+**Resolution:** User will add Gmail app password before regression testing
 
-### 2. Finite State Machine Integration Strategy
-**Status:** 🔴 Unresolved  
-**Details:** Need to determine how to add email verification states to existing FSM
-### 3. Email Template Design
-**Status:** 🟡 Needs Clarification
-**Details:** Need final approval on email template content
+### 2. Database Migration
+**Status:** 🔴 Blocking Implementation
+**Impact:** Cannot create EmailVerification model
+**Details:** Need to run migration script to create email_verifications table
+**Resolution:** Simple SQL script following existing Alembic pattern
 
-### 4. UI Text Finalization
-**Status:** 🟡 Needs Clarification
-**Details:** Need specific text for "more concise and precise" greeting message 
+## Resolved Blockers
+
+### ✅ Email Service Provider Selection
+**Status:** ✅ Resolved
+**Decision:** Gmail SMTP (smtp.gmail.com:587) with app password
+**Implementation:** EmailService with SMTP integration and bcrypt hashing
+
+### ✅ Finite State Machine Integration Strategy
+**Status:** ✅ Resolved
+**Decision:** Use nextTransition property in API responses
+**Implementation:** Additional states added to existing FiniteStateMachine.ts
+
+### ✅ Email Template Design
+**Status:** ✅ Resolved
+**Decision:** HTML template with environment-specific subject prefixes
+**Implementation:** Professional email template with verification code display
+
+### ✅ UI Text Finalization
+**Status:** ✅ Resolved
+**Decision:** "Please enter your email address so I can notify you once your AI agent is ready."
+**Implementation:** Real-time validation with blocking behavior 

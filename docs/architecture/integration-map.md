@@ -32,7 +32,21 @@ This file tracks how features integrate with each other to prevent conflicts and
 - **Dependencies**: None
 - **Breaking Changes**: Affects all API access
 
+### Email Verification System
+- **Owner**: Email Verification Feature
+- **Used By**: User onboarding flow, AI agent readiness notifications
+- **Interface**: `EmailVerificationRepository`, `EmailService`, `/api/v1/email-verification/*` endpoints
+- **Dependencies**: Session Management, Database Core, Authentication System
+- **Breaking Changes**: Affects user onboarding flow
+
 ## Feature Dependencies
+
+### Email Verification
+- **Depends On**: Session Management, Database Core, Authentication System
+- **Used By**: User onboarding flow, AI agent readiness notifications
+- **Shared Components**: `SessionContext`, `TransactionContext`, `BaseRepository`
+- **Database Tables**: `email_verifications` (new table)
+- **API Endpoints**: `/api/v1/email-verification/verify-email`, `/api/v1/email-verification/verify-code`, `/api/v1/email-verification/resend-code`
 
 ### [Feature A]
 - **Depends On**: [List of features/systems this depends on]
@@ -80,12 +94,16 @@ This file tracks how features integrate with each other to prevent conflicts and
 ### Endpoint Namespaces
 - `/api/v1/session/*`: Session Management (create, reset, status)
 - `/api/v1/upload/*`: File Upload (upload, status, list)
+- `/api/v1/email-verification/*`: Email Verification (verify-email, verify-code, resend-code)
 - `/api/v1/[feature]/*`: [Feature Name]
 
 ### API Integration Points
 - **Session Creation**: POST `/api/v1/session/create` → Returns session_id
 - **File Upload**: POST `/api/v1/upload/upload` → Requires session_id, returns file_key
 - **Session Reset**: POST `/api/v1/session/reset` → Requires session_id
+- **Email Verification**: POST `/api/v1/email-verification/verify-email` → Requires session_id, returns nextTransition
+- **Code Verification**: POST `/api/v1/email-verification/verify-code` → Requires session_id, returns nextTransition
+- **Code Resend**: POST `/api/v1/email-verification/resend-code` → Requires session_id, returns nextTransition
 - **Authentication**: All endpoints require `X-API-Key` header (configurable for tests)
 
 ## CI/CD Integration Points

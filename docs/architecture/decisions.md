@@ -136,5 +136,49 @@ This file will contain all major architectural decisions made across the project
 - **Implementation**: Separate jobs with shared workflow triggers
 - **Established**: December 2024
 
+## Email Verification Architecture Decisions
+
+### Repository Pattern for Email Verification
+- **Decision**: Use `EmailVerificationRepository` extending `BaseRepository<EmailVerification>`
+- **Rationale**: Consistent with existing repository pattern, provides abstraction and testability
+- **Implementation**: Follow same pattern as `UserSessionRepository` with factory integration
+- **Established**: December 2024
+
+### Transaction Management for Email Operations
+- **Decision**: Use `TransactionContext` for all email verification database operations
+- **Rationale**: Ensures atomicity for code generation, verification, and attempt tracking
+- **Implementation**: Wrap all service operations in TransactionContext with proper rollback
+- **Established**: December 2024
+
+### Session Management Integration
+- **Decision**: Use `SessionContext.resetSession()` instead of `window.location.reload`
+- **Rationale**: Provides consistent user experience and proper session state management
+- **Implementation**: Call `resetSession(true)` to show confirmation modal
+- **Established**: December 2024
+
+### FSM Integration with nextTransition
+- **Decision**: Use `nextTransition` property in API responses for FSM integration
+- **Rationale**: Consistent with existing chat FSM pattern, provides clear state management
+- **Implementation**: All email verification endpoints return nextTransition for state transitions
+- **Established**: December 2024
+
+### Security Implementation
+- **Decision**: Use bcrypt hashing (rounds=12) for email addresses with audit logging
+- **Rationale**: Protects user privacy while maintaining audit trail for security
+- **Implementation**: Hash emails before storage, use `audit_utils.log_audit_event`
+- **Established**: December 2024
+
+### Rate Limiting Strategy
+- **Decision**: Database-based rate limiting with 30-second cooldown and 3-attempt limits
+- **Rationale**: Prevents abuse while allowing legitimate retry scenarios
+- **Implementation**: Track attempts and timestamps in database, enforce limits in service layer
+- **Established**: December 2024
+
+### Testing Database Strategy
+- **Decision**: Use SQLite for all email verification testing environments
+- **Rationale**: Consistent with existing testing strategy, no external dependencies
+- **Implementation**: SQLite database with automatic migration before tests
+- **Established**: December 2024
+
 ---
 *This file will be populated as architectural decisions are made* 
