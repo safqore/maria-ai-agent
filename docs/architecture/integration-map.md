@@ -7,23 +7,30 @@ This file tracks how features integrate with each other to prevent conflicts and
 ### Session Management
 - **Owner**: Core System
 - **Used By**: All features
-- **Interface**: `SessionContext`, `UserSession` model
+- **Interface**: `SessionContext`, `UserSession` model, `/api/v1/session/*` endpoints
 - **Dependencies**: None
 - **Breaking Changes**: Requires coordination with all features
 
 ### File Upload
 - **Owner**: Core System
 - **Used By**: Features that need file handling
-- **Interface**: `FileUploadContext`, S3 utils
+- **Interface**: `FileUploadContext`, S3 utils, `/api/v1/upload/*` endpoints
 - **Dependencies**: Session Management
 - **Breaking Changes**: Affects any feature using file uploads
 
 ### Database Core
 - **Owner**: Core System
 - **Used By**: All features
-- **Interface**: `BaseRepository`, `TransactionContext`
+- **Interface**: `BaseRepository`, `TransactionContext`, SQLAlchemy ORM
 - **Dependencies**: None
 - **Breaking Changes**: Requires coordination with all features
+
+### Authentication System
+- **Owner**: Core System
+- **Used By**: All API endpoints
+- **Interface**: API key middleware, `X-API-Key` header validation
+- **Dependencies**: None
+- **Breaking Changes**: Affects all API access
 
 ## Feature Dependencies
 
@@ -71,9 +78,15 @@ This file tracks how features integrate with each other to prevent conflicts and
 ## API Endpoint Conflicts
 
 ### Endpoint Namespaces
-- `/api/v1/session/*`: Session Management
-- `/api/v1/upload/*`: File Upload
+- `/api/v1/session/*`: Session Management (create, reset, status)
+- `/api/v1/upload/*`: File Upload (upload, status, list)
 - `/api/v1/[feature]/*`: [Feature Name]
+
+### API Integration Points
+- **Session Creation**: POST `/api/v1/session/create` → Returns session_id
+- **File Upload**: POST `/api/v1/upload/upload` → Requires session_id, returns file_key
+- **Session Reset**: POST `/api/v1/session/reset` → Requires session_id
+- **Authentication**: All endpoints require `X-API-Key` header (configurable for tests)
 
 ### Shared Parameters
 - `session_id`: Required by all endpoints

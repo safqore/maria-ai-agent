@@ -198,5 +198,153 @@ cd backend && python wsgi.py --port 5000
 cd frontend && npm start  # Uses PORT=3000 from .env
 ```
 
+## Refactor-Specific Patterns
+
+### Repository Pattern Implementation
+```python
+# Base repository with generic CRUD operations
+class BaseRepository[T]:
+    def __init__(self, model_class: Type[T]):
+        self.model_class = model_class
+    
+    def create(self, data: dict) -> T:
+        instance = self.model_class(**data)
+        db.session.add(instance)
+        db.session.commit()
+        return instance
+    
+    def get_by_id(self, id: str) -> Optional[T]:
+        return self.model_class.query.get(id)
+```
+
+### Flask Blueprint Organization
+```python
+# Blueprint registration pattern
+def create_app():
+    app = Flask(__name__)
+    
+    # Register blueprints with URL prefixes
+    app.register_blueprint(session_bp, url_prefix='/api/v1/session')
+    app.register_blueprint(upload_bp, url_prefix='/api/v1/upload')
+    
+    return app
+
+# Blueprint definition pattern
+session_bp = Blueprint('session', __name__)
+
+@session_bp.route('/create', methods=['POST'])
+def create_session():
+    # Implementation
+    pass
+```
+
+### React Context State Management
+```typescript
+// Context provider pattern
+interface ChatContextType {
+  messages: Message[];
+  addMessage: (message: Message) => void;
+  resetChat: () => void;
+}
+
+const ChatContext = createContext<ChatContextType | undefined>(undefined);
+
+export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  
+  const addMessage = useCallback((message: Message) => {
+    setMessages(prev => [...prev, message]);
+  }, []);
+  
+  const resetChat = useCallback(() => {
+    setMessages([]);
+  }, []);
+  
+  return (
+    <ChatContext.Provider value={{ messages, addMessage, resetChat }}>
+      {children}
+    </ChatContext.Provider>
+  );
+};
+```
+
+### Service Layer Separation
+```python
+# Service pattern with business logic separation
+class SessionService:
+    def __init__(self):
+        self.repository = get_user_session_repository()
+    
+    def create_session(self) -> dict:
+        with TransactionContext():
+            session_uuid = self._generate_uuid()
+            session_data = {
+                'id': session_uuid,
+                'created_at': datetime.utcnow()
+            }
+            session = self.repository.create(session_data)
+            return {'session_id': session.id}
+    
+    def _generate_uuid(self) -> str:
+        # Business logic for UUID generation
+        pass
+```
+
+### Transaction Context Manager
+```python
+# Transaction context for atomic operations
+class TransactionContext:
+    def __enter__(self):
+        # Start transaction
+        pass
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            # Rollback on exception
+            db.session.rollback()
+        else:
+            # Commit on success
+            db.session.commit()
+```
+
+### S3 File Upload Integration
+```python
+# S3 upload pattern with session validation
+def upload_file_to_s3(file, session_uuid: str) -> str:
+    try:
+        bucket_name = current_app.config['S3_BUCKET']
+        file_key = f"uploads/{session_uuid}/{file.filename}"
+        
+        s3_client.upload_fileobj(
+            file,
+            bucket_name,
+            file_key,
+            ExtraArgs={'ContentType': file.content_type}
+        )
+        return file_key
+    except Exception as e:
+        logger.error(f"S3 upload failed: {str(e)}")
+        raise UploadError("File upload failed")
+```
+
+### Error Handling and Logging
+```python
+# Centralized error handling pattern
+@upload_bp.errorhandler(Exception)
+def handle_upload_error(error):
+    logger.error(f"Upload error: {str(error)}")
+    return jsonify({
+        'status': 'error',
+        'error': 'Upload failed'
+    }), 500
+
+# Correlation ID tracking
+@app.before_request
+def add_correlation_id():
+    correlation_id = request.headers.get('X-Correlation-ID', str(uuid.uuid4()))
+    g.correlation_id = correlation_id
+    logger.info(f"Request started: {correlation_id}")
+```
+
 ---
 *All new code must follow these established patterns* 

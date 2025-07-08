@@ -67,16 +67,48 @@ This file will contain all major architectural decisions made across the project
 ## Security Architecture
 
 ### Authentication
-- **Decision**: [Current authentication pattern]
-- **Rationale**: [Why this pattern was chosen]
-- **Implementation**: [How it's implemented]
-- **Established**: [Date when this was established]
+- **Decision**: API key authentication via `X-API-Key` header
+- **Rationale**: Provides simple, stateless authentication for API access
+- **Implementation**: Middleware validates API key, configurable for test environments
+- **Established**: December 2024
 
 ### Data Protection
-- **Decision**: [Current data protection approach]
-- **Rationale**: [Why this approach was chosen]
-- **Implementation**: [How it's implemented]
-- **Established**: [Date when this was established]
+- **Decision**: File upload validation with size and type restrictions
+- **Rationale**: Prevents malicious file uploads and ensures system security
+- **Implementation**: PDF files only, 5MB max size, S3 integration with session validation
+- **Established**: December 2024
+
+## Refactor Architecture Decisions
+
+### SQLAlchemy ORM with Repository Pattern
+- **Decision**: Implement SQLAlchemy ORM with repository pattern for all database access
+- **Rationale**: Provides abstraction, testability, and consistent data access patterns
+- **Implementation**: `BaseRepository` with generic CRUD operations, `UserSessionRepository` for session-specific operations
+- **Established**: December 2024
+
+### Flask Blueprints with API Versioning
+- **Decision**: Use Flask blueprints with `/api/v1/` versioning for modular route organization
+- **Rationale**: Enables modular development, clear API structure, and future versioning
+- **Implementation**: Session blueprint (`/api/v1/session`), upload blueprint (`/api/v1/upload`)
+- **Established**: December 2024
+
+### React Context State Management
+- **Decision**: Use React Context for feature state management instead of prop drilling
+- **Rationale**: Provides component isolation, testability, and clean state management
+- **Implementation**: `ChatContext`, `SessionContext`, `FileUploadContext` with proper providers
+- **Established**: December 2024
+
+### Service Layer Architecture
+- **Decision**: Implement service layer to separate business logic from API routes
+- **Rationale**: Improves testability, maintainability, and separation of concerns
+- **Implementation**: `SessionService`, `UploadService` with business logic, routes handle HTTP concerns
+- **Established**: December 2024
+
+### Transaction Management with Context Managers
+- **Decision**: Use `TransactionContext` for atomic database operations
+- **Rationale**: Ensures data consistency and proper error handling with automatic rollback
+- **Implementation**: Context managers wrap all service operations, automatic rollback on exceptions
+- **Established**: December 2024
 
 ---
 *This file will be populated as architectural decisions are made* 
