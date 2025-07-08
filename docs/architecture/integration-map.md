@@ -88,6 +88,36 @@ This file tracks how features integrate with each other to prevent conflicts and
 - **Session Reset**: POST `/api/v1/session/reset` → Requires session_id
 - **Authentication**: All endpoints require `X-API-Key` header (configurable for tests)
 
+## CI/CD Integration Points
+
+### Backend Testing Integration
+- **Owner**: CI/CD System
+- **Used By**: All backend features
+- **Interface**: pytest with SQLite fixtures, black/flake8 quality checks
+- **Dependencies**: Database migrations, environment configuration
+- **Breaking Changes**: Affects all backend feature testing
+
+### Frontend Testing Integration
+- **Owner**: CI/CD System
+- **Used By**: All frontend features
+- **Interface**: jest with React Testing Library, prettier/eslint quality checks
+- **Dependencies**: Node.js environment, build configuration
+- **Breaking Changes**: Affects all frontend feature testing
+
+### Database Migration Integration
+- **Owner**: CI/CD System
+- **Used By**: All database-dependent features
+- **Interface**: SQLite in-memory for CI, PostgreSQL for production
+- **Dependencies**: Migration files, database schema
+- **Breaking Changes**: Affects all database operations
+
+### Environment Configuration Integration
+- **Owner**: CI/CD System
+- **Used By**: All features requiring environment variables
+- **Interface**: GitHub Actions environment setup, test configuration
+- **Dependencies**: Environment files, configuration patterns
+- **Breaking Changes**: Affects all feature deployment
+
 ### Shared Parameters
 - `session_id`: Required by all endpoints
 - `correlation_id`: Used for tracking

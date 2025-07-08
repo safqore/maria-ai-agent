@@ -110,5 +110,31 @@ This file will contain all major architectural decisions made across the project
 - **Implementation**: Context managers wrap all service operations, automatic rollback on exceptions
 - **Established**: December 2024
 
+## CI/CD Architecture Decisions
+
+### Platform Selection
+- **Decision**: Use GitHub Actions for CI/CD platform
+- **Rationale**: Better GitHub integration, generous free tier, seamless workflow triggers
+- **Implementation**: Parallel jobs for backend and frontend, push/PR triggers
+- **Established**: December 2024
+
+### Testing Strategy
+- **Decision**: Use SQLite in-memory for CI testing, PostgreSQL for production
+- **Rationale**: Self-contained testing without external dependencies, faster execution
+- **Implementation**: pytest with SQLite fixtures, production uses PostgreSQL
+- **Established**: December 2024
+
+### Quality Tools
+- **Decision**: Use industry-standard formatting and linting tools
+- **Rationale**: Ensures code quality consistency and automated standards enforcement
+- **Implementation**: black + flake8 (Python), prettier + eslint (TypeScript)
+- **Established**: December 2024
+
+### Parallel Job Architecture
+- **Decision**: Use parallel backend and frontend jobs for faster feedback
+- **Rationale**: Reduces total pipeline time and provides faster developer feedback
+- **Implementation**: Separate jobs with shared workflow triggers
+- **Established**: December 2024
+
 ---
 *This file will be populated as architectural decisions are made* 

@@ -198,6 +198,90 @@ cd backend && python wsgi.py --port 5000
 cd frontend && npm start  # Uses PORT=3000 from .env
 ```
 
+## CI/CD Patterns
+
+### GitHub Actions Workflow Pattern
+```yaml
+# .github/workflows/ci.yml
+name: CI Pipeline
+on:
+  push:
+    branches: ["main", "feature/*"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  backend-ci:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+          cache: "pip"
+      - run: pip install -r requirements.txt
+      - run: black --check .
+      - run: flake8 .
+      - run: pytest
+
+  frontend-ci:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - run: npx prettier --check "src/**/*.{ts,tsx}"
+      - run: npm run lint
+      - run: npm test -- --watchAll=false
+      - run: npm run build
+```
+
+### Database Testing Pattern
+```python
+# backend/tests/conftest.py
+import pytest
+from app import create_app
+from app.database import get_db
+
+@pytest.fixture
+def test_app():
+    app = create_app()
+    app.config['TESTING'] = True
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    return app
+
+@pytest.fixture
+def test_db(test_app):
+    with test_app.app_context():
+        db = get_db()
+        # Setup test database
+        yield db
+        # Cleanup
+```
+
+### Quality Check Pattern
+```bash
+# Backend quality checks
+black --check .          # Code formatting
+flake8 .                 # Linting
+pytest                   # Testing
+
+# Frontend quality checks
+npx prettier --check "src/**/*.{ts,tsx}"  # Code formatting
+npm run lint             # Linting
+npm test -- --watchAll=false  # Testing
+npm run build            # Build validation
+```
+
 ## Refactor-Specific Patterns
 
 ### Repository Pattern Implementation
