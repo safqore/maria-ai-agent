@@ -154,6 +154,27 @@ This file tracks how features integrate with each other to prevent conflicts and
 - **Dependencies**: Environment files, configuration patterns
 - **Breaking Changes**: Affects all feature deployment
 
+### Database/Testing Integration
+- **Owner**: CI/CD System
+- **Used By**: All database-dependent features
+- **Interface**: SQLite for testing, PostgreSQL for production, Alembic migrations
+- **Dependencies**: Database migrations, environment configuration
+- **Breaking Changes**: Affects all database operations
+
+### API Architecture Integration
+- **Owner**: Core System
+- **Used By**: All API endpoints
+- **Interface**: Retry strategy, correlation IDs, structured error responses
+- **Dependencies**: Authentication system, error handling system
+- **Breaking Changes**: Affects all API endpoints
+
+### Configuration Integration
+- **Owner**: Core System
+- **Used By**: All features requiring configuration
+- **Interface**: Environment variables with service-specific patterns
+- **Dependencies**: Environment variable system
+- **Breaking Changes**: Affects all features requiring configuration
+
 ### Shared Parameters
 - `session_id`: Required by all endpoints
 - `correlation_id`: Used for tracking

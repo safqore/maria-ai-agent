@@ -847,5 +847,163 @@ export const handleUploadError = (error: any, filename: string): string => {
 };
 ```
 
+## Database Architecture Patterns
+
+### SQLAlchemy Relationship Loading Pattern
+```python
+# Default to lazy loading, use eager loading for performance-critical paths
+def get_user_with_sessions(user_id: str) -> User:
+    # Lazy loading by default
+    user = session.query(User).filter_by(id=user_id).first()
+    
+    # Eager loading for performance-critical paths
+    user_with_sessions = session.query(User).options(
+        joinedload(User.sessions)
+    ).filter_by(id=user_id).first()
+    return user_with_sessions
+```
+
+### Database Migration Pattern
+```python
+# Use Alembic for all database migrations
+def run_migrations():
+    """Run database migrations before tests"""
+    from alembic import command
+    from alembic.config import Config
+    
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
+```
+
+### SQLite Testing Pattern
+```python
+# Use SQLite for all test environments
+def create_test_database():
+    """Create SQLite test database"""
+    database_url = "sqlite:///:memory:"  # In-memory for CI
+    engine = create_engine(database_url)
+    Base.metadata.create_all(bind=engine)
+    return engine
+```
+
+## API Architecture Patterns
+
+### Retry Strategy Pattern
+```python
+# Linear backoff with configurable retries
+def api_call_with_retry(endpoint: str, data: dict, max_retries: int = 3):
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(endpoint, json=data)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            if attempt == max_retries - 1:
+                raise
+            time.sleep(2 ** attempt)  # Exponential backoff
+```
+
+### Correlation ID Pattern
+```python
+# Server-side correlation ID generation
+@app.before_request
+def add_correlation_id():
+    correlation_id = request.headers.get('X-Correlation-ID', str(uuid.uuid4()))
+    g.correlation_id = correlation_id
+    logger.info(f"Request started: {correlation_id}")
+
+@app.after_request
+def add_correlation_header(response):
+    response.headers['X-Correlation-ID'] = g.correlation_id
+    return response
+```
+
+### Error Handling Pattern
+```python
+# Structured error responses with environment-based detail
+def handle_api_error(error: Exception, environment: str = 'production'):
+    if environment == 'development':
+        return jsonify({
+            'status': 'error',
+            'error': str(error),
+            'traceback': traceback.format_exc()
+        }), 500
+    else:
+        return jsonify({
+            'status': 'error',
+            'error': 'Internal server error'
+        }), 500
+```
+
+## Configuration Architecture Patterns
+
+### Environment Variable Pattern
+```python
+# Standard environment variable names per technology stack
+# Backend (.env)
+PORT=5000
+DATABASE_URL=sqlite:///maria_ai_dev.db
+OPENAI_API_KEY=your_key_here
+
+# Frontend (.env)
+PORT=3000
+REACT_APP_API_BASE_URL=http://localhost:5000
+```
+
+### Port Configuration Pattern
+```python
+# Environment variables only, never hardcoded
+def get_server_config():
+    return {
+        'port': int(os.getenv('PORT', '5000')),
+        'host': os.getenv('HOST', '0.0.0.0'),
+        'debug': os.getenv('FLASK_ENV') == 'development'
+    }
+```
+
+### Service Separation Pattern
+```python
+# Separate configuration files for each service
+# backend/.env
+PORT=5000
+DATABASE_URL=sqlite:///maria_ai_dev.db
+
+# frontend/.env  
+PORT=3000
+REACT_APP_API_BASE_URL=http://localhost:5000
+```
+
+## Frontend Architecture Patterns
+
+### FSM State Transition Pattern
+```typescript
+// Use nextTransition property in API responses
+interface ApiResponse {
+  status: 'success' | 'error';
+  data?: any;
+  nextTransition?: string;  // FSM state transition
+}
+
+const handleApiResponse = (response: ApiResponse) => {
+  if (response.nextTransition) {
+    fsm.transition(response.nextTransition);
+  }
+};
+```
+
+### Frontend/Backend Integration Pattern
+```typescript
+// Configuration-based API endpoints
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': process.env.REACT_APP_API_KEY
+  }
+});
+```
+
 ---
 *All new code must follow these established patterns* 

@@ -1,44 +1,84 @@
-# Email Verification - Technical Decisions
+# Email Verification Decisions
 
-**Last Updated:** 2024-12-21
-## Core Technical Decisions
+## Email Service Decisions
+
+### Email Service Provider
+- **Decision**: Gmail SMTP with App Password (smtp.gmail.com:587)
+- **Rationale**: Company email hosted on Google, reliable delivery
+- **Implementation**: SMTP configuration with app password authentication
+
+### Email Template Strategy
+- **Decision**: HTML templates with branding
+- **Rationale**: Professional appearance, brand consistency
+- **Implementation**: HTML email templates with Maria branding
+
+### Sender Email Configuration
+- **Decision**: noreply@safqore.com (Maria sender name)
+- **Rationale**: User specified, maintains brand identity
+- **Implementation**: Configured sender address with Maria branding
+
+## User Experience Decisions
+
+### Post-Verification Flow
+- **Decision**: Automatic progression to next chat state (no manual continue button)
+- **Rationale**: Seamless user experience, reduces friction
+- **Implementation**: Automatic FSM transition after successful verification
+
+### Session Reset Integration
+- **Decision**: Use existing SessionContext.resetSession() pattern
+- **Rationale**: Consistency with existing UX patterns
+- **Implementation**: Call resetSession() instead of window.location.reload
+
+### Error Message Tone
+- **Decision**: User-friendly with "please" and "thanks" for polite messaging
+- **Rationale**: More courteous user experience
+- **Implementation**: Polite error messages throughout verification flow
+
+## Technical Decisions
+
+### Rate Limiting Strategy
+- **Decision**: 30-second cooldown and 3 resend attempts
+- **Rationale**: Prevents abuse while allowing legitimate retry scenarios
+- **Implementation**: Database-based rate limiting with attempt tracking
 
 ### Verification Code Format
-- **Decision:** 6-digit numeric code (not alphanumeric)
-- **Rationale:** Better user experience, easier to enter on mobile devices
+- **Decision**: 6-digit numeric codes
+- **Rationale**: Easier typing, less confusion than alphanumeric
+- **Implementation**: Numeric code generation with proper validation
 
-### Code Validity Period
-- **Decision:** 10-minute expiration
-- **Rationale:** Security best practice while allowing reasonable time for users
+### Code Expiration Strategy
+- **Decision**: 10-minute code expiration
+- **Rationale**: Industry standard, balances security with usability
+- **Implementation**: Timestamp-based expiration with cleanup
 
-### Failed Attempt Handling
-- **Decision:** 3 incorrect attempts → session reset via SessionContext
-- **Rationale:** Consistent with existing session reset behavior
+### Record Retention Strategy
+- **Decision**: 24-hour auto-cleanup via repository cleanup method
+- **Rationale**: For audit/compliance purposes
+- **Implementation**: Automated cleanup process
 
-### Resend Functionality
-- **Decision:** 30-second cooldown between resends, maximum 3 attempts
-- **Rationale:** Faster feedback than 1-minute, prevents spam while allowing retries
+## Architecture Decisions
 
-### Email Format Validation
-- **Decision:** Real-time validation in chat interface before sending
-- **Rationale:** Immediate feedback and reduced server load
+### Repository Pattern
+- **Decision**: EmailVerificationRepository must extend BaseRepository pattern
+- **Rationale**: Architectural alignment required
+- **Implementation**: Follow same pattern as UserSessionRepository
 
-### Integration Approach
-- **Decision:** Integrate with existing finite state machine using nextTransition
-- **Rationale:** Consistent with existing chat FSM pattern
+### Transaction Management
+- **Decision**: Use existing TransactionContext for all operations
+- **Rationale**: Follow existing service patterns
+- **Implementation**: Wrap all operations in TransactionContext
 
-### Security Implementation
-- **Decision:** bcrypt hashing (rounds=12) for email addresses with audit logging
-- **Rationale:** Protects user privacy while maintaining security audit trail
+### FSM Integration
+- **Decision**: Use nextTransition property in API responses
+- **Rationale**: Follow existing ChatContext pattern
+- **Implementation**: All endpoints return nextTransition for state transitions
 
-### Database Strategy
-- **Decision:** SQLite for all environments (development, testing, production)
-- **Rationale:** Consistent with existing testing strategy, no external dependencies
+### Testing Database Strategy
+- **Decision**: SQLite for all test environments
+- **Rationale**: Consistency with existing setup
+- **Implementation**: SQLite database with automatic migration
 
-### Testing Approach
-- **Decision:** Real Gmail SMTP integration with personal email for development
-- **Rationale:** Ensures production-like testing without mocking complexity
-
-### Success Flow
-- **Decision:** Show confirmation message with future notification promise
-- **Message:** "Thank you for verifying your email address. We will email you once your AI agent is ready." 
+## Cross-References
+- Architecture: decisions.md (Email Verification architecture decisions)
+- Integration: integration-map.md (Email verification dependencies)
+- Patterns: patterns.md (Email verification patterns) 

@@ -198,6 +198,81 @@ This file will contain all major architectural decisions made across the project
 - **Decision**: Use SQLite with proper initialization for concurrent database access
 - **Rationale**: Prevents "no such table" errors in concurrent scenarios
 - **Implementation**: Initialize database tables before concurrent tests, use proper session management
+- **Established**: December 2024
+
+## Database Architecture Decisions
+
+### SQLAlchemy Relationship Loading Strategy
+- **Decision**: Default to lazy loading, with eager loading used selectively for performance-critical paths
+- **Rationale**: Balances performance with memory usage, prevents N+1 queries
+- **Implementation**: Use lazy loading by default, add eager loading for specific use cases
+- **Established**: December 2024
+
+### Database Migration Strategy
+- **Decision**: Use Alembic for all database migrations with automatic application before tests
+- **Rationale**: Provides better version control than raw SQL scripts, ensures test reliability
+- **Implementation**: Alembic migrations with automatic application before test execution
+- **Established**: December 2024
+
+### SQLite Testing Strategy
+- **Decision**: Use SQLite for all test environments (local/dev/test/CI)
+- **Rationale**: Self-contained testing without external dependencies, faster execution
+- **Implementation**: SQLite in-memory for CI, file-based for local testing
+- **Established**: December 2024
+
+## API Architecture Decisions
+
+### Retry Strategy
+- **Decision**: Linear backoff with maximum of 3 retries, configurable by endpoint and error type
+- **Rationale**: Handles transient failures without overwhelming the system
+- **Implementation**: Exponential backoff with jitter, configurable retry counts
+- **Established**: December 2024
+
+### Correlation ID Strategy
+- **Decision**: Server-side generation with each request, passed to all downstream services and response headers
+- **Rationale**: Provides better security and reliability than client-side generation
+- **Implementation**: Generate UUID v4 on each request, include in all logs and responses
+- **Established**: December 2024
+
+### Error Handling Strategy
+- **Decision**: Structured error responses with environment-based detail level and consistent error codes
+- **Rationale**: Provides consistent error handling across features, protects sensitive information
+- **Implementation**: Use existing errors.py patterns with environment-based detail level
+- **Established**: December 2024
+
+## Configuration Architecture Decisions
+
+### Environment Variable Strategy
+- **Decision**: Use standard environment variable names per technology stack with sensible defaults
+- **Rationale**: Follows established conventions, reduces configuration complexity
+- **Implementation**: Backend uses PORT=5000, Frontend uses PORT=3000 and REACT_APP_* prefix
+- **Established**: December 2024
+
+### Port Configuration Strategy
+- **Decision**: Environment variables only, never hardcoded, with dynamic CORS configuration
+- **Rationale**: Enables flexible deployment and prevents port conflicts
+- **Implementation**: Environment variables with dynamic CORS adaptation
+- **Established**: December 2024
+
+### Service Separation Strategy
+- **Decision**: Use separate configuration files for each service (frontend/backend)
+- **Rationale**: Reflects deployment reality, prevents conflicts, follows stack standards
+- **Implementation**: backend/.env and frontend/.env with service-specific variables
+- **Established**: December 2024
+
+## Frontend Architecture Decisions
+
+### FSM State Transition Strategy
+- **Decision**: Use nextTransition property in API responses for FSM integration
+- **Rationale**: Provides clear state transition management, more robust than direct state setting
+- **Implementation**: All API responses include nextTransition when applicable
+- **Established**: December 2024
+
+### Frontend/Backend Integration Strategy
+- **Decision**: API-driven with clear contracts, separate deployment, and configuration-based endpoints
+- **Rationale**: Enables independent deployment, follows microservices principles
+- **Implementation**: Environment variables for API URLs, no hardcoded dependencies
+- **Established**: December 2024
 
 ## CI/CD Infrastructure Decisions
 
