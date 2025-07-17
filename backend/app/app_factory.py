@@ -13,6 +13,7 @@ from flask_limiter.util import get_remote_address
 
 from app.routes.session import session_bp, setup_session_service
 from app.routes.upload import upload_bp
+from app.routes.email_verification import email_verification_bp
 from app.utils.middleware import (
     setup_request_logging,
     setup_request_validation,
@@ -110,6 +111,7 @@ def create_app(config=None):
         # Apply middleware to blueprints with versioning
         apply_middleware_to_blueprint(session_bp, api_version="v1")
         apply_middleware_to_blueprint(upload_bp, api_version="v1")
+        apply_middleware_to_blueprint(email_verification_bp, api_version="v1")
     else:
         # For tests, we still want basic logging but skip auth and request validation
         setup_request_logging(app)
@@ -118,6 +120,7 @@ def create_app(config=None):
     # Register blueprints
     app.register_blueprint(session_bp, url_prefix="/api/v1")
     app.register_blueprint(upload_bp, url_prefix="/api/v1")
+    app.register_blueprint(email_verification_bp, url_prefix="/api/v1")
 
     # Add main API info endpoint
     @app.route("/api/info", methods=["GET"])

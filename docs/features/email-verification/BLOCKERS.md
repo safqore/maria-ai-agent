@@ -4,15 +4,15 @@
 ## Critical Blockers
 
 ### 1. SMTP Configuration
-**Status:** 🔴 Blocking Implementation
-**Impact:** Cannot implement email sending functionality
+**Status:** 🔴 Blocking Production Deployment
+**Impact:** Cannot send actual verification emails
 **Details:** Need Gmail SMTP credentials in .env file
-**Resolution:** User will add Gmail app password before regression testing
+**Resolution:** User will add Gmail app password before production deployment
 
 ### 2. Database Migration
-**Status:** 🔴 Blocking Implementation
-**Impact:** Cannot create EmailVerification model
-**Details:** Need to run migration script to create email_verifications table
+**Status:** 🔴 Blocking Production Deployment
+**Impact:** Cannot create email verification fields
+**Details:** Need to run migration script to create email verification fields
 **Resolution:** Simple SQL script following existing Alembic pattern
 
 ## Resolved Blockers
