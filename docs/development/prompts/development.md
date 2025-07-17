@@ -46,7 +46,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         - `DECISIONS.md` - Technical decisions made
         - `IMPLEMENTATION.md` - Technical specifications
         - `BLOCKERS.md` - Current blocking issues
-    - **Architecture Context:** Load `/docs/architecture/patterns.md` for coding patterns
+    - **Architecture Context:** Load `/docs/architecture/patterns.md`, `/docs/architecture/integration-map.md`, and `/docs/architecture/decisions.md`
     - **Codebase Analysis:** Analyze existing code structure for the feature
     - **End Condition:** Full context loaded and understood
 
@@ -55,6 +55,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Blocker Analysis:** Identify and assess current blockers
     - **Next Task Identification:** Determine immediate next tasks (max 3)
     - **Dependency Check:** Verify dependencies are ready
+    - **Architecture Compliance Check:** Verify planned work aligns with architectural decisions
     - **Output:** Display current status summary to user
 
 3. **Plan Development Approach (Interactive):**
@@ -63,6 +64,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Risk Assessment:** Identify potential implementation risks
     - **Testing Strategy:** Plan testing approach for new code
     - **Integration Points:** Identify integration points with existing code
+    - **Architecture Alignment:** Ensure implementation follows established patterns and decisions
     - **End Condition:** Clear development plan established
 
 4. **Development Summary & Handoff Gate (Interactive):**
@@ -77,6 +79,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         - Testing Strategy: [TestingApproach]
         - Integration Points: [IntegrationList]
         - Risk Mitigation: [RiskMitigation]
+        - Architecture Compliance: [ComplianceStatus]
         ```
     - **HANDOFF GATE:** Ask explicit question:
         "**READY FOR CODE IMPLEMENTATION?**
@@ -84,7 +87,8 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         I will now:
         - Implement the planned code automatically
         - Write/update tests automatically
-        - Update documentation automatically
+        - Update feature documentation automatically
+        - Update architecture decisions automatically
         - Verify code quality automatically
         - Complete all development tasks without further input
 
@@ -105,13 +109,14 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
 
 5. **Implement Code (Autonomous):**
     - **Pattern Compliance:** Follow established patterns from `/docs/architecture/patterns.md`
+    - **Decision Compliance:** Ensure implementation aligns with `/docs/architecture/decisions.md`
     - **Code Structure:** Implement according to technical specifications
     - **Error Handling:** Implement proper error handling patterns
     - **Authentication:** Implement authentication/authorization if required
     - **API Integration:** Implement API endpoints and contracts
     - **Frontend Components:** Implement UI components and state management
     - **Database Operations:** Implement database changes if needed
-    - **Validation:** Ensure code follows project standards
+    - **Validation:** Ensure code follows project standards and architectural decisions
     - **Error Handling:** If implementation fails, HALT with "IMPLEMENTATION_FAILED"
 
 6. **Write/Update Tests (Autonomous):**
@@ -132,6 +137,10 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         - Update IMPLEMENTATION.md with implementation details
         - Update DECISIONS.md with any new technical decisions
         - Update BLOCKERS.md with any new blockers or resolved blockers
+    - **Architecture Documentation Updates:**
+        - **Decisions.md Update:** Add new architectural decisions made during implementation
+        - **Integration-map.md Update:** Update integration points if new dependencies identified
+        - **Patterns.md Update:** Add new patterns if established during implementation
     - **Validation:** Verify all documentation updated successfully
     - **Error Handling:** If documentation update fails, HALT with "DOCUMENTATION_FAILED"
 
@@ -140,6 +149,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Performance Check:** Verify performance considerations
     - **Security Review:** Verify security best practices
     - **Integration Test:** Verify integration with existing features
+    - **Architecture Compliance:** Verify code follows established patterns and decisions
     - **Documentation Accuracy:** Verify documentation matches implementation
     - **Validation:** Ensure all quality standards met
     - **Error Handling:** If quality issues found, attempt fixes, then HALT with "QUALITY_FAILED" if unfixable
@@ -168,6 +178,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         - [ ] Code implemented
         - [ ] Tests written/updated
         - [ ] Documentation updated
+        - [ ] Architecture decisions documented
         - [ ] Code quality verified
     - **Success Criteria:** All checklist items ticked, no errors
     - **Completion Message:** "Development complete!
@@ -175,6 +186,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     Your feature implementation is ready. You can now:
         - Review updated status in: `/docs/features/[FeatureName]/STATUS.md`
         - Check implementation details in: `/docs/features/[FeatureName]/IMPLEMENTATION.md`
+        - Review architectural decisions in: `/docs/architecture/decisions.md`
         - Run tests to verify functionality
         - Continue development or use `progress-check.md` for validation"
     

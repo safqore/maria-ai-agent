@@ -73,6 +73,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         - Generate detailed technical specifications automatically
         - Create implementation plan automatically
         - Update feature documentation automatically
+        - Update architecture decisions automatically
         - Verify architecture compliance automatically
         - Complete all technical planning without further input
 
@@ -107,9 +108,10 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
 <!-- PHASE 2-4: AUTONOMOUS EXECUTION (NO USER INTERACTION) -->
 
 3. **Generate Technical Specifications (Autonomous):**
-    - **Architecture Review:** Load `/docs/architecture/patterns.md` and `/docs/architecture/integration-map.md`
+    - **Architecture Review:** Load `/docs/architecture/patterns.md`, `/docs/architecture/integration-map.md`, and `/docs/architecture/decisions.md`
     - **Pattern Analysis:** Identify applicable patterns for this feature
     - **Integration Analysis:** Identify all affected features and dependencies
+    - **Decision Analysis:** Review existing architectural decisions to ensure compliance
     - **Technical Specification Structure:**
         - Database schema changes (if needed)
         - API endpoints and contracts
@@ -119,7 +121,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         - Testing strategy
         - Performance considerations
         - Security considerations
-    - **Validation:** Ensure specifications follow established patterns
+    - **Validation:** Ensure specifications follow established patterns and decisions
     - **Error Handling:** If unable to generate valid specifications, HALT with "TECHNICAL_SPEC_FAILED"
 
 4. **Create Implementation Plan (Autonomous):**
@@ -141,13 +143,18 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         - Update DECISIONS.md with planning decisions
         - Update IMPLEMENTATION.md with technical specifications
         - Update BLOCKERS.md with any identified blockers
+    - **Architecture Documentation Updates:**
+        - **Decisions.md Update:** Add new architectural decisions made during planning
+        - **Integration-map.md Update:** Update integration points if new dependencies identified
+        - **Patterns.md Update:** Add new patterns if established during planning
     - **Validation:** Verify all documentation updated successfully
     - **Error Handling:** If documentation update fails, HALT with "DOCUMENTATION_FAILED"
 
 6. **Verify Architecture Compliance (Autonomous):**
     - **Pattern Compliance:** Verify technical specifications follow established patterns
     - **Integration Compliance:** Verify integration points are properly identified
-    - **Conflict Check:** Verify no conflicts with existing features
+    - **Decision Compliance:** Verify all new decisions align with existing architectural decisions
+    - **Conflict Check:** Verify no conflicts with existing features or decisions
     - **Documentation Compliance:** Verify all architectural decisions are documented
     - **Validation:** Confirm full compliance with architecture standards
     - **Error Handling:** If compliance issues found, attempt fixes, then HALT with "ARCHITECTURE_FAILED" if unfixable
@@ -177,6 +184,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         - [ ] Technical specifications generated
         - [ ] Implementation plan created
         - [ ] Documentation updated
+        - [ ] Architecture decisions documented
         - [ ] Architecture compliance verified
     - **Success Criteria:** All checklist items ticked, no errors
     - **Completion Message:** "Feature planning complete!
@@ -184,6 +192,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     Your feature is ready for implementation. You can now:
         - Review technical specifications in: `/docs/features/[FeatureName]/IMPLEMENTATION.md`
         - Check implementation plan in: `/docs/features/[FeatureName]/STATUS.md`
+        - Review architectural decisions in: `/docs/architecture/decisions.md`
         - Start development using: `development.md` prompt"
     
 **SUCCESS CRITERIA:** All acceptance checklist items marked ✓ without user intervention after handoff gate. 

@@ -45,6 +45,10 @@ You are a documentation management agent responsible for updating feature docume
         - `DECISIONS.md` (max 30 lines)
         - `IMPLEMENTATION.md` (max 100 lines)
         - `BLOCKERS.md` (max 20 lines)
+    - **Architecture Files to Load:**
+        - `/docs/architecture/decisions.md` (no line limit - architectural decisions)
+        - `/docs/architecture/integration-map.md` (no line limit - integration tracking)
+        - `/docs/architecture/patterns.md` (no line limit - established patterns)
     - **Error Handling:** If files don't exist, create them with template content
     - **Success:** All documentation files loaded or created
 
@@ -69,6 +73,11 @@ You are a documentation management agent responsible for updating feature docume
         - Current blocking issues
         - Resolution status
         - **Line Limit:** 20 lines maximum
+    - **Architecture Decisions.md Updates:**
+        - New architectural decisions made during feature work
+        - Decision rationale and implementation details
+        - Date established
+        - **No Line Limit:** Architectural decisions are preserved indefinitely
 
 4. **Enforce Line Limits (Autonomous):**
     - **Action:** Ensure all files respect line limits
@@ -77,6 +86,10 @@ You are a documentation management agent responsible for updating feature docume
         - Maintain complete sentences
         - Keep essential technical details
         - Remove oldest entries if necessary
+    - **Architecture File Rules:**
+        - **Decisions.md:** No line limits - preserve all architectural decisions
+        - **Integration-map.md:** No line limits - preserve all integration information
+        - **Patterns.md:** No line limits - preserve all established patterns
     - **Validation:** Verify line counts after updates
     - **Error Handling:** If unable to fit content within limits, HALT with "DOCUMENTATION_FAILED"
 
@@ -90,10 +103,16 @@ You are a documentation management agent responsible for updating feature docume
         - Proper markdown formatting
         - Consistent date formats
         - Logical organization
+    - **Architecture Decision Quality:**
+        - Clear decision statements
+        - Rationale provided
+        - Implementation details included
+        - Date established recorded
     - **Error Handling:** If quality issues found, attempt auto-fix, then HALT with "DOCUMENTATION_FAILED" if unfixable
 
 6. **Save Documentation (Autonomous):**
     - **Action:** Write updated files to `/docs/features/[FEATURE_NAME]/`
+    - **Architecture Action:** Write updated files to `/docs/architecture/`
     - **File Permissions:** Ensure files are writable
     - **Backup:** Create backup of previous version if major changes
     - **Validation:** Verify files were written successfully
@@ -118,6 +137,7 @@ You are a documentation management agent responsible for updating feature docume
         - [ ] Current documentation loaded
         - [ ] Content validated against line limits
         - [ ] Documentation updated
+        - [ ] Architecture decisions updated
         - [ ] Line limits enforced
         - [ ] Content quality verified
     - **Success Criteria:** All checklist items ticked, no errors

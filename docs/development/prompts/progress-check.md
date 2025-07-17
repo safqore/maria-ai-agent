@@ -49,7 +49,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         - `DECISIONS.md` - Technical decisions made
         - `IMPLEMENTATION.md` - Technical specifications
         - `BLOCKERS.md` - Current blocking issues
-    - **Architecture Context:** Load `/docs/architecture/patterns.md` for validation standards
+    - **Architecture Context:** Load `/docs/architecture/patterns.md`, `/docs/architecture/integration-map.md`, and `/docs/architecture/decisions.md`
     - **Codebase Analysis:** Analyze actual code implementation for the feature
     - **End Condition:** Full context loaded and understood
 
@@ -57,6 +57,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Code Structure Analysis:** Review actual code structure and organization
     - **Functionality Analysis:** Verify implemented functionality against requirements
     - **Pattern Compliance:** Check code against established patterns
+    - **Decision Compliance:** Check code against established architectural decisions
     - **Integration Analysis:** Verify integration points are properly implemented
     - **Error Handling:** Verify error handling is implemented correctly
     - **Testing Coverage:** Analyze test coverage and quality
@@ -71,15 +72,18 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Accuracy Validation:** Verify technical details are correct
     - **Consistency Check:** Ensure documentation is internally consistent
     - **Timeliness Check:** Verify documentation is up to date
+    - **Architecture Decision Alignment:** Verify documentation aligns with architectural decisions
     - **Validation:** Ensure comprehensive documentation analysis completed
 
 4. **Identify Discrepancies (Autonomous):**
     - **Code vs Documentation:** Identify mismatches between code and documentation
     - **Requirements vs Implementation:** Identify gaps between requirements and implementation
     - **Pattern Violations:** Identify deviations from established patterns
+    - **Decision Violations:** Identify deviations from established architectural decisions
     - **Missing Elements:** Identify missing documentation or implementation
     - **Inconsistencies:** Identify internal inconsistencies
     - **Quality Issues:** Identify quality or standards violations
+    - **Architecture Compliance Issues:** Identify issues with architectural decision compliance
     - **Validation:** Ensure all discrepancies identified and categorized
 
 <!-- PHASE 2: INTERACTIVE APPROVAL -->
@@ -96,13 +100,16 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         - Code vs Documentation: [List of mismatches]
         - Requirements vs Implementation: [List of gaps]
         - Pattern Violations: [List of violations]
+        - Decision Violations: [List of architectural decision violations]
         - Missing Elements: [List of missing items]
         - Quality Issues: [List of quality problems]
+        - Architecture Compliance Issues: [List of compliance issues]
         
         PROPOSED RESOLUTIONS:
         - Documentation Updates: [List of updates needed]
         - Code Fixes: [List of fixes needed]
         - Pattern Corrections: [List of corrections needed]
+        - Decision Alignments: [List of decision alignments needed]
         - Quality Improvements: [List of improvements needed]
         
         IMPACT ASSESSMENT:
@@ -119,6 +126,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         I will now:
         - Update documentation to match actual implementation
         - Fix any code issues that can be resolved automatically
+        - Update architecture decisions if new decisions made
         - Generate final validation report
         - Update feature status automatically
         - Complete all validation tasks without further input
@@ -147,6 +155,10 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         - Update IMPLEMENTATION.md to match actual code
         - Update DECISIONS.md with any new decisions made during validation
         - Update BLOCKERS.md with any new blockers or resolved blockers
+    - **Architecture Documentation Updates:**
+        - **Decisions.md Update:** Add new architectural decisions made during validation
+        - **Integration-map.md Update:** Update integration points if new dependencies identified
+        - **Patterns.md Update:** Add new patterns if established during validation
     - **Validation:** Verify all documentation updated successfully
     - **Error Handling:** If documentation update fails, HALT with "DOCUMENTATION_FAILED"
 
@@ -154,6 +166,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Automatic Fixes:** Apply fixes that can be resolved automatically
     - **Code Quality:** Fix code quality issues within scope
     - **Pattern Compliance:** Correct pattern violations
+    - **Decision Compliance:** Correct architectural decision violations
     - **Documentation Alignment:** Ensure code matches documentation
     - **Validation:** Verify all fixes applied successfully
     - **Error Handling:** If code fixes fail, HALT with "CODE_FIX_FAILED"
@@ -166,6 +179,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         - Remaining Issues (if any)
         - Recommendations
         - Next Steps
+        - Architecture Compliance Status
     - **Report Location:** Save to `/docs/features/[FEATURE_NAME]/validation-report.md`
     - **Validation:** Verify report generated successfully
     - **Error Handling:** If report generation fails, HALT with "REPORT_FAILED"
@@ -174,7 +188,9 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Final Code Review:** Verify all code meets quality standards
     - **Documentation Accuracy:** Verify documentation is accurate and complete
     - **Pattern Compliance:** Verify all patterns are followed
+    - **Decision Compliance:** Verify all architectural decisions are followed
     - **Integration Verification:** Verify all integrations work correctly
+    - **Architecture Compliance:** Verify full compliance with architectural decisions
     - **Validation:** Ensure all quality standards met
     - **Error Handling:** If quality issues remain, HALT with "QUALITY_FAILED"
 
@@ -204,6 +220,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         - [ ] Documentation analysis completed
         - [ ] Discrepancies identified
         - [ ] Documentation updated
+        - [ ] Architecture decisions updated
         - [ ] Validation report generated
         - [ ] Quality standards verified
     - **Success Criteria:** All checklist items ticked, no errors
@@ -212,6 +229,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     Your feature has been validated and updated. You can now:
         - Review validation report in: `/docs/features/[FeatureName]/validation-report.md`
         - Check updated status in: `/docs/features/[FeatureName]/STATUS.md`
+        - Review architectural decisions in: `/docs/architecture/decisions.md`
         - Continue development or start new feature planning"
     
 **SUCCESS CRITERIA:** All acceptance checklist items marked ✓ without user intervention after handoff gate. 
