@@ -58,7 +58,7 @@ docs/
 2. Validate code against documentation and requirements
 3. Ensure consistency and quality standards
 
-## Working with Claude
+## Working with AI Assistants
 
 ### Deterministic Development
 - Use structured prompts for consistent AI behavior

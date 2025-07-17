@@ -25,7 +25,7 @@
 ## Context for Next Session
 
 ### What to Remember
-- [Important context that Claude should know]
+- [Important context that the AI assistant should know]
 - [Key decisions that were made]
 - [Current state of implementation]
 
