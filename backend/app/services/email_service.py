@@ -69,8 +69,27 @@ class EmailService:
         Returns:
             True if valid format, False otherwise
         """
-        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        return bool(re.match(pattern, email))
+        # More strict regex that prevents consecutive dots and other invalid patterns
+        pattern = r'^[a-zA-Z0-9]([a-zA-Z0-9._%+-]*[a-zA-Z0-9])?@[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$'
+        
+        # Additional checks for common invalid patterns
+        if not re.match(pattern, email):
+            return False
+        
+        # Check for consecutive dots
+        if '..' in email:
+            return False
+            
+        # Check for dots at start or end of local part
+        local_part, domain = email.split('@', 1)
+        if local_part.startswith('.') or local_part.endswith('.'):
+            return False
+            
+        # Check for dots at start or end of domain
+        if domain.startswith('.') or domain.endswith('.'):
+            return False
+            
+        return True
 
     def create_email_template(self, code: str, environment: str = 'development') -> tuple[str, str]:
         """

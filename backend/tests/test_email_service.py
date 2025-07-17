@@ -152,22 +152,26 @@ class TestEmailService:
 
     def test_get_verification_expiry(self):
         """Test verification expiry calculation."""
-        from datetime import datetime, timedelta
-        
+        from datetime import datetime, timedelta, UTC
+
         expiry = self.email_service.get_verification_expiry()
-        now = datetime.utcnow()
-        
+        now = datetime.now(UTC)
+
         # Should be approximately 10 minutes from now
         time_diff = expiry - now
+        
+        # Check that expiry is between 9.5 and 10.5 minutes from now
         assert timedelta(minutes=9, seconds=30) <= time_diff <= timedelta(minutes=10, seconds=30)
 
     def test_get_verification_expiry_custom_minutes(self):
         """Test verification expiry calculation with custom minutes."""
-        from datetime import datetime, timedelta
-        
+        from datetime import datetime, timedelta, UTC
+
         expiry = self.email_service.get_verification_expiry(minutes=5)
-        now = datetime.utcnow()
-        
+        now = datetime.now(UTC)
+
         # Should be approximately 5 minutes from now
         time_diff = expiry - now
+        
+        # Check that expiry is between 4.5 and 5.5 minutes from now
         assert timedelta(minutes=4, seconds=30) <= time_diff <= timedelta(minutes=5, seconds=30) 

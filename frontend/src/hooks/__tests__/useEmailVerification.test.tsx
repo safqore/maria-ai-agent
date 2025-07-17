@@ -5,7 +5,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useEmailVerification } from '../useEmailVerification';
 import { useSession } from '../../contexts/SessionContext';
-import { emailVerificationApi } from '../../api/emailVerificationApi';
+import { emailVerificationApi, EmailVerificationResponse } from '../../api/emailVerificationApi';
 
 // Mock dependencies
 jest.mock('../../contexts/SessionContext');
@@ -15,7 +15,7 @@ const mockedUseSession = useSession as jest.MockedFunction<typeof useSession>;
 const mockedEmailVerificationApi = emailVerificationApi as jest.Mocked<typeof emailVerificationApi>;
 
 describe('useEmailVerification', () => {
-  const mockSessionId = 'test-session-id';
+  const mockSessionUUID = 'test-session-uuid';
   const mockEmail = 'test@example.com';
   const mockCode = '123456';
   const mockResetSession = jest.fn();
@@ -25,9 +25,19 @@ describe('useEmailVerification', () => {
     jest.useFakeTimers();
 
     mockedUseSession.mockReturnValue({
-      sessionId: mockSessionId,
+      state: {
+        sessionUUID: mockSessionUUID,
+        isLoading: false,
+        error: null,
+        isResetModalVisible: false,
+        isInitialized: true
+      },
       resetSession: mockResetSession,
-      // Add other required properties
+      initializeSession: jest.fn(),
+      clearError: jest.fn(),
+      showResetModal: jest.fn(),
+      hideResetModal: jest.fn(),
+      confirmResetSession: jest.fn()
     } as any);
   });
 
@@ -42,22 +52,20 @@ describe('useEmailVerification', () => {
       expect(result.current).toEqual({
         isLoading: false,
         error: null,
-        message: null,
-        nextTransition: null,
-        canResend: true,
-        resendCooldown: 0,
+        isEmailSent: false,
+        isVerified: false,
         verifyEmail: expect.any(Function),
         verifyCode: expect.any(Function),
         resendCode: expect.any(Function),
         clearError: expect.any(Function),
-        clearMessage: expect.any(Function)
+        reset: expect.any(Function)
       });
     });
   });
 
   describe('verifyEmail', () => {
     it('should successfully verify email', async () => {
-      const mockResponse = {
+      const mockResponse: EmailVerificationResponse = {
         status: 'success',
         message: 'Verification code sent successfully',
         nextTransition: 'CODE_INPUT'
@@ -68,18 +76,18 @@ describe('useEmailVerification', () => {
       const { result } = renderHook(() => useEmailVerification());
 
       await act(async () => {
-        await result.current.verifyEmail(mockEmail);
+        const response = await result.current.verifyEmail(mockEmail);
+        expect(response).toEqual(mockResponse);
       });
 
-      expect(mockedEmailVerificationApi.verifyEmail).toHaveBeenCalledWith(mockSessionId, { email: mockEmail });
-      expect(result.current.message).toBe('Verification code sent successfully');
-      expect(result.current.nextTransition).toBe('CODE_INPUT');
+      expect(mockedEmailVerificationApi.verifyEmail).toHaveBeenCalledWith(mockSessionUUID, { email: mockEmail });
+      expect(result.current.isEmailSent).toBe(true);
       expect(result.current.error).toBeNull();
       expect(result.current.isLoading).toBe(false);
     });
 
     it('should handle verification errors', async () => {
-      const mockError = {
+      const mockError: EmailVerificationResponse = {
         status: 'error',
         error: 'Invalid email format',
         nextTransition: 'EMAIL_INPUT'
@@ -90,53 +98,49 @@ describe('useEmailVerification', () => {
       const { result } = renderHook(() => useEmailVerification());
 
       await act(async () => {
-        await result.current.verifyEmail(mockEmail);
+        try {
+          await result.current.verifyEmail(mockEmail);
+        } catch (error: any) {
+          expect(error).toEqual(mockError);
+        }
       });
 
       expect(result.current.error).toBe('Invalid email format');
-      expect(result.current.nextTransition).toBe('EMAIL_INPUT');
-      expect(result.current.message).toBeNull();
       expect(result.current.isLoading).toBe(false);
-    });
-
-    it('should handle session reset transition', async () => {
-      const mockResponse = {
-        status: 'error',
-        error: 'Maximum attempts reached',
-        nextTransition: 'SESSION_RESET'
-      };
-
-      mockedEmailVerificationApi.verifyEmail.mockResolvedValueOnce(mockResponse);
-
-      const { result } = renderHook(() => useEmailVerification());
-
-      await act(async () => {
-        await result.current.verifyEmail(mockEmail);
-      });
-
-      expect(mockResetSession).toHaveBeenCalledWith(true);
     });
 
     it('should handle missing session ID', async () => {
       mockedUseSession.mockReturnValue({
-        sessionId: null,
+        state: {
+          sessionUUID: null,
+          isLoading: false,
+          error: null,
+          isResetModalVisible: false,
+          isInitialized: true
+        },
         resetSession: mockResetSession,
+        initializeSession: jest.fn(),
+        clearError: jest.fn(),
+        showResetModal: jest.fn(),
+        hideResetModal: jest.fn(),
+        confirmResetSession: jest.fn()
       } as any);
 
       const { result } = renderHook(() => useEmailVerification());
 
       await act(async () => {
-        await result.current.verifyEmail(mockEmail);
+        try {
+          await result.current.verifyEmail(mockEmail);
+        } catch (error: any) {
+          expect(error.message).toBe('No active session');
+        }
       });
-
-      expect(result.current.error).toBe('No active session found');
-      expect(result.current.nextTransition).toBe('SESSION_ERROR');
     });
   });
 
   describe('verifyCode', () => {
     it('should successfully verify code', async () => {
-      const mockResponse = {
+      const mockResponse: EmailVerificationResponse = {
         status: 'success',
         message: 'Email verified successfully',
         nextTransition: 'CHAT_READY'
@@ -147,18 +151,18 @@ describe('useEmailVerification', () => {
       const { result } = renderHook(() => useEmailVerification());
 
       await act(async () => {
-        await result.current.verifyCode(mockCode);
+        const response = await result.current.verifyCode(mockCode);
+        expect(response).toEqual(mockResponse);
       });
 
-      expect(mockedEmailVerificationApi.verifyCode).toHaveBeenCalledWith(mockSessionId, { code: mockCode });
-      expect(result.current.message).toBe('Email verified successfully');
-      expect(result.current.nextTransition).toBe('CHAT_READY');
+      expect(mockedEmailVerificationApi.verifyCode).toHaveBeenCalledWith(mockSessionUUID, { code: mockCode });
+      expect(result.current.isVerified).toBe(true);
       expect(result.current.error).toBeNull();
       expect(result.current.isLoading).toBe(false);
     });
 
     it('should handle verification errors', async () => {
-      const mockError = {
+      const mockError: EmailVerificationResponse = {
         status: 'error',
         error: 'Invalid verification code',
         nextTransition: 'CODE_INPUT'
@@ -169,19 +173,21 @@ describe('useEmailVerification', () => {
       const { result } = renderHook(() => useEmailVerification());
 
       await act(async () => {
-        await result.current.verifyCode(mockCode);
+        try {
+          await result.current.verifyCode(mockCode);
+        } catch (error: any) {
+          expect(error).toEqual(mockError);
+        }
       });
 
       expect(result.current.error).toBe('Invalid verification code');
-      expect(result.current.nextTransition).toBe('CODE_INPUT');
-      expect(result.current.message).toBeNull();
       expect(result.current.isLoading).toBe(false);
     });
   });
 
   describe('resendCode', () => {
     it('should successfully resend code', async () => {
-      const mockResponse = {
+      const mockResponse: EmailVerificationResponse = {
         status: 'success',
         message: 'Verification code resent successfully',
         nextTransition: 'CODE_INPUT'
@@ -192,22 +198,19 @@ describe('useEmailVerification', () => {
       const { result } = renderHook(() => useEmailVerification());
 
       await act(async () => {
-        await result.current.resendCode();
+        const response = await result.current.resendCode();
+        expect(response).toEqual(mockResponse);
       });
 
-      expect(mockedEmailVerificationApi.resendCode).toHaveBeenCalledWith(mockSessionId);
-      expect(result.current.message).toBe('Verification code resent successfully');
-      expect(result.current.nextTransition).toBe('CODE_INPUT');
+      expect(mockedEmailVerificationApi.resendCode).toHaveBeenCalledWith(mockSessionUUID);
       expect(result.current.error).toBeNull();
       expect(result.current.isLoading).toBe(false);
-      expect(result.current.canResend).toBe(false);
-      expect(result.current.resendCooldown).toBe(30);
     });
 
     it('should handle resend errors', async () => {
-      const mockError = {
+      const mockError: EmailVerificationResponse = {
         status: 'error',
-        error: 'Please wait before requesting another code',
+        error: 'Too many attempts',
         nextTransition: 'CODE_INPUT'
       };
 
@@ -216,59 +219,25 @@ describe('useEmailVerification', () => {
       const { result } = renderHook(() => useEmailVerification());
 
       await act(async () => {
-        await result.current.resendCode();
+        try {
+          await result.current.resendCode();
+        } catch (error: any) {
+          expect(error).toEqual(mockError);
+        }
       });
 
-      expect(result.current.error).toBe('Please wait before requesting another code');
-      expect(result.current.nextTransition).toBe('CODE_INPUT');
-      expect(result.current.message).toBeNull();
+      expect(result.current.error).toBe('Too many attempts');
       expect(result.current.isLoading).toBe(false);
-      expect(result.current.canResend).toBe(true);
-    });
-
-    it('should handle cooldown timer', async () => {
-      const mockResponse = {
-        status: 'success',
-        message: 'Verification code resent successfully',
-        nextTransition: 'CODE_INPUT'
-      };
-
-      mockedEmailVerificationApi.resendCode.mockResolvedValueOnce(mockResponse);
-
-      const { result } = renderHook(() => useEmailVerification());
-
-      await act(async () => {
-        await result.current.resendCode();
-      });
-
-      expect(result.current.resendCooldown).toBe(30);
-      expect(result.current.canResend).toBe(false);
-
-      // Advance timer by 15 seconds
-      act(() => {
-        jest.advanceTimersByTime(15000);
-      });
-
-      expect(result.current.resendCooldown).toBe(15);
-      expect(result.current.canResend).toBe(false);
-
-      // Advance timer to complete cooldown
-      act(() => {
-        jest.advanceTimersByTime(15000);
-      });
-
-      expect(result.current.resendCooldown).toBe(0);
-      expect(result.current.canResend).toBe(true);
     });
   });
 
-  describe('clearError and clearMessage', () => {
+  describe('clearError and reset', () => {
     it('should clear error', () => {
       const { result } = renderHook(() => useEmailVerification());
 
-      // Set error first
+      // Set an error first
       act(() => {
-        result.current.verifyEmail(mockEmail);
+        result.current.verifyEmail(mockEmail).catch(() => {});
       });
 
       act(() => {
@@ -278,19 +247,29 @@ describe('useEmailVerification', () => {
       expect(result.current.error).toBeNull();
     });
 
-    it('should clear message', () => {
+    it('should reset state', () => {
       const { result } = renderHook(() => useEmailVerification());
 
-      // Set message first
+      // Set some state first
       act(() => {
-        result.current.verifyEmail(mockEmail);
+        result.current.verifyEmail(mockEmail).catch(() => {});
       });
 
       act(() => {
-        result.current.clearMessage();
+        result.current.reset();
       });
 
-      expect(result.current.message).toBeNull();
+      expect(result.current).toEqual({
+        isLoading: false,
+        error: null,
+        isEmailSent: false,
+        isVerified: false,
+        verifyEmail: expect.any(Function),
+        verifyCode: expect.any(Function),
+        resendCode: expect.any(Function),
+        clearError: expect.any(Function),
+        reset: expect.any(Function)
+      });
     });
   });
 }); 

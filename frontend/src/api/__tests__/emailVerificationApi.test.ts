@@ -3,11 +3,14 @@
  */
 
 import { emailVerificationApi } from '../emailVerificationApi';
-import { apiClient } from '../apiClient';
+import { post } from '../apiClient';
 
-// Mock the apiClient
-jest.mock('../apiClient');
-const mockedApiClient = apiClient as jest.Mocked<typeof apiClient>;
+// Mock the apiClient module
+jest.mock('../apiClient', () => ({
+  post: jest.fn()
+}));
+
+const mockedPost = post as jest.MockedFunction<typeof post>;
 
 describe('emailVerificationApi', () => {
   const mockSessionId = 'test-session-id';
@@ -21,25 +24,23 @@ describe('emailVerificationApi', () => {
   describe('verifyEmail', () => {
     it('should successfully send verification email', async () => {
       const mockResponse = {
-        status: 'success',
-        message: 'Verification code sent successfully',
-        nextTransition: 'CODE_INPUT'
+        data: {
+          status: 'success',
+          message: 'Verification code sent successfully',
+          nextTransition: 'CODE_INPUT'
+        }
       };
 
-      mockedApiClient.post.mockResolvedValueOnce({ data: mockResponse });
+      mockedPost.mockResolvedValueOnce(mockResponse);
 
       const result = await emailVerificationApi.verifyEmail(mockSessionId, { email: mockEmail });
 
-      expect(mockedApiClient.post).toHaveBeenCalledWith(
-        '/api/v1/email-verification/verify-email',
-        { email: mockEmail },
-        {
-          headers: {
-            'X-Session-ID': mockSessionId
-          }
+      expect(mockedPost).toHaveBeenCalledWith('/email-verification/verify-email', { email: mockEmail }, {
+        headers: {
+          'X-Session-ID': mockSessionId
         }
-      );
-      expect(result).toEqual(mockResponse);
+      });
+      expect(result).toEqual(mockResponse.data);
     });
 
     it('should handle API errors', async () => {
@@ -53,14 +54,14 @@ describe('emailVerificationApi', () => {
         }
       };
 
-      mockedApiClient.post.mockRejectedValueOnce(mockError);
+      mockedPost.mockRejectedValueOnce(mockError);
 
       await expect(emailVerificationApi.verifyEmail(mockSessionId, { email: mockEmail }))
         .rejects.toEqual(mockError.response.data);
     });
 
     it('should handle network errors', async () => {
-      mockedApiClient.post.mockRejectedValueOnce(new Error('Network error'));
+      mockedPost.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(emailVerificationApi.verifyEmail(mockSessionId, { email: mockEmail }))
         .rejects.toEqual({
@@ -74,25 +75,23 @@ describe('emailVerificationApi', () => {
   describe('verifyCode', () => {
     it('should successfully verify code', async () => {
       const mockResponse = {
-        status: 'success',
-        message: 'Email verified successfully',
-        nextTransition: 'CHAT_READY'
+        data: {
+          status: 'success',
+          message: 'Email verified successfully',
+          nextTransition: 'CHAT_READY'
+        }
       };
 
-      mockedApiClient.post.mockResolvedValueOnce({ data: mockResponse });
+      mockedPost.mockResolvedValueOnce(mockResponse);
 
       const result = await emailVerificationApi.verifyCode(mockSessionId, { code: mockCode });
 
-      expect(mockedApiClient.post).toHaveBeenCalledWith(
-        '/api/v1/email-verification/verify-code',
-        { code: mockCode },
-        {
-          headers: {
-            'X-Session-ID': mockSessionId
-          }
+      expect(mockedPost).toHaveBeenCalledWith('/email-verification/verify-code', { code: mockCode }, {
+        headers: {
+          'X-Session-ID': mockSessionId
         }
-      );
-      expect(result).toEqual(mockResponse);
+      });
+      expect(result).toEqual(mockResponse.data);
     });
 
     it('should handle API errors', async () => {
@@ -106,14 +105,14 @@ describe('emailVerificationApi', () => {
         }
       };
 
-      mockedApiClient.post.mockRejectedValueOnce(mockError);
+      mockedPost.mockRejectedValueOnce(mockError);
 
       await expect(emailVerificationApi.verifyCode(mockSessionId, { code: mockCode }))
         .rejects.toEqual(mockError.response.data);
     });
 
     it('should handle network errors', async () => {
-      mockedApiClient.post.mockRejectedValueOnce(new Error('Network error'));
+      mockedPost.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(emailVerificationApi.verifyCode(mockSessionId, { code: mockCode }))
         .rejects.toEqual({
@@ -127,25 +126,23 @@ describe('emailVerificationApi', () => {
   describe('resendCode', () => {
     it('should successfully resend verification code', async () => {
       const mockResponse = {
-        status: 'success',
-        message: 'Verification code resent successfully',
-        nextTransition: 'CODE_INPUT'
+        data: {
+          status: 'success',
+          message: 'Verification code resent successfully',
+          nextTransition: 'CODE_INPUT'
+        }
       };
 
-      mockedApiClient.post.mockResolvedValueOnce({ data: mockResponse });
+      mockedPost.mockResolvedValueOnce(mockResponse);
 
       const result = await emailVerificationApi.resendCode(mockSessionId);
 
-      expect(mockedApiClient.post).toHaveBeenCalledWith(
-        '/api/v1/email-verification/resend-code',
-        {},
-        {
-          headers: {
-            'X-Session-ID': mockSessionId
-          }
+      expect(mockedPost).toHaveBeenCalledWith('/email-verification/resend-code', {}, {
+        headers: {
+          'X-Session-ID': mockSessionId
         }
-      );
-      expect(result).toEqual(mockResponse);
+      });
+      expect(result).toEqual(mockResponse.data);
     });
 
     it('should handle API errors', async () => {
@@ -153,20 +150,20 @@ describe('emailVerificationApi', () => {
         response: {
           data: {
             status: 'error',
-            error: 'Please wait before requesting another code',
+            error: 'Too many attempts',
             nextTransition: 'CODE_INPUT'
           }
         }
       };
 
-      mockedApiClient.post.mockRejectedValueOnce(mockError);
+      mockedPost.mockRejectedValueOnce(mockError);
 
       await expect(emailVerificationApi.resendCode(mockSessionId))
         .rejects.toEqual(mockError.response.data);
     });
 
     it('should handle network errors', async () => {
-      mockedApiClient.post.mockRejectedValueOnce(new Error('Network error'));
+      mockedPost.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(emailVerificationApi.resendCode(mockSessionId))
         .rejects.toEqual({

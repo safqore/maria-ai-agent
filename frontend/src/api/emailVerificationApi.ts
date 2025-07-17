@@ -16,10 +16,12 @@ export interface EmailVerificationResponse {
 
 export interface VerifyEmailRequest {
   email: string;
+  [key: string]: unknown;
 }
 
 export interface VerifyCodeRequest {
   code: string;
+  [key: string]: unknown;
 }
 
 export const emailVerificationApi = {
