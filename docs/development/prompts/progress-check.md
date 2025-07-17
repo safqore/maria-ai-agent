@@ -180,8 +180,8 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         - Recommendations
         - Next Steps
         - Architecture Compliance Status
-    - **Report Location:** Save to `/docs/features/[FEATURE_NAME]/validation-report.md`
-    - **Validation:** Verify report generated successfully
+    - **Report Output:** Present validation report in chat session (no file creation)
+    - **Validation:** Verify report content is comprehensive and accurate
     - **Error Handling:** If report generation fails, HALT with "REPORT_FAILED"
 
 10. **Verify Quality Standards (Autonomous):**
@@ -221,13 +221,13 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         - [ ] Discrepancies identified
         - [ ] Documentation updated
         - [ ] Architecture decisions updated
-        - [ ] Validation report generated
+        - [ ] Validation report presented in chat
         - [ ] Quality standards verified
     - **Success Criteria:** All checklist items ticked, no errors
     - **Completion Message:** "Progress validation complete!
     
     Your feature has been validated and updated. You can now:
-        - Review validation report in: `/docs/features/[FeatureName]/validation-report.md`
+        - Review validation findings in the chat session above
         - Check updated status in: `/docs/features/[FeatureName]/STATUS.md`
         - Review architectural decisions in: `/docs/architecture/decisions.md`
         - Continue development or start new feature planning"
