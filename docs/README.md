@@ -12,8 +12,7 @@ docs/
 │   ├── patterns.md           # ← Established code patterns
 │   └── integration-map.md    # ← Feature interdependencies
 ├── development/              # ← Development workflow tools
-│   ├── prompts/              # ← Guided prompts for Claude sessions
-│   └── checklists/           # ← Workflow checklists
+│   └── prompts/              # ← Deterministic prompts for AI-assisted development
 ├── features/                 # ← Feature-specific documentation
 │   └── [feature-name]/       # ← Individual feature docs
 │       ├── STATUS.md         # ← Current status (max 50 lines)
@@ -21,8 +20,7 @@ docs/
 │       ├── IMPLEMENTATION.md # ← Implementation details (max 100 lines)
 │       └── BLOCKERS.md       # ← Current blockers (max 20 lines)
 └── templates/                # ← Documentation templates
-    ├── feature-docs/         # ← Templates for feature documentation
-    └── session-memory/       # ← Templates for session working memory
+    └── feature-docs/         # ← Templates for feature documentation
 ```
 
 ## System Design Principles
@@ -30,7 +28,7 @@ docs/
 ### 1. Layered Architecture
 - **Layer 1**: Cross-feature architecture registry (single source of truth)
 - **Layer 2**: Focused feature documentation (line-limited)
-- **Layer 3**: Session working memory (temporary, gets deleted)
+- **Layer 3**: Deterministic development prompts (AI-assisted workflow)
 
 ### 2. Line Limits
 - **STATUS.md**: 50 lines max
@@ -46,31 +44,32 @@ docs/
 ## Getting Started
 
 ### For New Features
-1. Use `/docs/development/prompts/start-new-feature.md`
-2. Follow the new feature checklist
-3. Create feature documentation from templates
+1. Use `/docs/development/prompts/feature-planning.md`
+2. Follow the deterministic planning workflow
+3. Create technical specifications and implementation plan
 
-### For Daily Sessions
-1. Use `/docs/development/prompts/daily-session-start.md`
-2. Follow the daily session checklist
-3. Create session working memory
+### For Development
+1. Use `/docs/development/prompts/development.md`
+2. Follow the AI-assisted development workflow
+3. Implement code with automatic documentation updates
 
-### For Implementation
-1. Use `/docs/development/prompts/cross-feature-check.md`
-2. Follow the implementation ready checklist
-3. Check architecture registry for patterns
+### For Validation
+1. Use `/docs/development/prompts/progress-check.md`
+2. Validate code against documentation and requirements
+3. Ensure consistency and quality standards
 
 ## Working with Claude
 
-### Session Continuity
-- Use guided prompts for consistent session startup
-- Maintain session working memory in `/.claude-sessions/`
-- Update feature documentation at end of each session
+### Deterministic Development
+- Use structured prompts for consistent AI behavior
+- Follow hybrid interactive/autonomous workflows
+- Automatic documentation updates ensure continuity
 
 ### Preventing Hallucinations
 - Hard line limits prevent documentation bloat
 - Focused documents provide clear context
 - Architecture registry prevents pattern conflicts
+- Explicit handoff gates prevent assumptions
 
 ## Benefits
 
