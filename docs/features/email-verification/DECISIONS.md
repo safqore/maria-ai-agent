@@ -28,3 +28,8 @@
 - **FSM Integration:** Follow existing ChatContext pattern
 
 **Rationale:** All decisions prioritize consistency with existing patterns, user experience, and security while maintaining architectural compliance. 
+---
+## Production Deployment Decisions
+- Gmail SMTP configuration and credentials added to backend/.env
+- Database migration executed and verified
+- All blockers resolved; feature is now live in production

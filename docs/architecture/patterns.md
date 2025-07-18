@@ -309,7 +309,6 @@ def validate_uuid():
     # Implementation
     pass
 ```
-```
 
 ### Test Database Initialization Pattern
 ```python
@@ -1017,5 +1016,11 @@ const apiClient = axios.create({
 });
 ```
 
+### Email Verification Production Pattern (July 2025)
+- Gmail SMTP configuration in backend/.env
+- Database migration executed and verified
+- All API endpoints return nextTransition for FSM
+- Error handling and security patterns followed
+
 ---
-*All new code must follow these established patterns* 
+*All new code must follow these established patterns*

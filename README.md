@@ -536,13 +536,44 @@ Key frontend configuration variables include:
 
 **Note:** React environment variables must be prefixed with `REACT_APP_` to be accessible in the application.
 
+### Email Verification Production Deployment
+
+Maria AI Agent uses Gmail SMTP for email verification. Before deploying to production, ensure the following steps are completed:
+
+#### 1. Configure Gmail SMTP in backend/.env
+Add these lines to your `backend/.env` (see `backend/.env.example` for reference):
+```
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SENDER_EMAIL=noreply@safqore.com
+SENDER_NAME=Maria AI Agent
+SMTP_USERNAME=<your_gmail_address>
+SMTP_PASSWORD=<your_gmail_app_password>
+```
+
+#### 2. Run Database Migration
+Activate the conda environment and run:
+```bash
+conda activate maria-ai-agent
+python backend/run_migrations.py
+```
+This will create the required email verification fields in the database.
+
+#### 3. Verify Email Verification Workflow
+- Test the end-to-end email verification flow in production.
+- Ensure emails are sent and codes are validated correctly.
+
+#### 4. Troubleshooting
+- If emails are not sent, check SMTP credentials and Gmail app password.
+- Review backend logs for error details.
+
 ### Backend Email Verification (Required for Production)
 - `SMTP_SERVER=smtp.gmail.com`
 - `SMTP_PORT=587`
 - `SENDER_EMAIL=noreply@safqore.com`
 - `SENDER_NAME=Maria AI Agent`
 - `SMTP_USERNAME=<your-gmail-address>`
-- `SMTP_PASSWORD=<your-app-password>`
+- `SMTP_PASSWORD=<your-gmail-app-password>`
 
 Add these to `backend/.env` before deploying email verification to production.
 

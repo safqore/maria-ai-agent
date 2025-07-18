@@ -377,5 +377,10 @@ This file will contain all major architectural decisions made across the project
 - **Implementation**: Upload state in FSM, "Done & Continue" button, nextTransition responses
 - **Established**: December 2024
 
+## Email Verification Production Deployment (July 2025)
+- Gmail SMTP configuration and credentials added to backend/.env
+- Database migration executed and verified
+- All blockers resolved; feature is now live in production
+
 ---
-*This file will be populated as architectural decisions are made* 
+*This file will be populated as architectural decisions are made*
