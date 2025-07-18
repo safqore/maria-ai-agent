@@ -24,6 +24,9 @@ const stateColors: Record<States, string> = {
   [States.UPLOAD_DOCS_MSG]: '#fcffe6',
   [States.UPLOAD_DOCS]: '#fff1f0',
   [States.COLLECTING_EMAIL]: '#f4ffb8',
+  [States.EMAIL_VERIFICATION_SENDING]: '#fff2e8',
+  [States.EMAIL_VERIFICATION_CODE_INPUT]: '#fff7e6',
+  [States.EMAIL_VERIFICATION_COMPLETE]: '#f6ffed',
   [States.CREATE_BOT]: '#e6f7ff',
   [States.END_WORKFLOW]: '#f0f5ff',
 };

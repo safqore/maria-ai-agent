@@ -21,6 +21,12 @@ export enum States {
   COLLECTING_NAME = 'COLLECTING_NAME',
   /** State for collecting the user's email */
   COLLECTING_EMAIL = 'COLLECTING_EMAIL',
+  /** State for email verification - sending code */
+  EMAIL_VERIFICATION_SENDING = 'EMAIL_VERIFICATION_SENDING',
+  /** State for email verification - entering code */
+  EMAIL_VERIFICATION_CODE_INPUT = 'EMAIL_VERIFICATION_CODE_INPUT',
+  /** State for email verification - code verified */
+  EMAIL_VERIFICATION_COMPLETE = 'EMAIL_VERIFICATION_COMPLETE',
   /** State for introducing document upload functionality */
   UPLOAD_DOCS_MSG = 'UPLOAD_DOCS_MSG',
   /** State for handling document uploads */
@@ -51,6 +57,12 @@ export enum Transitions {
   NAME_PROVIDED = 'NAME_PROVIDED',
   /** Transition when user provides their email */
   EMAIL_PROVIDED = 'EMAIL_PROVIDED',
+  /** Transition when email verification code is sent */
+  EMAIL_CODE_SENT = 'EMAIL_CODE_SENT',
+  /** Transition when email verification code is verified */
+  EMAIL_CODE_VERIFIED = 'EMAIL_CODE_VERIFIED',
+  /** Transition when email verification fails */
+  EMAIL_VERIFICATION_FAILED = 'EMAIL_VERIFICATION_FAILED',
   /** Transition when upload docs message completion is detected */
   UPLOAD_DOCS_MSG_COMPLETE = 'UPLOAD_DOCS_MSG_COMPLETE',
   /** Transition when documents have been successfully uploaded */
@@ -147,7 +159,18 @@ const stateTransitionMap: { [key in State]?: { [key in Transition]?: State } } =
     [Transitions.DOCS_UPLOADED]: States.COLLECTING_EMAIL,
   },
   [States.COLLECTING_EMAIL]: {
-    [Transitions.EMAIL_PROVIDED]: States.CREATE_BOT,
+    [Transitions.EMAIL_PROVIDED]: States.EMAIL_VERIFICATION_SENDING,
+  },
+  [States.EMAIL_VERIFICATION_SENDING]: {
+    [Transitions.EMAIL_CODE_SENT]: States.EMAIL_VERIFICATION_CODE_INPUT,
+    [Transitions.EMAIL_VERIFICATION_FAILED]: States.COLLECTING_EMAIL,
+  },
+  [States.EMAIL_VERIFICATION_CODE_INPUT]: {
+    [Transitions.EMAIL_CODE_VERIFIED]: States.EMAIL_VERIFICATION_COMPLETE,
+    [Transitions.EMAIL_VERIFICATION_FAILED]: States.EMAIL_VERIFICATION_CODE_INPUT,
+  },
+  [States.EMAIL_VERIFICATION_COMPLETE]: {
+    [Transitions.BOT_CREATION_INITIALISED]: States.CREATE_BOT,
   },
   [States.CREATE_BOT]: {
     [Transitions.BOT_CREATION_INITIALISED]: States.END_WORKFLOW,

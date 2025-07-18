@@ -89,6 +89,9 @@ const FsmVisualizer: React.FC<FsmVisualizerProps> = ({ fsm }) => {
     [States.ENGAGE_USR_AGAIN]: [Transitions.LETS_GO_CLICKED, Transitions.MAYBE_NEXT_TIME_CLICKED],
     [States.COLLECTING_NAME]: [Transitions.NAME_PROVIDED],
     [States.COLLECTING_EMAIL]: [Transitions.EMAIL_PROVIDED],
+    [States.EMAIL_VERIFICATION_SENDING]: [Transitions.EMAIL_CODE_SENT, Transitions.EMAIL_VERIFICATION_FAILED],
+    [States.EMAIL_VERIFICATION_CODE_INPUT]: [Transitions.EMAIL_CODE_VERIFIED, Transitions.EMAIL_VERIFICATION_FAILED],
+    [States.EMAIL_VERIFICATION_COMPLETE]: [Transitions.BOT_CREATION_INITIALISED],
     [States.UPLOAD_DOCS_MSG]: [Transitions.UPLOAD_DOCS_MSG_COMPLETE],
     [States.UPLOAD_DOCS]: [Transitions.DOCS_UPLOADED],
     [States.CREATE_BOT]: [Transitions.BOT_CREATION_INITIALISED],
@@ -110,6 +113,12 @@ const FsmVisualizer: React.FC<FsmVisualizerProps> = ({ fsm }) => {
         return 'Input enabled, no buttons, collecting name';
       case States.COLLECTING_EMAIL:
         return 'Input enabled, no buttons, collecting email';
+      case States.EMAIL_VERIFICATION_SENDING:
+        return 'Email verification sending, input disabled, loading state';
+      case States.EMAIL_VERIFICATION_CODE_INPUT:
+        return 'Email verification code input, code input visible';
+      case States.EMAIL_VERIFICATION_COMPLETE:
+        return 'Email verification complete, proceeding to bot creation';
       case States.UPLOAD_DOCS_MSG:
         return 'Input disabled, message typing about document upload';
       case States.UPLOAD_DOCS:
