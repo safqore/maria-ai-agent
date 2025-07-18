@@ -536,6 +536,19 @@ Key frontend configuration variables include:
 
 **Note:** React environment variables must be prefixed with `REACT_APP_` to be accessible in the application.
 
+### Backend Email Verification (Required for Production)
+- `SMTP_SERVER=smtp.gmail.com`
+- `SMTP_PORT=587`
+- `SENDER_EMAIL=noreply@safqore.com`
+- `SENDER_NAME=Maria AI Agent`
+- `SMTP_USERNAME=<your-gmail-address>`
+- `SMTP_PASSWORD=<your-app-password>`
+
+Add these to `backend/.env` before deploying email verification to production.
+
+### Database Migration
+- Run `python backend/run_migrations.py` before production deployment to ensure email verification fields are present.
+
 ---
 
 For full requirements and rationale, see `prompts/user_session.md`.

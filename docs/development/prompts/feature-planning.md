@@ -139,15 +139,21 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         - Feature name: [FeatureName]
         - Update type: STATUS
         - Content: Initial planning status and next actions
+    - **LINE LIMIT ENFORCEMENT:** Create documentation within strict limits:
+        - STATUS.md: MAX 50 lines (initial status and planning progress)
+        - DECISIONS.md: MAX 30 lines (planning decisions only, consolidate)
+        - IMPLEMENTATION.md: MAX 100 lines (technical specifications, focus on essentials)
+        - BLOCKERS.md: MAX 20 lines (identified blockers only)
+    - **Line Limit Validation:** Count lines during creation and summarize if approaching limits
     - **Additional Updates:**
-        - Update DECISIONS.md with planning decisions
-        - Update IMPLEMENTATION.md with technical specifications
-        - Update BLOCKERS.md with any identified blockers
+        - Update DECISIONS.md with planning decisions (within 30 lines)
+        - Update IMPLEMENTATION.md with technical specifications (within 100 lines)
+        - Update BLOCKERS.md with any identified blockers (within 20 lines)
     - **Architecture Documentation Updates:**
         - **Decisions.md Update:** Add new architectural decisions made during planning
         - **Integration-map.md Update:** Update integration points if new dependencies identified
         - **Patterns.md Update:** Add new patterns if established during planning
-    - **Validation:** Verify all documentation updated successfully
+    - **Validation:** Verify all documentation updated successfully AND within line limits
     - **Error Handling:** If documentation update fails, HALT with "DOCUMENTATION_FAILED"
 
 6. **Verify Architecture Compliance (Autonomous):**

@@ -106,7 +106,12 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Inconsistencies:** Identify internal inconsistencies
     - **Quality Issues:** Identify quality or standards violations
     - **Architecture Compliance Issues:** Identify issues with architectural decision compliance
-    - **Validation:** Ensure all discrepancies identified and categorized
+    - **LINE LIMIT VIOLATIONS:** Check each feature documentation file against strict limits:
+        - STATUS.md: Must be ≤50 lines (flag if exceeded)
+        - DECISIONS.md: Must be ≤30 lines (flag if exceeded)
+        - IMPLEMENTATION.md: Must be ≤100 lines (flag if exceeded)
+        - BLOCKERS.md: Must be ≤20 lines (flag if exceeded)
+    - **Validation:** Ensure all discrepancies identified and categorized, including line limit violations
 
 <!-- PHASE 3: INTERACTIVE APPROVAL -->
 
@@ -173,16 +178,22 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         - Feature name: [FeatureName]
         - Update type: STATUS
         - Content: Updated validation status and next actions
+    - **LINE LIMIT ENFORCEMENT:** Before updating any feature documentation file, enforce strict line limits:
+        - STATUS.md: MAX 50 lines (summarize if exceeded)
+        - DECISIONS.md: MAX 30 lines (consolidate if exceeded)
+        - IMPLEMENTATION.md: MAX 100 lines (focus on essentials if exceeded)
+        - BLOCKERS.md: MAX 20 lines (prioritize active blockers if exceeded)
+    - **Line Limit Validation:** Count lines after updates and truncate/summarize if limits exceeded
     - **Additional Updates:**
-        - Update IMPLEMENTATION.md to match actual code
-        - Update DECISIONS.md with any new decisions made during validation
-        - Update BLOCKERS.md with any new blockers or resolved blockers
+        - Update IMPLEMENTATION.md to match actual code (within 100 lines)
+        - Update DECISIONS.md with any new decisions made during validation (within 30 lines)
+        - Update BLOCKERS.md with any new blockers or resolved blockers (within 20 lines)
     - **Architecture Documentation Updates:**
         - **Decisions.md Update:** Add new architectural decisions made during validation
         - **Integration-map.md Update:** Update integration points if new dependencies identified
         - **Patterns.md Update:** Add new patterns if established during validation
-    - **Validation:** Verify all documentation updated successfully
-    - **Error Handling:** If documentation update fails, HALT with "DOCUMENTATION_FAILED"
+    - **Validation:** Verify all documentation updated successfully AND within line limits
+    - **Error Handling:** If documentation update fails or exceeds line limits, HALT with "DOCUMENTATION_FAILED"
 
 9. **Apply Code Fixes (Autonomous):**
     - **Automatic Fixes:** Apply fixes that can be resolved automatically
