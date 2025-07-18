@@ -52,6 +52,12 @@ This directory contains deterministic prompts for AI-assisted development. Each 
 1. Use `development.md` for continued work (maintains architecture alignment)
 2. Use `progress-check.md` periodically for validation (checks decision compliance)
 
+### Feature Name Validation
+- `development.md` and `progress-check.md` require explicit feature name specification
+- If no feature name is provided, prompts will ask user to specify one
+- Feature directory must exist at `/docs/features/[FEATURE_NAME]/`
+- Prompts will not proceed until valid feature name is confirmed
+
 ### For Team Coordination
 - All prompts automatically update documentation
 - Architecture decisions are preserved and referenced across all features
@@ -88,11 +94,16 @@ This directory contains deterministic prompts for AI-assisted development. Each 
 ## Error Handling
 
 All prompts use standardized error codes:
+- `FEATURE_NOT_FOUND`: Feature directory does not exist
 - `REQUIREMENT_VALIDATION_FAILED`: Business requirements unclear
 - `TECHNICAL_SPEC_FAILED`: Unable to generate technical specifications
 - `IMPLEMENTATION_FAILED`: Code implementation failed
+- `TESTING_FAILED`: Unable to write or execute tests successfully
 - `DOCUMENTATION_FAILED`: Documentation update failed
 - `VALIDATION_FAILED`: Progress check validation failed
+- `CODE_FIX_FAILED`: Unable to apply code fixes
+- `REPORT_FAILED`: Unable to generate validation report
+- `QUALITY_FAILED`: Unable to meet quality/code standards
 - `ARCHITECTURE_FAILED`: Architecture compliance issues detected
 
 ## Success Criteria

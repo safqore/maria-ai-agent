@@ -10,6 +10,7 @@ Mandatory Inputs:
  - Current task or focus area (from user)
 Output: Implemented code + updated documentation + tests
 Acceptance Checklist (AI must self-tick at each gate):
+ [ ] Feature name validated and exists
  [ ] Feature context loaded
  [ ] Current status reviewed
  [ ] Next tasks identified
@@ -23,7 +24,7 @@ Acceptance Checklist (AI must self-tick at each gate):
 
 <!-- Hybrid Flow Overview
 INTERACTIVE PHASE:
-Feature Context -> Status Review -> Task Planning -> User Confirmation -> HANDOFF GATE
+Feature Name Validation -> Feature Context -> Status Review -> Task Planning -> User Confirmation -> HANDOFF GATE
 
 AUTONOMOUS PHASE:
 Code Implementation -> Testing -> Documentation Update -> Quality Verification
@@ -39,7 +40,22 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
 
 <!-- PHASE 1: INTERACTIVE PLANNING -->
 
-1. **Load Feature Context (Interactive):**
+1. **Validate Feature Name (Interactive):**
+    - **Action:** Ensure feature name is provided by user
+    - **Validation Rules:**
+        - Feature name must be explicitly provided by user
+        - Feature name must be valid directory name
+        - Feature documentation directory must exist at `/docs/features/[FEATURE_NAME]/`
+    - **If Missing:** Ask user: "**Please specify the feature name you want to work on.**
+        
+        Available features can be found in: `/docs/features/`
+        
+        Which feature would you like me to develop?"
+    - **Wait for Response:** Do not proceed until user provides valid feature name
+    - **Error Handling:** If feature directory doesn't exist, HALT with "FEATURE_NOT_FOUND"
+    - **End Condition:** Valid feature name confirmed and feature directory exists
+
+2. **Load Feature Context (Interactive):**
     - **Action:** Load feature documentation from `/docs/features/[FEATURE_NAME]/`
     - **Files to Load:**
         - `STATUS.md` - Current progress and next actions
@@ -50,7 +66,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Codebase Analysis:** Analyze existing code structure for the feature
     - **End Condition:** Full context loaded and understood
 
-2. **Review Current Status (Interactive):**
+3. **Review Current Status (Interactive):**
     - **Progress Assessment:** Review current implementation status
     - **Blocker Analysis:** Identify and assess current blockers
     - **Next Task Identification:** Determine immediate next tasks (max 3)
@@ -58,7 +74,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Architecture Compliance Check:** Verify planned work aligns with architectural decisions
     - **Output:** Display current status summary to user
 
-3. **Plan Development Approach (Interactive):**
+4. **Plan Development Approach (Interactive):**
     - **Task Prioritization:** Rank next tasks by priority and dependency
     - **Implementation Strategy:** Plan approach for each task
     - **Risk Assessment:** Identify potential implementation risks
@@ -67,7 +83,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Architecture Alignment:** Ensure implementation follows established patterns and decisions
     - **End Condition:** Clear development plan established
 
-4. **Development Summary & Handoff Gate (Interactive):**
+5. **Development Summary & Handoff Gate (Interactive):**
     - **Action:** Display development plan to user:
         ```
         DEVELOPMENT PLAN:
@@ -107,7 +123,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
 
 <!-- PHASE 2-4: AUTONOMOUS EXECUTION (NO USER INTERACTION) -->
 
-5. **Implement Code (Autonomous):**
+6. **Implement Code (Autonomous):**
     - **Pattern Compliance:** Follow established patterns from `/docs/architecture/patterns.md`
     - **Decision Compliance:** Ensure implementation aligns with `/docs/architecture/decisions.md`
     - **Code Structure:** Implement according to technical specifications
@@ -119,7 +135,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Validation:** Ensure code follows project standards and architectural decisions
     - **Error Handling:** If implementation fails, HALT with "IMPLEMENTATION_FAILED"
 
-6. **Write/Update Tests (Autonomous):**
+7. **Write/Update Tests (Autonomous):**
     - **Unit Tests:** Write unit tests for new functionality
     - **Integration Tests:** Write integration tests for API endpoints
     - **Frontend Tests:** Write component tests for UI elements
@@ -128,7 +144,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Validation:** Ensure all tests pass
     - **Error Handling:** If testing fails, HALT with "TESTING_FAILED"
 
-7. **Update Documentation (Autonomous):**
+8. **Update Documentation (Autonomous):**
     - **Action:** Execute `documentation-updater.md` sub-prompt with:
         - Feature name: [FeatureName]
         - Update type: STATUS
@@ -144,7 +160,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Validation:** Verify all documentation updated successfully
     - **Error Handling:** If documentation update fails, HALT with "DOCUMENTATION_FAILED"
 
-8. **Verify Code Quality (Autonomous):**
+9. **Verify Code Quality (Autonomous):**
     - **Code Review:** Review code for quality and standards compliance
     - **Performance Check:** Verify performance considerations
     - **Security Review:** Verify security best practices
@@ -155,7 +171,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Error Handling:** If quality issues found, attempt fixes, then HALT with "QUALITY_FAILED" if unfixable
 
 <!-- AUTONOMOUS ERROR HANDLING -->
-**Error Recovery Pattern:** For all autonomous phases (5-8):
+**Error Recovery Pattern:** For all autonomous phases (6-9):
     - **Attempt:** Execute step
     - **Validate:** Check success conditions
     - **Context Preservation:** Save current state (code, tests, progress)
@@ -167,14 +183,16 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
 
 <!-- ERROR CODE DEFINITIONS -->
 **Error Codes:**
+- FEATURE_NOT_FOUND: Feature directory does not exist
 - IMPLEMENTATION_FAILED: Unable to implement code successfully
 - TESTING_FAILED: Unable to write or execute tests successfully
 - DOCUMENTATION_FAILED: Unable to update documentation
 - QUALITY_FAILED: Unable to meet code quality standards
 
 <!-- COMPLETION VERIFICATION -->
-9. **Final Verification (Autonomous):**
+10. **Final Verification (Autonomous):**
     - **Action:** Confirm all steps completed successfully:
+        - [ ] Feature name validated
         - [ ] Code implemented
         - [ ] Tests written/updated
         - [ ] Documentation updated

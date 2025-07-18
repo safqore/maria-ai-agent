@@ -9,6 +9,7 @@ Mandatory Inputs:
  - Feature name (from user)
 Output: Validation report + documentation updates + discrepancy resolution
 Acceptance Checklist (AI must self-tick at each gate):
+ [ ] Feature name validated and exists
  [ ] Feature context loaded
  [ ] Code analysis completed
  [ ] Documentation analysis completed
@@ -21,6 +22,9 @@ Acceptance Checklist (AI must self-tick at each gate):
 -->
 
 <!-- Hybrid Flow Overview
+INTERACTIVE PHASE:
+Feature Name Validation -> HANDOFF GATE
+
 AUTONOMOUS PHASE:
 Feature Analysis -> Code Review -> Documentation Review -> Discrepancy Identification
 
@@ -40,9 +44,26 @@ You are an expert validation agent operating in **HYBRID MODE**: Autonomous anal
 
 Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
 
-<!-- PHASE 1: AUTONOMOUS ANALYSIS -->
+<!-- PHASE 1: INTERACTIVE VALIDATION -->
 
-1. **Load Feature Context (Autonomous):**
+1. **Validate Feature Name (Interactive):**
+    - **Action:** Ensure feature name is provided by user
+    - **Validation Rules:**
+        - Feature name must be explicitly provided by user
+        - Feature name must be valid directory name
+        - Feature documentation directory must exist at `/docs/features/[FEATURE_NAME]/`
+    - **If Missing:** Ask user: "**Please specify the feature name you want to validate.**
+        
+        Available features can be found in: `/docs/features/`
+        
+        Which feature would you like me to validate?"
+    - **Wait for Response:** Do not proceed until user provides valid feature name
+    - **Error Handling:** If feature directory doesn't exist, HALT with "FEATURE_NOT_FOUND"
+    - **End Condition:** Valid feature name confirmed and feature directory exists
+
+<!-- PHASE 2: AUTONOMOUS ANALYSIS -->
+
+2. **Load Feature Context (Autonomous):**
     - **Action:** Load feature documentation from `/docs/features/[FEATURE_NAME]/`
     - **Files to Load:**
         - `STATUS.md` - Current progress and next actions
@@ -53,7 +74,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Codebase Analysis:** Analyze actual code implementation for the feature
     - **End Condition:** Full context loaded and understood
 
-2. **Analyze Code Implementation (Autonomous):**
+3. **Analyze Code Implementation (Autonomous):**
     - **Code Structure Analysis:** Review actual code structure and organization
     - **Functionality Analysis:** Verify implemented functionality against requirements
     - **Pattern Compliance:** Check code against established patterns
@@ -65,7 +86,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Security Analysis:** Verify security best practices
     - **Validation:** Ensure comprehensive code analysis completed
 
-3. **Analyze Documentation (Autonomous):**
+4. **Analyze Documentation (Autonomous):**
     - **Requirements Alignment:** Compare documentation against original requirements
     - **Implementation Accuracy:** Verify documentation matches actual implementation
     - **Completeness Check:** Ensure all aspects are documented
@@ -75,7 +96,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Architecture Decision Alignment:** Verify documentation aligns with architectural decisions
     - **Validation:** Ensure comprehensive documentation analysis completed
 
-4. **Identify Discrepancies (Autonomous):**
+5. **Identify Discrepancies (Autonomous):**
     - **Code vs Documentation:** Identify mismatches between code and documentation
     - **Requirements vs Implementation:** Identify gaps between requirements and implementation
     - **Pattern Violations:** Identify deviations from established patterns
@@ -86,9 +107,9 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Architecture Compliance Issues:** Identify issues with architectural decision compliance
     - **Validation:** Ensure all discrepancies identified and categorized
 
-<!-- PHASE 2: INTERACTIVE APPROVAL -->
+<!-- PHASE 3: INTERACTIVE APPROVAL -->
 
-5. **Generate Discrepancy Report (Interactive):**
+6. **Generate Discrepancy Report (Interactive):**
     - **Action:** Compile comprehensive discrepancy report:
         ```
         VALIDATION REPORT:
@@ -119,7 +140,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         ```
     - **End Condition:** Comprehensive report generated and presented to user
 
-6. **Discrepancy Summary & Handoff Gate (Interactive):**
+7. **Discrepancy Summary & Handoff Gate (Interactive):**
     - **HANDOFF GATE:** Ask explicit question:
         "**READY TO APPLY DISCREPANCY RESOLUTIONS?**
     
@@ -136,17 +157,17 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
         **Proceed with discrepancy resolution? (yes/no)**"
 
     - **Gate Logic:**
-        - If "yes" -> Proceed to Phase 3 (Autonomous)
-        - If "no" -> Return to discrepancy review in Phase 2
+        - If "yes" -> Proceed to Phase 4 (Autonomous)
+        - If "no" -> Return to discrepancy review in Phase 3
         - If unclear response -> Ask again with explicit binary choice
         - If no response -> Wait indefinitely (do not assume approval)
         - **Never proceed without explicit "yes" confirmation**
 
     - **Checklist Update:** Mark handoff gate as ✓ when user approves
 
-<!-- PHASE 3: AUTONOMOUS RESOLUTION -->
+<!-- PHASE 4: AUTONOMOUS RESOLUTION -->
 
-7. **Apply Documentation Updates (Autonomous):**
+8. **Apply Documentation Updates (Autonomous):**
     - **Action:** Execute `documentation-updater.md` sub-prompt with:
         - Feature name: [FeatureName]
         - Update type: STATUS
@@ -162,7 +183,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Validation:** Verify all documentation updated successfully
     - **Error Handling:** If documentation update fails, HALT with "DOCUMENTATION_FAILED"
 
-8. **Apply Code Fixes (Autonomous):**
+9. **Apply Code Fixes (Autonomous):**
     - **Automatic Fixes:** Apply fixes that can be resolved automatically
     - **Code Quality:** Fix code quality issues within scope
     - **Pattern Compliance:** Correct pattern violations
@@ -171,7 +192,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Validation:** Verify all fixes applied successfully
     - **Error Handling:** If code fixes fail, HALT with "CODE_FIX_FAILED"
 
-9. **Generate Final Validation Report (Autonomous):**
+10. **Generate Final Validation Report (Autonomous):**
     - **Report Structure:**
         - Executive Summary
         - Detailed Findings
@@ -184,7 +205,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Validation:** Verify report content is comprehensive and accurate
     - **Error Handling:** If report generation fails, HALT with "REPORT_FAILED"
 
-10. **Verify Quality Standards (Autonomous):**
+11. **Verify Quality Standards (Autonomous):**
     - **Final Code Review:** Verify all code meets quality standards
     - **Documentation Accuracy:** Verify documentation is accurate and complete
     - **Pattern Compliance:** Verify all patterns are followed
@@ -195,7 +216,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Error Handling:** If quality issues remain, HALT with "QUALITY_FAILED"
 
 <!-- AUTONOMOUS ERROR HANDLING -->
-**Error Recovery Pattern:** For all autonomous phases (1-4, 7-10):
+**Error Recovery Pattern:** For all autonomous phases (2-5, 8-11):
     - **Attempt:** Execute step
     - **Validate:** Check success conditions
     - **Context Preservation:** Save current state (analysis, findings, progress)
@@ -207,6 +228,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
 
 <!-- ERROR CODE DEFINITIONS -->
 **Error Codes:**
+- FEATURE_NOT_FOUND: Feature directory does not exist
 - ANALYSIS_FAILED: Unable to complete code or documentation analysis
 - DOCUMENTATION_FAILED: Unable to update documentation
 - CODE_FIX_FAILED: Unable to apply code fixes
@@ -214,8 +236,9 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
 - QUALITY_FAILED: Unable to meet quality standards
 
 <!-- COMPLETION VERIFICATION -->
-11. **Final Verification (Autonomous):**
+12. **Final Verification (Autonomous):**
     - **Action:** Confirm all steps completed successfully:
+        - [ ] Feature name validated
         - [ ] Code analysis completed
         - [ ] Documentation analysis completed
         - [ ] Discrepancies identified
