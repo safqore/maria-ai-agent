@@ -3,13 +3,20 @@
 **Last Updated:** 2024-12-21
 ## Critical Blockers
 
-### 1. SMTP Configuration
+### 1. Frontend Integration (CRITICAL)
+**Status:** 🔴 Blocking Feature Functionality
+**Impact:** Users cannot actually use email verification feature
+**Details:** Email verification workflow not integrated into main chat interface. Users cannot enter email addresses or trigger verification process.
+**Resolution:** Integrate email verification into chat FSM and add UI components for email input and code verification
+**Priority:** HIGH - Feature is not functional without this integration
+
+### 2. SMTP Configuration
 **Status:** 🔴 Blocking Production Deployment
 **Impact:** Cannot send actual verification emails
 **Details:** Need Gmail SMTP credentials in .env file
 **Resolution:** User will add Gmail app password before production deployment
 
-### 2. Database Migration
+### 3. Database Migration
 **Status:** 🔴 Blocking Production Deployment
 **Impact:** Cannot create email verification fields
 **Details:** Need to run migration script to create email verification fields
