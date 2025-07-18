@@ -82,6 +82,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Integration Analysis:** Verify integration points are properly implemented
     - **Error Handling:** Verify error handling is implemented correctly
     - **Testing Coverage:** Analyze test coverage and quality
+    - **Environment Compliance:** Verify backend operations use conda environment activation
     - **Performance Analysis:** Check performance considerations
     - **Security Analysis:** Verify security best practices
     - **Validation:** Ensure comprehensive code analysis completed

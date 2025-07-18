@@ -4,6 +4,18 @@ This file contains all established code patterns that must be followed across th
 
 ## Backend Patterns
 
+### Environment Activation Pattern
+```bash
+# MANDATORY: All backend operations must start with environment activation
+conda activate maria-ai-agent
+
+# Then proceed with Python operations
+python wsgi.py
+pytest backend/
+pip install package-name
+python setup_test_db.py
+```
+
 ### Repository Pattern
 ```python
 # All repositories must extend BaseRepository

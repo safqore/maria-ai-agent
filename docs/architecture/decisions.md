@@ -46,6 +46,12 @@ This file will contain all major architectural decisions made across the project
 
 ## Configuration Architecture
 
+### Environment Isolation
+- **Decision**: All backend operations must use the conda environment 'maria-ai-agent'
+- **Rationale**: Ensures dependency isolation, prevents base environment pollution, maintains consistent development environment
+- **Implementation**: Execute `conda activate maria-ai-agent` before any Python/backend operations (tests, server, database, pip installs)
+- **Established**: December 2024
+
 ### Service Separation
 - **Decision**: Use separate configuration files for each service (frontend/backend)
 - **Rationale**: Reflects deployment reality, prevents conflicts, follows stack standards

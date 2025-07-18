@@ -124,6 +124,13 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
 <!-- PHASE 2-4: AUTONOMOUS EXECUTION (NO USER INTERACTION) -->
 
 6. **Implement Code (Autonomous):**
+    - **Environment Activation (MANDATORY):** Before any Python/backend operations, verify conda environment is activated:
+        ```bash
+        conda activate maria-ai-agent
+        ```
+        - **CRITICAL:** This step is MANDATORY for all backend operations (tests, database, pip installs, python commands)
+        - **Validation:** Verify environment is active before proceeding with any Python operations
+        - **Error Handling:** If conda environment is not activated, HALT with "CONDA_ENVIRONMENT_NOT_ACTIVATED"
     - **Pattern Compliance:** Follow established patterns from `/docs/architecture/patterns.md`
     - **Decision Compliance:** Ensure implementation aligns with `/docs/architecture/decisions.md`
     - **Code Structure:** Implement according to technical specifications
@@ -136,11 +143,12 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
     - **Error Handling:** If implementation fails, HALT with "IMPLEMENTATION_FAILED"
 
 7. **Write/Update Tests (Autonomous):**
+    - **Environment Validation:** Ensure conda environment 'maria-ai-agent' is still activated
     - **Unit Tests:** Write unit tests for new functionality
     - **Integration Tests:** Write integration tests for API endpoints
     - **Frontend Tests:** Write component tests for UI elements
     - **Test Coverage:** Ensure adequate test coverage
-    - **Test Execution:** Run tests to verify functionality
+    - **Test Execution:** Run tests to verify functionality (using activated conda environment)
     - **Validation:** Ensure all tests pass
     - **Error Handling:** If testing fails, HALT with "TESTING_FAILED"
 
@@ -184,6 +192,7 @@ Between phases, there is a **HANDOFF GATE** requiring explicit user approval.
 <!-- ERROR CODE DEFINITIONS -->
 **Error Codes:**
 - FEATURE_NOT_FOUND: Feature directory does not exist
+- CONDA_ENVIRONMENT_NOT_ACTIVATED: Conda environment 'maria-ai-agent' is not activated
 - IMPLEMENTATION_FAILED: Unable to implement code successfully
 - TESTING_FAILED: Unable to write or execute tests successfully
 - DOCUMENTATION_FAILED: Unable to update documentation
