@@ -23,16 +23,10 @@ from app.services.session_service import SessionService
 # Create the session blueprint
 session_bp = Blueprint("session", __name__)
 
-# Get rate limit from environment variable or default to 10/minute
-SESSION_RATE_LIMIT = os.getenv("SESSION_RATE_LIMIT", "10/minute")
 
-# Create limiter instance that will be initialized by app factory
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=[SESSION_RATE_LIMIT],
-    storage_uri="memory://",  # Use in-memory storage for tests
-    # Note: enabled status will be set during init_app() based on app config
-)
+# Limiter will be initialized in app factory after config is loaded
+# Do NOT set default_limits here to avoid stale registration
+limiter = Limiter(key_func=get_remote_address, storage_uri="memory://", default_limits=None)
 
 
 def is_rate_limiting_enabled():
@@ -50,7 +44,7 @@ def is_rate_limiting_enabled():
 def cors_options_response():
     """Return a response with proper CORS headers for OPTIONS requests."""
     response = jsonify({"status": "success"})
-    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
     response.headers.add(
         "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"
     )
@@ -61,6 +55,7 @@ def cors_options_response():
     response.headers.add(
         "Access-Control-Expose-Headers", "X-API-Version, X-Correlation-ID"
     )
+    response.headers.add("Access-Control-Allow-Credentials", "true")
     return response, 200
 
 
@@ -111,46 +106,27 @@ def api_info():
     )
 
 
-def conditional_rate_limit(rate_limit_string):
+def conditional_rate_limit(_):
     """
-    Decorator that conditionally applies rate limiting based on config.
-
-    Args:
-        rate_limit_string: The rate limit string (e.g., "10/minute")
-
-    Returns:
-        Decorator that applies rate limiting only if enabled
+    Decorator that conditionally applies rate limiting based on config at runtime.
+    Only applies limiter if enabled and config is present. Avoids stale registration.
     """
-
     def decorator(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
-            # Check if rate limiting is enabled
-            if not is_rate_limiting_enabled():
-                # Rate limiting is disabled, call function directly
-                return f(*args, **kwargs)
-
-            # Check if this is an OPTIONS request (always allow)
-            if request.method == "OPTIONS":
-                return f(*args, **kwargs)
-
-            # Apply rate limiting using Flask-Limiter
-            # Create a temporary view function with limiter applied
-            try:
-                limited_func = limiter.limit(rate_limit_string)(f)
-                return limited_func(*args, **kwargs)
-            except Exception as e:
-                # If rate limiting fails, log and continue without rate limiting
-                current_app.logger.warning(f"Rate limiting error: {e}")
-                return f(*args, **kwargs)
-
+            # Always fetch the current rate limit from config
+            rate_limit = current_app.config.get("SESSION_RATE_LIMIT")
+            # Only apply limiter if enabled and rate_limit is set
+            if is_rate_limiting_enabled() and rate_limit and request.method != "OPTIONS":
+                # Dynamically apply limiter at runtime
+                return limiter.limit(rate_limit)(f)(*args, **kwargs)
+            return f(*args, **kwargs)
         return wrapper
-
     return decorator
 
 
 @session_bp.route("/validate-uuid", methods=["POST", "OPTIONS"])
-@conditional_rate_limit(SESSION_RATE_LIMIT)
+@conditional_rate_limit(None)
 @api_route
 def validate_uuid():
     """
@@ -176,15 +152,24 @@ def validate_uuid():
     """
     # Handle OPTIONS requests separately
     if request.method == "OPTIONS":
+        current_app.logger.info("OPTIONS request to /validate-uuid")
         return cors_options_response()
 
+    current_app.logger.info(f"POST /validate-uuid called from IP: {request.remote_addr}, Headers: {dict(request.headers)}")
+    current_app.logger.info(f"SESSION_RATE_LIMIT: {current_app.config.get('SESSION_RATE_LIMIT', 'not set')}")
+    current_app.logger.info(f"RATELIMIT_ENABLED: {current_app.config.get('RATELIMIT_ENABLED', 'not set')}")
+    current_app.logger.info(f"TESTING: {current_app.config.get('TESTING', 'not set')}")
+    current_app.logger.info(f"limiter._default_limits: {getattr(limiter, '_default_limits', 'unknown')}")
+    current_app.logger.info(f"limiter._enabled: {getattr(limiter, '_enabled', 'unknown')}")
     data = request.get_json()
+    current_app.logger.info(f"Request data: {data}")
 
     # Validate request data
     try:
         schema = UUIDSchema()
         validated_data = schema.load(data)
     except ValidationError as err:
+        current_app.logger.warning(f"UUID validation error: {err.messages}")
         return (
             jsonify(
                 {
@@ -199,11 +184,14 @@ def validate_uuid():
 
     session_uuid = validated_data["uuid"]
     response_data, status_code = g.session_service.validate_uuid(session_uuid)
+    current_app.logger.info(f"validate_uuid response: {response_data}, status_code: {status_code}")
+    if status_code == 429:
+        current_app.logger.error(f"429 TOO MANY REQUESTS for UUID: {session_uuid}, IP: {request.remote_addr}")
     return jsonify(response_data), status_code
 
 
 @session_bp.route("/generate-uuid", methods=["POST", "OPTIONS"])
-@conditional_rate_limit(SESSION_RATE_LIMIT)
+@conditional_rate_limit(None)
 @api_route
 def generate_uuid():
     """
