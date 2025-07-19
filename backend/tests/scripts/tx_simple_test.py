@@ -27,7 +27,14 @@ try:
 
     # Print database URL (with password masked)
     db_url = get_database_url()
-    masked_url = db_url.replace(db_url.split("@")[0].split(":")[2], "****")
+    # Handle different database URL formats safely
+    if "@" in db_url and ":" in db_url.split("@")[0]:
+        try:
+            masked_url = db_url.replace(db_url.split("@")[0].split(":")[2], "****")
+        except IndexError:
+            masked_url = db_url  # Fallback if parsing fails
+    else:
+        masked_url = db_url  # For SQLite URLs without @ symbol
     print(f"Database URL: {masked_url}")
 
     print("Creating test session...")

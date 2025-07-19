@@ -1,0 +1,73 @@
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+tests/
+*_test.db
+maria_ai_test.db
+
+# Development databases
+*.db
+*.sqlite
+*.sqlite3
+maria_ai_dev.db
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+docs/
+README.md
+*.md
+
+# Logs
+logs/
+*.log
+
+# Migration backups (keep migration files)
+migrations_backup/
+
+# Virtual environments
+venv/
+.venv/
+
+# Development scripts
+debug_*.py
+test_*.py 
