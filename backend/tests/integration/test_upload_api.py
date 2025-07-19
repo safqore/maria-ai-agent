@@ -10,12 +10,11 @@ import uuid
 from unittest.mock import patch
 
 import pytest
-from flask import Flask, jsonify
-
 from app import create_app
+from app.database_core import Base, get_engine
 from app.models import UserSession
 from app.repositories.user_session_repository import UserSessionRepository
-from app.database_core import Base, get_engine
+from flask import Flask, jsonify
 
 
 @pytest.fixture

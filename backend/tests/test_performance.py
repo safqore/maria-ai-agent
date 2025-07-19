@@ -14,10 +14,9 @@ from contextlib import contextmanager
 from typing import List
 
 import pytest
-
 from app import create_app
-from app.database_core import get_db_session
 from app.database.transaction import TransactionContext
+from app.database_core import get_db_session
 from app.models import UserSession
 from app.repositories.user_session_repository import UserSessionRepository
 

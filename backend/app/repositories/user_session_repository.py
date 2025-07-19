@@ -8,13 +8,12 @@ isolating database operations from the service layer.
 import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
-
 from app.database_core import get_db_session
 from app.errors import ServerError
 from app.models import UserSession
 from app.repositories.base_repository import BaseRepository
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 
 class UserSessionRepository(BaseRepository[UserSession]):

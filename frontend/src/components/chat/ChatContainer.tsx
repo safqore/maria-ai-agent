@@ -175,7 +175,7 @@ const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID }) 
     emailVerificationComplete();
     fsm.transition(Transitions.EMAIL_CODE_VERIFIED);
     addBotMessage(
-      'Perfect! Your email has been verified. I\'ll now create your personalized AI agent.'
+      "Perfect! Your email has been verified. I'll now create your personalized AI agent."
     );
     setInputDisabled(true); // Disable input during bot creation
   };
@@ -185,7 +185,7 @@ const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID }) 
   };
 
   const handleResendCode = () => {
-    addBotMessage('I\'ve sent a new verification code to your email. Please check your inbox.');
+    addBotMessage("I've sent a new verification code to your email. Please check your inbox.");
   };
 
   // Display state-based buttons based on the current state

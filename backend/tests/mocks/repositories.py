@@ -8,9 +8,8 @@ limitations, particularly for UUID handling.
 import uuid
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy.exc import SQLAlchemyError
-
 from app.errors import ResourceNotFoundError, ServerError
+from sqlalchemy.exc import SQLAlchemyError
 from tests.mocks.database import get_db_session
 from tests.mocks.models import UserSession
 

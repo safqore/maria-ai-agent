@@ -2,7 +2,6 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from app import create_app
 from app.routes.session import limiter
 

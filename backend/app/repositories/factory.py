@@ -6,8 +6,8 @@ ensuring that repository instances are created consistently.
 """
 
 from app.models import UserSession
-from app.repositories.user_session_repository import UserSessionRepository
 from app.repositories.email_verification_repository import EmailVerificationRepository
+from app.repositories.user_session_repository import UserSessionRepository
 
 
 def get_user_session_repository() -> UserSessionRepository:

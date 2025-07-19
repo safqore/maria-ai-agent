@@ -1,6 +1,6 @@
 /**
  * Email Verification API client
- * 
+ *
  * Provides methods for interacting with the email verification endpoints
  * including sending verification codes, verifying codes, and resending codes.
  */
@@ -29,15 +29,19 @@ export const emailVerificationApi = {
    * Send verification code to the provided email address
    */
   verifyEmail: async (
-    sessionId: string, 
+    sessionId: string,
     data: VerifyEmailRequest
   ): Promise<EmailVerificationResponse> => {
     try {
-      const response = await post<EmailVerificationResponse>('/email-verification/verify-email', data, {
-        headers: {
-          'X-Session-ID': sessionId
+      const response = await post<EmailVerificationResponse>(
+        '/email-verification/verify-email',
+        data,
+        {
+          headers: {
+            'X-Session-ID': sessionId,
+          },
         }
-      });
+      );
       return response.data;
     } catch (error: any) {
       // Handle and re-throw with consistent error format
@@ -47,7 +51,7 @@ export const emailVerificationApi = {
       throw {
         status: 'error',
         error: 'Failed to send verification code',
-        nextTransition: 'EMAIL_INPUT'
+        nextTransition: 'EMAIL_INPUT',
       };
     }
   },
@@ -56,15 +60,19 @@ export const emailVerificationApi = {
    * Verify the provided verification code
    */
   verifyCode: async (
-    sessionId: string, 
+    sessionId: string,
     data: VerifyCodeRequest
   ): Promise<EmailVerificationResponse> => {
     try {
-      const response = await post<EmailVerificationResponse>('/email-verification/verify-code', data, {
-        headers: {
-          'X-Session-ID': sessionId
+      const response = await post<EmailVerificationResponse>(
+        '/email-verification/verify-code',
+        data,
+        {
+          headers: {
+            'X-Session-ID': sessionId,
+          },
         }
-      });
+      );
       return response.data;
     } catch (error: any) {
       // Handle and re-throw with consistent error format
@@ -74,7 +82,7 @@ export const emailVerificationApi = {
       throw {
         status: 'error',
         error: 'Failed to verify code',
-        nextTransition: 'CODE_INPUT'
+        nextTransition: 'CODE_INPUT',
       };
     }
   },
@@ -84,11 +92,15 @@ export const emailVerificationApi = {
    */
   resendCode: async (sessionId: string): Promise<EmailVerificationResponse> => {
     try {
-      const response = await post<EmailVerificationResponse>('/email-verification/resend-code', {}, {
-        headers: {
-          'X-Session-ID': sessionId
+      const response = await post<EmailVerificationResponse>(
+        '/email-verification/resend-code',
+        {},
+        {
+          headers: {
+            'X-Session-ID': sessionId,
+          },
         }
-      });
+      );
       return response.data;
     } catch (error: any) {
       // Handle and re-throw with consistent error format
@@ -98,8 +110,8 @@ export const emailVerificationApi = {
       throw {
         status: 'error',
         error: 'Failed to resend verification code',
-        nextTransition: 'CODE_INPUT'
+        nextTransition: 'CODE_INPUT',
       };
     }
-  }
-}; 
+  },
+};

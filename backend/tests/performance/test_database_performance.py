@@ -15,9 +15,8 @@ from contextlib import contextmanager
 from typing import Any, Dict, List
 
 import pytest
-
-from app.database_core import get_db_session, init_database
 from app.database.transaction import TransactionContext
+from app.database_core import get_db_session, init_database
 from app.models import UserSession
 from app.repositories.user_session_repository import UserSessionRepository
 
@@ -29,7 +28,7 @@ class TestDatabasePerformance:
     def setup_test_data(self):
         """Setup test data for performance testing."""
         # Initialize database with table creation like conftest.py
-        from app.database_core import get_engine, Base, init_database
+        from app.database_core import Base, get_engine, init_database
         from app.models import UserSession  # Import models to ensure they're registered
 
         init_database()

@@ -6,20 +6,20 @@ extensions, blueprints, and middleware.
 """
 
 import os
+
+from app.routes.email_verification import email_verification_bp
+from app.routes.session import session_bp, setup_session_service
+from app.routes.upload import upload_bp
+from app.utils.auth import setup_auth_middleware
+from app.utils.middleware import (
+    apply_middleware_to_blueprint,
+    setup_request_logging,
+    setup_request_validation,
+)
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-
-from app.routes.session import session_bp, setup_session_service
-from app.routes.upload import upload_bp
-from app.routes.email_verification import email_verification_bp
-from app.utils.middleware import (
-    setup_request_logging,
-    setup_request_validation,
-    apply_middleware_to_blueprint,
-)
-from app.utils.auth import setup_auth_middleware
 
 
 def create_app(config=None):
@@ -41,25 +41,45 @@ def create_app(config=None):
         # Load from environment variables
         app.config.from_object("config.Config")
 
-    # Ensure SESSION_RATE_LIMIT and RATELIMIT_ENABLED are set in app.config from environment
+    # Ensure SESSION_RATE_LIMIT and RATELIMIT_ENABLED are set in app.config
     import logging
+
     logging.basicConfig(level=logging.INFO)
-    
+
     # Use more reasonable defaults for development
-    default_rate_limit = "100/minute" if app.config.get("TESTING", False) else "100/minute"
-    app.config["SESSION_RATE_LIMIT"] = os.getenv("SESSION_RATE_LIMIT", default_rate_limit)
-    app.config["RATELIMIT_ENABLED"] = os.getenv("RATELIMIT_ENABLED", "True")
+    default_rate_limit = (
+        "100/minute" if app.config.get("TESTING", False) else "100/minute"
+    )
     
-    logging.info(f"[Startup] SESSION_RATE_LIMIT: {app.config.get('SESSION_RATE_LIMIT', 'not set')}")
-    logging.info(f"[Startup] RATELIMIT_ENABLED: {app.config.get('RATELIMIT_ENABLED', 'not set')}")
+    # Only set from environment if not already provided in config
+    if "SESSION_RATE_LIMIT" not in app.config:
+        app.config["SESSION_RATE_LIMIT"] = os.getenv(
+            "SESSION_RATE_LIMIT", default_rate_limit
+        )
+    if "RATELIMIT_ENABLED" not in app.config:
+        app.config["RATELIMIT_ENABLED"] = os.getenv("RATELIMIT_ENABLED", "True")
+
+    logging.info(
+        f"[Startup] SESSION_RATE_LIMIT: {app.config.get('SESSION_RATE_LIMIT', 'not set')}"
+    )
+    logging.info(
+        f"[Startup] RATELIMIT_ENABLED: {app.config.get('RATELIMIT_ENABLED', 'not set')}"
+    )
     logging.info(f"[Startup] TESTING: {app.config.get('TESTING', 'not set')}")
-    
+
     from app.routes.session import limiter as session_limiter
+
     # Set default limits from config
     session_limiter._default_limits = [app.config["SESSION_RATE_LIMIT"]]
-    logging.info(f"[Startup] SESSION_RATE_LIMIT config: {app.config['SESSION_RATE_LIMIT']}")
-    logging.info(f"[Startup] session_limiter._default_limits: {getattr(session_limiter, '_default_limits', 'unknown')}")
-    logging.info(f"[Startup] session_limiter._enabled: {getattr(session_limiter, '_enabled', 'unknown')}")
+    logging.info(
+        f"[Startup] SESSION_RATE_LIMIT config: {app.config['SESSION_RATE_LIMIT']}"
+    )
+    logging.info(
+        f"[Startup] session_limiter._default_limits: {getattr(session_limiter, '_default_limits', 'unknown')}"
+    )
+    logging.info(
+        f"[Startup] session_limiter._enabled: {getattr(session_limiter, '_enabled', 'unknown')}"
+    )
 
     # Enable CORS with proper headers
     CORS(
@@ -78,7 +98,12 @@ def create_app(config=None):
                 "supports_credentials": True,
             }
         },
-        allow_headers=["Content-Type", "Authorization", "X-API-Key", "X-Correlation-ID"],
+        allow_headers=[
+            "Content-Type",
+            "Authorization",
+            "X-API-Key",
+            "X-Correlation-ID",
+        ],
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     )
 
@@ -113,10 +138,12 @@ def create_app(config=None):
         session_limiter.init_app(app)
         # Initialize upload limiter with its own configuration
         upload_limiter.init_app(app)
-        
+
         # Ensure session limiter uses the correct rate limit
         session_limiter._default_limits = [app.config["SESSION_RATE_LIMIT"]]
-        logging.info(f"[Startup] Final session_limiter._default_limits: {getattr(session_limiter, '_default_limits', 'unknown')}")
+        logging.info(
+            f"[Startup] Final session_limiter._default_limits: {getattr(session_limiter, '_default_limits', 'unknown')}"
+        )
     else:
         # For disabled limiters, we still need to set up the app context
         # but with no active limiting
@@ -175,7 +202,15 @@ def create_app(config=None):
     @app.route("/health", methods=["GET"])
     def health_check():
         """Simple health check endpoint."""
-        return jsonify({"status": "healthy", "rate_limit": app.config.get("SESSION_RATE_LIMIT")}), 200
+        return (
+            jsonify(
+                {
+                    "status": "healthy",
+                    "rate_limit": app.config.get("SESSION_RATE_LIMIT"),
+                }
+            ),
+            200,
+        )
 
     # Setup request context
     @app.before_request

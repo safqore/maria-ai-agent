@@ -1,6 +1,6 @@
 /**
  * Email Input Component
- * 
+ *
  * Provides email input functionality for the email verification process.
  * Integrates with the chat interface and follows established patterns.
  */
@@ -29,29 +29,31 @@ export const EmailInput: React.FC<EmailInputProps> = ({
   const [isValid, setIsValid] = useState<boolean>(true);
   const { verifyEmail, isLoading, error, clearError } = useEmailVerification();
 
-  // Email validation regex
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
   const validateEmail = useCallback((emailValue: string): boolean => {
+    // Email validation regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(emailValue.trim());
   }, []);
 
-  const handleEmailChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    const emailValue = event.target.value;
-    setEmail(emailValue);
-    
-    // Clear previous error when user starts typing
-    if (error) {
-      clearError();
-    }
-    
-    // Validate email format
-    setIsValid(emailValue === '' || validateEmail(emailValue));
-  }, [error, clearError, validateEmail]);
+  const handleEmailChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const emailValue = event.target.value;
+      setEmail(emailValue);
+
+      // Clear previous error when user starts typing
+      if (error) {
+        clearError();
+      }
+
+      // Validate email format
+      setIsValid(emailValue === '' || validateEmail(emailValue));
+    },
+    [error, clearError, validateEmail]
+  );
 
   const handleSubmit = useCallback(async () => {
     const trimmedEmail = email.trim();
-    
+
     if (!trimmedEmail) {
       setIsValid(false);
       onError('Please enter your email address');
@@ -66,7 +68,7 @@ export const EmailInput: React.FC<EmailInputProps> = ({
 
     try {
       const response = await verifyEmail(trimmedEmail);
-      
+
       if (response.status === 'success') {
         onEmailSent(trimmedEmail);
       } else {
@@ -78,11 +80,14 @@ export const EmailInput: React.FC<EmailInputProps> = ({
     }
   }, [email, validateEmail, verifyEmail, onEmailSent, onError]);
 
-  const handleKeyPress = useCallback((event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter' && !disabled && !isLoading) {
-      handleSubmit();
-    }
-  }, [disabled, isLoading, handleSubmit]);
+  const handleKeyPress = useCallback(
+    (event: KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === 'Enter' && !disabled && !isLoading) {
+        handleSubmit();
+      }
+    },
+    [disabled, isLoading, handleSubmit]
+  );
 
   return (
     <div className="email-input-container">
@@ -120,4 +125,4 @@ export const EmailInput: React.FC<EmailInputProps> = ({
       )}
     </div>
   );
-}; 
+};

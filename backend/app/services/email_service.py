@@ -16,95 +16,100 @@ from email.mime.text import MIMEText
 from typing import Optional
 
 import bcrypt
-from flask import current_app
-
 from app.utils.audit_utils import log_audit_event
+from flask import current_app
 
 
 class EmailService:
     """
     Service for email operations including verification code generation and sending.
-    
+
     Handles SMTP integration with Gmail, email template rendering, and
     proper security measures including bcrypt hashing for email addresses.
     """
 
     def __init__(self):
         """Initialize the email service with SMTP configuration."""
-        self.smtp_server = os.getenv('SMTP_HOST', 'smtp.gmail.com')
-        self.smtp_port = int(os.getenv('SMTP_PORT', '587'))
-        self.username = os.getenv('SMTP_USERNAME')
-        self.password = os.getenv('SMTP_PASSWORD')
-        self.sender_email = os.getenv('SENDER_EMAIL', 'noreply@safqore.com')
-        self.sender_name = os.getenv('SENDER_NAME', 'Maria')
+        self.smtp_server = os.getenv("SMTP_HOST", "smtp.gmail.com")
+        self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
+        self.username = os.getenv("SMTP_USERNAME")
+        self.password = os.getenv("SMTP_PASSWORD")
+        self.sender_email = os.getenv("SENDER_EMAIL", "noreply@safqore.com")
+        self.sender_name = os.getenv("SENDER_NAME", "Maria")
 
     def generate_verification_code(self) -> str:
         """
         Generate a 6-digit numeric verification code.
-        
+
         Returns:
             6-digit numeric string
         """
-        return ''.join(secrets.choice(string.digits) for _ in range(6))
+        return "".join(secrets.choice(string.digits) for _ in range(6))
 
     def hash_email(self, email: str) -> str:
         """
         Hash email address using bcrypt for storage.
-        
+
         Args:
             email: Email address to hash
-            
+
         Returns:
             Hashed email string
         """
-        return bcrypt.hashpw(email.encode('utf-8'), bcrypt.gensalt(rounds=12)).decode('utf-8')
+        return bcrypt.hashpw(email.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode(
+            "utf-8"
+        )
 
     def validate_email_format(self, email: str) -> bool:
         """
         Validate email format using regex.
-        
+
         Args:
             email: Email address to validate
-            
+
         Returns:
             True if valid format, False otherwise
         """
         # More strict regex that prevents consecutive dots and other invalid patterns
-        pattern = r'^[a-zA-Z0-9]([a-zA-Z0-9._%+-]*[a-zA-Z0-9])?@[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$'
-        
+        pattern = r"^[a-zA-Z0-9]([a-zA-Z0-9._%+-]*[a-zA-Z0-9])?@[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$"
+
         # Additional checks for common invalid patterns
         if not re.match(pattern, email):
             return False
-        
+
         # Check for consecutive dots
-        if '..' in email:
+        if ".." in email:
             return False
-            
+
         # Check for dots at start or end of local part
-        local_part, domain = email.split('@', 1)
-        if local_part.startswith('.') or local_part.endswith('.'):
+        local_part, domain = email.split("@", 1)
+        if local_part.startswith(".") or local_part.endswith("."):
             return False
-            
+
         # Check for dots at start or end of domain
-        if domain.startswith('.') or domain.endswith('.'):
+        if domain.startswith(".") or domain.endswith("."):
             return False
-            
+
         return True
 
-    def create_email_template(self, code: str, environment: str = 'development') -> tuple[str, str]:
+    def create_email_template(
+        self, code: str, environment: str = "development"
+    ) -> tuple[str, str]:
         """
         Create email template with verification code.
-        
+
         Args:
             code: 6-digit verification code
             environment: Environment name for subject prefix
-            
+
         Returns:
             Tuple of (subject, html_content)
         """
-        subject_prefix = f"[{environment.upper()}] " if environment != 'production' else ""
+        subject_prefix = (
+            f"[{environment.upper()}] " if environment != "production" else ""
+        )
         subject = f"{subject_prefix}Your Maria AI Agent Verification Code"
-        
+
         html_content = f"""
         <!DOCTYPE html>
         <html>
@@ -193,18 +198,18 @@ class EmailService:
         </body>
         </html>
         """
-        
+
         return subject, html_content
 
     def send_verification_email(self, email: str, code: str, session_id: str) -> bool:
         """
         Send verification email with the provided code.
-        
+
         Args:
             email: Recipient email address
             code: 6-digit verification code
             session_id: Session ID for audit logging
-            
+
         Returns:
             True if email sent successfully, False otherwise
         """
@@ -221,23 +226,23 @@ class EmailService:
 
             # Create email content
             subject, html_content = self.create_email_template(code)
-            
+
             # Create message
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            msg['From'] = f"{self.sender_name} <{self.sender_email}>"
-            msg['To'] = email
-            
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = f"{self.sender_name} <{self.sender_email}>"
+            msg["To"] = email
+
             # Add HTML content
-            html_part = MIMEText(html_content, 'html')
+            html_part = MIMEText(html_content, "html")
             msg.attach(html_part)
-            
+
             # Send email
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 server.starttls()
                 server.login(self.username, self.password)
                 server.send_message(msg)
-            
+
             # Log successful email send
             log_audit_event(
                 session_id=session_id,
@@ -245,13 +250,13 @@ class EmailService:
                 details={
                     "email": self.hash_email(email),
                     "code_length": len(code),
-                    "smtp_server": self.smtp_server
-                }
+                    "smtp_server": self.smtp_server,
+                },
             )
-            
+
             current_app.logger.info(f"Verification email sent to {email}")
             return True
-            
+
         except smtplib.SMTPAuthenticationError as e:
             current_app.logger.error(f"SMTP authentication failed: {e}")
             return False
@@ -268,11 +273,11 @@ class EmailService:
     def get_verification_expiry(self, minutes: int = 10) -> datetime:
         """
         Get verification code expiry time.
-        
+
         Args:
             minutes: Minutes until expiry (default 10)
-            
+
         Returns:
             Expiry datetime
         """
-        return datetime.now(UTC) + timedelta(minutes=minutes) 
+        return datetime.now(UTC) + timedelta(minutes=minutes)

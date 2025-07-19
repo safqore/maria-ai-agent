@@ -11,14 +11,13 @@ This module provides routes for:
 import functools
 import os
 
-from flask import Blueprint, g, jsonify, request, current_app
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from marshmallow import ValidationError
-
 from app.errors import api_route
 from app.schemas.session_schemas import SessionPersistSchema, UUIDSchema
 from app.services.session_service import SessionService
+from flask import Blueprint, current_app, g, jsonify, request
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from marshmallow import ValidationError
 
 # Create the session blueprint
 session_bp = Blueprint("session", __name__)
@@ -26,7 +25,9 @@ session_bp = Blueprint("session", __name__)
 
 # Limiter will be initialized in app factory after config is loaded
 # Do NOT set default_limits here to avoid stale registration
-limiter = Limiter(key_func=get_remote_address, storage_uri="memory://", default_limits=None)
+limiter = Limiter(
+    key_func=get_remote_address, storage_uri="memory://", default_limits=None
+)
 
 
 def is_rate_limiting_enabled():
@@ -111,17 +112,24 @@ def conditional_rate_limit(_):
     Decorator that conditionally applies rate limiting based on config at runtime.
     Only applies limiter if enabled and config is present. Avoids stale registration.
     """
+
     def decorator(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             # Always fetch the current rate limit from config
             rate_limit = current_app.config.get("SESSION_RATE_LIMIT")
             # Only apply limiter if enabled and rate_limit is set
-            if is_rate_limiting_enabled() and rate_limit and request.method != "OPTIONS":
+            if (
+                is_rate_limiting_enabled()
+                and rate_limit
+                and request.method != "OPTIONS"
+            ):
                 # Dynamically apply limiter at runtime
                 return limiter.limit(rate_limit)(f)(*args, **kwargs)
             return f(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -155,12 +163,22 @@ def validate_uuid():
         current_app.logger.info("OPTIONS request to /validate-uuid")
         return cors_options_response()
 
-    current_app.logger.info(f"POST /validate-uuid called from IP: {request.remote_addr}, Headers: {dict(request.headers)}")
-    current_app.logger.info(f"SESSION_RATE_LIMIT: {current_app.config.get('SESSION_RATE_LIMIT', 'not set')}")
-    current_app.logger.info(f"RATELIMIT_ENABLED: {current_app.config.get('RATELIMIT_ENABLED', 'not set')}")
+    current_app.logger.info(
+        f"POST /validate-uuid called from IP: {request.remote_addr}, Headers: {dict(request.headers)}"
+    )
+    current_app.logger.info(
+        f"SESSION_RATE_LIMIT: {current_app.config.get('SESSION_RATE_LIMIT', 'not set')}"
+    )
+    current_app.logger.info(
+        f"RATELIMIT_ENABLED: {current_app.config.get('RATELIMIT_ENABLED', 'not set')}"
+    )
     current_app.logger.info(f"TESTING: {current_app.config.get('TESTING', 'not set')}")
-    current_app.logger.info(f"limiter._default_limits: {getattr(limiter, '_default_limits', 'unknown')}")
-    current_app.logger.info(f"limiter._enabled: {getattr(limiter, '_enabled', 'unknown')}")
+    current_app.logger.info(
+        f"limiter._default_limits: {getattr(limiter, '_default_limits', 'unknown')}"
+    )
+    current_app.logger.info(
+        f"limiter._enabled: {getattr(limiter, '_enabled', 'unknown')}"
+    )
     data = request.get_json()
     current_app.logger.info(f"Request data: {data}")
 
@@ -184,9 +202,13 @@ def validate_uuid():
 
     session_uuid = validated_data["uuid"]
     response_data, status_code = g.session_service.validate_uuid(session_uuid)
-    current_app.logger.info(f"validate_uuid response: {response_data}, status_code: {status_code}")
+    current_app.logger.info(
+        f"validate_uuid response: {response_data}, status_code: {status_code}"
+    )
     if status_code == 429:
-        current_app.logger.error(f"429 TOO MANY REQUESTS for UUID: {session_uuid}, IP: {request.remote_addr}")
+        current_app.logger.error(
+            f"429 TOO MANY REQUESTS for UUID: {session_uuid}, IP: {request.remote_addr}"
+        )
     return jsonify(response_data), status_code
 
 

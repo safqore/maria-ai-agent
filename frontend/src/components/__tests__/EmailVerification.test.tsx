@@ -1,17 +1,10 @@
 /**
  * Email Verification Integration Tests
- * 
+ *
  * Tests for the email verification components and their integration with the chat interface.
  */
 
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ChatProvider } from '../../contexts/ChatContext';
-import { SessionProvider } from '../../contexts/SessionContext';
-import { EmailInput } from '../EmailInput';
-import { CodeVerification } from '../CodeVerification';
-
-// Mock the email verification API
+// Mock the email verification API BEFORE importing components
 const mockVerifyEmail = jest.fn();
 const mockVerifyCode = jest.fn();
 const mockResendCode = jest.fn();
@@ -37,12 +30,19 @@ jest.mock('../../contexts/SessionContext', () => ({
   useSession: () => mockSessionContext,
 }));
 
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { ChatProvider } from '../../contexts/ChatContext';
+import { SessionProvider } from '../../contexts/SessionContext';
+import { EmailInput } from '../EmailInput';
+import { CodeVerification } from '../CodeVerification';
+
 describe('Email Verification Components', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockVerifyEmail.mockResolvedValue({ status: 'success' });
-    mockVerifyCode.mockResolvedValue({ status: 'success' });
-    mockResendCode.mockResolvedValue({ status: 'success' });
+    mockVerifyEmail.mockResolvedValue({ status: 'success', nextTransition: 'CODE_INPUT' });
+    mockVerifyCode.mockResolvedValue({ status: 'success', nextTransition: 'EMAIL_VERIFIED' });
+    mockResendCode.mockResolvedValue({ status: 'success', nextTransition: 'CODE_INPUT' });
   });
 
   describe('EmailInput Component', () => {
@@ -57,10 +57,7 @@ describe('Email Verification Components', () => {
     it('renders email input field and submit button', () => {
       render(
         <SessionProvider>
-          <EmailInput
-            onEmailSent={mockOnEmailSent}
-            onError={mockOnError}
-          />
+          <EmailInput onEmailSent={mockOnEmailSent} onError={mockOnError} />
         </SessionProvider>
       );
 
@@ -71,10 +68,7 @@ describe('Email Verification Components', () => {
     it('validates email format', async () => {
       render(
         <SessionProvider>
-          <EmailInput
-            onEmailSent={mockOnEmailSent}
-            onError={mockOnError}
-          />
+          <EmailInput onEmailSent={mockOnEmailSent} onError={mockOnError} />
         </SessionProvider>
       );
 
@@ -86,6 +80,9 @@ describe('Email Verification Components', () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
+        expect(mockVerifyEmail).toHaveBeenCalledWith('test-session-uuid', {
+          email: 'test@example.com',
+        });
         expect(mockOnEmailSent).toHaveBeenCalledWith('test@example.com');
       });
     });
@@ -93,10 +90,7 @@ describe('Email Verification Components', () => {
     it('shows validation error for invalid email', () => {
       render(
         <SessionProvider>
-          <EmailInput
-            onEmailSent={mockOnEmailSent}
-            onError={mockOnError}
-          />
+          <EmailInput onEmailSent={mockOnEmailSent} onError={mockOnError} />
         </SessionProvider>
       );
 
@@ -153,11 +147,12 @@ describe('Email Verification Components', () => {
       fireEvent.click(verifyButton);
 
       await waitFor(() => {
+        expect(mockVerifyCode).toHaveBeenCalledWith('test-session-uuid', { code: '123456' });
         expect(mockOnCodeVerified).toHaveBeenCalled();
       });
     });
 
-    it('shows validation error for invalid code', () => {
+    it('disables submit button for invalid code', () => {
       render(
         <SessionProvider>
           <CodeVerification
@@ -171,7 +166,9 @@ describe('Email Verification Components', () => {
       const codeInput = screen.getByPlaceholderText('Enter 6-digit code');
       fireEvent.change(codeInput, { target: { value: '123' } });
 
-      expect(screen.getByText('Please enter a valid 6-digit code')).toBeInTheDocument();
+      // The button should be disabled for invalid code (less than 6 digits)
+      const verifyButton = screen.getByRole('button', { name: 'Verify code' });
+      expect(verifyButton).toBeDisabled();
     });
 
     it('renders resend code button', () => {
@@ -189,4 +186,4 @@ describe('Email Verification Components', () => {
       expect(resendButton).toBeInTheDocument();
     });
   });
-}); 
+});

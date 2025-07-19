@@ -1,6 +1,6 @@
 /**
  * Email Verification Hook
- * 
+ *
  * Provides email verification functionality with SessionContext integration,
  * including sending verification codes, verifying codes, and resending codes.
  */
@@ -25,7 +25,10 @@ export interface EmailVerificationActions {
 }
 
 export const useEmailVerification = (): EmailVerificationState & EmailVerificationActions => {
-  const { state: { sessionUUID }, resetSession } = useSession();
+  const {
+    state: { sessionUUID },
+    resetSession,
+  } = useSession();
   const [state, setState] = useState<EmailVerificationState>({
     isLoading: false,
     error: null,
@@ -46,79 +49,85 @@ export const useEmailVerification = (): EmailVerificationState & EmailVerificati
     });
   }, []);
 
-  const verifyEmail = useCallback(async (email: string): Promise<EmailVerificationResponse> => {
-    if (!sessionUUID) {
-      throw new Error('No active session');
-    }
-
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-
-    try {
-      const response = await emailVerificationApi.verifyEmail(sessionUUID, { email });
-      
-      if (response.status === 'success') {
-        setState(prev => ({ 
-          ...prev, 
-          isLoading: false, 
-          isEmailSent: true,
-          error: null 
-        }));
-      } else {
-        setState(prev => ({ 
-          ...prev, 
-          isLoading: false, 
-          error: response.error || 'Failed to send verification code' 
-        }));
+  const verifyEmail = useCallback(
+    async (email: string): Promise<EmailVerificationResponse> => {
+      if (!sessionUUID) {
+        throw new Error('No active session');
       }
 
-      return response;
-    } catch (error: any) {
-      const errorMessage = error?.error || error?.message || 'Failed to send verification code';
-      setState(prev => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: errorMessage 
-      }));
-      throw error;
-    }
-  }, [sessionUUID]);
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
 
-  const verifyCode = useCallback(async (code: string): Promise<EmailVerificationResponse> => {
-    if (!sessionUUID) {
-      throw new Error('No active session');
-    }
+      try {
+        const response = await emailVerificationApi.verifyEmail(sessionUUID, { email });
 
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+        if (response.status === 'success') {
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+            isEmailSent: true,
+            error: null,
+          }));
+        } else {
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+            error: response.error || 'Failed to send verification code',
+          }));
+        }
 
-    try {
-      const response = await emailVerificationApi.verifyCode(sessionUUID, { code });
-      
-      if (response.status === 'success') {
-        setState(prev => ({ 
-          ...prev, 
-          isLoading: false, 
-          isVerified: true,
-          error: null 
+        return response;
+      } catch (error: any) {
+        const errorMessage = error?.error || error?.message || 'Failed to send verification code';
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: errorMessage,
         }));
-      } else {
-        setState(prev => ({ 
-          ...prev, 
-          isLoading: false, 
-          error: response.error || 'Failed to verify code' 
-        }));
+        throw error;
+      }
+    },
+    [sessionUUID]
+  );
+
+  const verifyCode = useCallback(
+    async (code: string): Promise<EmailVerificationResponse> => {
+      if (!sessionUUID) {
+        throw new Error('No active session');
       }
 
-      return response;
-    } catch (error: any) {
-      const errorMessage = error?.error || error?.message || 'Failed to verify code';
-      setState(prev => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: errorMessage 
-      }));
-      throw error;
-    }
-  }, [sessionUUID]);
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
+
+      try {
+        const response = await emailVerificationApi.verifyCode(sessionUUID, { code });
+
+        if (response.status === 'success') {
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+            isVerified: true,
+            error: null,
+          }));
+        } else {
+          setState(prev => ({
+            ...prev,
+            isLoading: false,
+            error: response.error || 'Failed to verify code',
+          }));
+        }
+
+        return response;
+      } catch (error: any) {
+        const errorMessage = error?.error || error?.message || 'Failed to verify code';
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: errorMessage,
+        }));
+        throw error;
+      }
+    },
+    [sessionUUID]
+  );
 
   const resendCode = useCallback(async (): Promise<EmailVerificationResponse> => {
     if (!sessionUUID) {
@@ -129,28 +138,28 @@ export const useEmailVerification = (): EmailVerificationState & EmailVerificati
 
     try {
       const response = await emailVerificationApi.resendCode(sessionUUID);
-      
+
       if (response.status === 'success') {
-        setState(prev => ({ 
-          ...prev, 
-          isLoading: false, 
-          error: null 
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: null,
         }));
       } else {
-        setState(prev => ({ 
-          ...prev, 
-          isLoading: false, 
-          error: response.error || 'Failed to resend verification code' 
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: response.error || 'Failed to resend verification code',
         }));
       }
 
       return response;
     } catch (error: any) {
       const errorMessage = error?.error || error?.message || 'Failed to resend verification code';
-      setState(prev => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: errorMessage 
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: errorMessage,
       }));
       throw error;
     }
@@ -164,4 +173,4 @@ export const useEmailVerification = (): EmailVerificationState & EmailVerificati
     clearError,
     reset,
   };
-}; 
+};

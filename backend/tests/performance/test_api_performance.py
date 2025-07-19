@@ -16,7 +16,6 @@ import uuid
 from contextlib import contextmanager
 
 import pytest
-
 from app import create_app
 
 

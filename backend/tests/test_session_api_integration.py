@@ -14,14 +14,13 @@ import json
 import uuid
 from typing import Any, Dict
 from unittest.mock import MagicMock, Mock, patch
-from flask import current_app
 
 import pytest
-
 from app.app_factory import create_app
-from app.routes.session import limiter
 from app.models import UserSession
+from app.routes.session import limiter
 from app.services.session_service import SessionService
+from flask import current_app
 
 
 class TestSessionAPIIntegration:

@@ -12,7 +12,6 @@ from unittest import mock
 
 import pytest
 from flask import Flask, current_app, jsonify, request  # Add request import here
-
 from tests.mocks.database import (
     GUID,
     Base,
@@ -34,7 +33,7 @@ def app(request):
     """Create a Flask application for testing using the real app factory."""
     import os
     import sys
-    from unittest.mock import patch, MagicMock
+    from unittest.mock import MagicMock, patch
 
     # Set up patching for database module before importing app factory
     sys.modules["backend.app.models"] = MagicMock()
@@ -671,8 +670,9 @@ class TestSessionRepositoryIntegration:
 
         # Verify the session was stored in the database using the real database
         with client.application.app_context():
-            from app.repositories.factory import get_user_session_repository
             import uuid as uuid_module
+
+            from app.repositories.factory import get_user_session_repository
 
             repo = get_user_session_repository()
             uuid_obj = uuid_module.UUID(generated_uuid)
@@ -690,8 +690,9 @@ class TestSessionRepositoryIntegration:
 
         # Create a session with the new UUID using the real repository
         with client.application.app_context():
-            from app.repositories.factory import get_user_session_repository
             import uuid as uuid_module
+
+            from app.repositories.factory import get_user_session_repository
 
             repo = get_user_session_repository()
             uuid_obj = uuid_module.UUID(new_test_uuid)

@@ -6,8 +6,6 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
-from flask import Flask, g, jsonify, request
-
 from app.utils.middleware import (
     extract_correlation_id,
     generate_request_id,
@@ -16,6 +14,7 @@ from app.utils.middleware import (
     setup_request_validation,
     validate_json_middleware,
 )
+from flask import Flask, g, jsonify, request
 
 
 class TestMiddleware:

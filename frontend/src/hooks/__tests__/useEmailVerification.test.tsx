@@ -30,14 +30,14 @@ describe('useEmailVerification', () => {
         isLoading: false,
         error: null,
         isResetModalVisible: false,
-        isInitialized: true
+        isInitialized: true,
       },
       resetSession: mockResetSession,
       initializeSession: jest.fn(),
       clearError: jest.fn(),
       showResetModal: jest.fn(),
       hideResetModal: jest.fn(),
-      confirmResetSession: jest.fn()
+      confirmResetSession: jest.fn(),
     } as any);
   });
 
@@ -58,7 +58,7 @@ describe('useEmailVerification', () => {
         verifyCode: expect.any(Function),
         resendCode: expect.any(Function),
         clearError: expect.any(Function),
-        reset: expect.any(Function)
+        reset: expect.any(Function),
       });
     });
   });
@@ -68,7 +68,7 @@ describe('useEmailVerification', () => {
       const mockResponse: EmailVerificationResponse = {
         status: 'success',
         message: 'Verification code sent successfully',
-        nextTransition: 'CODE_INPUT'
+        nextTransition: 'CODE_INPUT',
       };
 
       mockedEmailVerificationApi.verifyEmail.mockResolvedValueOnce(mockResponse);
@@ -80,7 +80,9 @@ describe('useEmailVerification', () => {
         expect(response).toEqual(mockResponse);
       });
 
-      expect(mockedEmailVerificationApi.verifyEmail).toHaveBeenCalledWith(mockSessionUUID, { email: mockEmail });
+      expect(mockedEmailVerificationApi.verifyEmail).toHaveBeenCalledWith(mockSessionUUID, {
+        email: mockEmail,
+      });
       expect(result.current.isEmailSent).toBe(true);
       expect(result.current.error).toBeNull();
       expect(result.current.isLoading).toBe(false);
@@ -90,7 +92,7 @@ describe('useEmailVerification', () => {
       const mockError: EmailVerificationResponse = {
         status: 'error',
         error: 'Invalid email format',
-        nextTransition: 'EMAIL_INPUT'
+        nextTransition: 'EMAIL_INPUT',
       };
 
       mockedEmailVerificationApi.verifyEmail.mockRejectedValueOnce(mockError);
@@ -116,14 +118,14 @@ describe('useEmailVerification', () => {
           isLoading: false,
           error: null,
           isResetModalVisible: false,
-          isInitialized: true
+          isInitialized: true,
         },
         resetSession: mockResetSession,
         initializeSession: jest.fn(),
         clearError: jest.fn(),
         showResetModal: jest.fn(),
         hideResetModal: jest.fn(),
-        confirmResetSession: jest.fn()
+        confirmResetSession: jest.fn(),
       } as any);
 
       const { result } = renderHook(() => useEmailVerification());
@@ -143,7 +145,7 @@ describe('useEmailVerification', () => {
       const mockResponse: EmailVerificationResponse = {
         status: 'success',
         message: 'Email verified successfully',
-        nextTransition: 'CHAT_READY'
+        nextTransition: 'CHAT_READY',
       };
 
       mockedEmailVerificationApi.verifyCode.mockResolvedValueOnce(mockResponse);
@@ -155,7 +157,9 @@ describe('useEmailVerification', () => {
         expect(response).toEqual(mockResponse);
       });
 
-      expect(mockedEmailVerificationApi.verifyCode).toHaveBeenCalledWith(mockSessionUUID, { code: mockCode });
+      expect(mockedEmailVerificationApi.verifyCode).toHaveBeenCalledWith(mockSessionUUID, {
+        code: mockCode,
+      });
       expect(result.current.isVerified).toBe(true);
       expect(result.current.error).toBeNull();
       expect(result.current.isLoading).toBe(false);
@@ -165,7 +169,7 @@ describe('useEmailVerification', () => {
       const mockError: EmailVerificationResponse = {
         status: 'error',
         error: 'Invalid verification code',
-        nextTransition: 'CODE_INPUT'
+        nextTransition: 'CODE_INPUT',
       };
 
       mockedEmailVerificationApi.verifyCode.mockRejectedValueOnce(mockError);
@@ -190,7 +194,7 @@ describe('useEmailVerification', () => {
       const mockResponse: EmailVerificationResponse = {
         status: 'success',
         message: 'Verification code resent successfully',
-        nextTransition: 'CODE_INPUT'
+        nextTransition: 'CODE_INPUT',
       };
 
       mockedEmailVerificationApi.resendCode.mockResolvedValueOnce(mockResponse);
@@ -211,7 +215,7 @@ describe('useEmailVerification', () => {
       const mockError: EmailVerificationResponse = {
         status: 'error',
         error: 'Too many attempts',
-        nextTransition: 'CODE_INPUT'
+        nextTransition: 'CODE_INPUT',
       };
 
       mockedEmailVerificationApi.resendCode.mockRejectedValueOnce(mockError);
@@ -237,7 +241,9 @@ describe('useEmailVerification', () => {
 
       // Set an error first
       act(() => {
-        result.current.verifyEmail(mockEmail).catch(() => {});
+        result.current.verifyEmail(mockEmail).catch(() => {
+          // Intentionally empty - just catching the error for test setup
+        });
       });
 
       act(() => {
@@ -252,7 +258,9 @@ describe('useEmailVerification', () => {
 
       // Set some state first
       act(() => {
-        result.current.verifyEmail(mockEmail).catch(() => {});
+        result.current.verifyEmail(mockEmail).catch(() => {
+          // Intentionally empty - just catching the error for test setup
+        });
       });
 
       act(() => {
@@ -268,8 +276,8 @@ describe('useEmailVerification', () => {
         verifyCode: expect.any(Function),
         resendCode: expect.any(Function),
         clearError: expect.any(Function),
-        reset: expect.any(Function)
+        reset: expect.any(Function),
       });
     });
   });
-}); 
+});

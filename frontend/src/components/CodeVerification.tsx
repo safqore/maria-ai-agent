@@ -1,6 +1,6 @@
 /**
  * Code Verification Component
- * 
+ *
  * Provides verification code input functionality for the email verification process.
  * Integrates with the chat interface and follows established patterns.
  */
@@ -32,9 +32,6 @@ export const CodeVerification: React.FC<CodeVerificationProps> = ({
   const [resendCooldown, setResendCooldown] = useState<number>(0);
   const { verifyCode, resendCode, isLoading, error, clearError } = useEmailVerification();
 
-  // 6-digit code validation
-  const codeRegex = /^\d{6}$/;
-
   // Handle resend cooldown timer
   useEffect(() => {
     if (resendCooldown > 0) {
@@ -46,18 +43,23 @@ export const CodeVerification: React.FC<CodeVerificationProps> = ({
   }, [resendCooldown]);
 
   const validateCode = useCallback((codeValue: string): boolean => {
+    // 6-digit code validation
+    const codeRegex = /^\d{6}$/;
     return codeRegex.test(codeValue);
   }, []);
 
-  const handleCodeChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    const codeValue = event.target.value.replace(/\D/g, '').slice(0, 6); // Only allow digits, max 6
-    setCode(codeValue);
-    
-    // Clear previous error when user starts typing
-    if (error) {
-      clearError();
-    }
-  }, [error, clearError]);
+  const handleCodeChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const codeValue = event.target.value.replace(/\D/g, '').slice(0, 6); // Only allow digits, max 6
+      setCode(codeValue);
+
+      // Clear previous error when user starts typing
+      if (error) {
+        clearError();
+      }
+    },
+    [error, clearError]
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!code) {
@@ -72,7 +74,7 @@ export const CodeVerification: React.FC<CodeVerificationProps> = ({
 
     try {
       const response = await verifyCode(code);
-      
+
       if (response.status === 'success') {
         onCodeVerified();
       } else {
@@ -91,7 +93,7 @@ export const CodeVerification: React.FC<CodeVerificationProps> = ({
 
     try {
       const response = await resendCode();
-      
+
       if (response.status === 'success') {
         setResendCooldown(30); // 30-second cooldown
         onResendCode();
@@ -104,11 +106,14 @@ export const CodeVerification: React.FC<CodeVerificationProps> = ({
     }
   }, [resendCode, resendCooldown, onResendCode, onError]);
 
-  const handleKeyPress = useCallback((event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter' && !disabled && !isLoading) {
-      handleSubmit();
-    }
-  }, [disabled, isLoading, handleSubmit]);
+  const handleKeyPress = useCallback(
+    (event: KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === 'Enter' && !disabled && !isLoading) {
+        handleSubmit();
+      }
+    },
+    [disabled, isLoading, handleSubmit]
+  );
 
   const canResend = resendCooldown === 0 && !isLoading;
 
@@ -136,7 +141,7 @@ export const CodeVerification: React.FC<CodeVerificationProps> = ({
           {isLoading ? 'Verifying...' : 'Verify'}
         </button>
       </div>
-      
+
       <div className="code-actions">
         <button
           onClick={handleResendCode}
@@ -144,10 +149,7 @@ export const CodeVerification: React.FC<CodeVerificationProps> = ({
           className="resend-code-button"
           aria-label="Resend verification code"
         >
-          {resendCooldown > 0 
-            ? `Resend in ${resendCooldown}s` 
-            : 'Resend Code'
-          }
+          {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
         </button>
       </div>
 
@@ -158,4 +160,4 @@ export const CodeVerification: React.FC<CodeVerificationProps> = ({
       )}
     </div>
   );
-}; 
+};

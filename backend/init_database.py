@@ -18,8 +18,8 @@ def setup_sqlite_test_db():
     """Set up SQLite test database with proper configuration."""
     try:
         # Import database components
-        from app.database_core import set_database_url, get_engine, Base
         from app import models  # This ensures models are registered
+        from app.database_core import Base, get_engine, set_database_url
 
         # Use SQLite for testing
         sqlite_path = Path(__file__).parent / "maria_ai_test.db"
@@ -82,8 +82,8 @@ def create_database_tables():
     """Create database tables using SQLAlchemy models."""
     try:
         # Import database components
-        from app.database_core import get_engine, Base
         from app import models  # This ensures models are registered
+        from app.database_core import Base, get_engine
 
         # Get engine
         engine = get_engine()

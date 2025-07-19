@@ -7,7 +7,6 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
-
 from app.repositories.email_verification_repository import EmailVerificationRepository
 from tests.mocks.models import UserSession
 
@@ -39,7 +38,9 @@ class TestEmailVerificationRepository:
         # For now, we'll test the UUID validation logic
         code = "123456"
         expires_at = datetime.now(UTC) + timedelta(minutes=10)
-        result = self.repository.update_verification_code(self.session_id, code, expires_at)
+        result = self.repository.update_verification_code(
+            self.session_id, code, expires_at
+        )
         # Should not raise ValueError for valid UUID
         assert result is False  # No session in test database
 
@@ -47,7 +48,9 @@ class TestEmailVerificationRepository:
         """Test updating verification code with invalid session ID."""
         code = "123456"
         expires_at = datetime.now(UTC) + timedelta(minutes=10)
-        result = self.repository.update_verification_code("invalid-uuid", code, expires_at)
+        result = self.repository.update_verification_code(
+            "invalid-uuid", code, expires_at
+        )
         assert result is False
 
     def test_increment_verification_attempts_valid_uuid(self):
@@ -106,4 +109,4 @@ class TestEmailVerificationRepository:
         """Test cleaning up expired verification records with custom hours."""
         result = self.repository.cleanup_expired_verifications(hours=48)
         assert isinstance(result, int)
-        assert result >= 0 
+        assert result >= 0

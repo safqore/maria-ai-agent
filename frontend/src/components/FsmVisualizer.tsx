@@ -89,8 +89,14 @@ const FsmVisualizer: React.FC<FsmVisualizerProps> = ({ fsm }) => {
     [States.ENGAGE_USR_AGAIN]: [Transitions.LETS_GO_CLICKED, Transitions.MAYBE_NEXT_TIME_CLICKED],
     [States.COLLECTING_NAME]: [Transitions.NAME_PROVIDED],
     [States.COLLECTING_EMAIL]: [Transitions.EMAIL_PROVIDED],
-    [States.EMAIL_VERIFICATION_SENDING]: [Transitions.EMAIL_CODE_SENT, Transitions.EMAIL_VERIFICATION_FAILED],
-    [States.EMAIL_VERIFICATION_CODE_INPUT]: [Transitions.EMAIL_CODE_VERIFIED, Transitions.EMAIL_VERIFICATION_FAILED],
+    [States.EMAIL_VERIFICATION_SENDING]: [
+      Transitions.EMAIL_CODE_SENT,
+      Transitions.EMAIL_VERIFICATION_FAILED,
+    ],
+    [States.EMAIL_VERIFICATION_CODE_INPUT]: [
+      Transitions.EMAIL_CODE_VERIFIED,
+      Transitions.EMAIL_VERIFICATION_FAILED,
+    ],
     [States.EMAIL_VERIFICATION_COMPLETE]: [Transitions.BOT_CREATION_INITIALISED],
     [States.UPLOAD_DOCS_MSG]: [Transitions.UPLOAD_DOCS_MSG_COMPLETE],
     [States.UPLOAD_DOCS]: [Transitions.DOCS_UPLOADED],

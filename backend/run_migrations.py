@@ -13,19 +13,19 @@ Options:
     --reset          Drop all tables before running migrations
 """
 
+import argparse
 import os
 import sys
-import argparse
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 # Add the backend directory to Python path
 backend_dir = Path(__file__).parent
 sys.path.insert(0, str(backend_dir))
 
-from app.database_core import init_database, get_engine, Base, get_database_url
-from sqlalchemy import text, inspect
 import app.models  # Import to register models
+from app.database_core import Base, get_database_url, get_engine, init_database
+from sqlalchemy import inspect, text
 
 
 def get_migration_files() -> List[Path]:

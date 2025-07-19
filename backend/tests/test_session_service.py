@@ -13,7 +13,6 @@ from typing import Any, Dict
 from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
-
 from app.models import UserSession
 from app.services.session_service import SessionService
 

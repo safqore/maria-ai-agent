@@ -13,10 +13,9 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Optional
 
+from app.database_core import Base
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
-
-from app.database_core import Base
 
 
 class UserSession(Base):
