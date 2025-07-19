@@ -35,10 +35,6 @@ def initialize_test_database():
     """Initialize the test database with proper schema and migrations."""
     print("DEBUG: Initializing test database with migrations...")
 
-    # Clean up any existing test database file
-    import os
-    import tempfile
-
     # Force initialization of database
     init_database()
 

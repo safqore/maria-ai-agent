@@ -50,7 +50,7 @@ def create_app(config=None):
     default_rate_limit = (
         "100/minute" if app.config.get("TESTING", False) else "100/minute"
     )
-    
+
     # Only set from environment if not already provided in config
     if "SESSION_RATE_LIMIT" not in app.config:
         app.config["SESSION_RATE_LIMIT"] = os.getenv(

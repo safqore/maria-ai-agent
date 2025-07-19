@@ -26,10 +26,12 @@ class TestVerificationService:
     @patch("app.services.verification_service.EmailVerificationRepository")
     @patch("app.services.verification_service.EmailService")
     @patch("app.services.verification_service.log_audit_event")
-    def test_send_verification_code_success(self, mock_audit, mock_email_service, mock_repo):
+    def test_send_verification_code_success(
+        self, mock_audit, mock_email_service, mock_repo
+    ):
         """Test successful verification code sending."""
         service = VerificationService()
-        
+
         # Mock repository response
         mock_user_session = Mock()
         mock_user_session.can_resend_verification = True
@@ -39,8 +41,12 @@ class TestVerificationService:
 
         # Mock email service response
         mock_email_service.return_value.validate_email_format.return_value = True
-        mock_email_service.return_value.generate_verification_code.return_value = "123456"
-        mock_email_service.return_value.get_verification_expiry.return_value = datetime(2024, 1, 1, 0, 10, 0)
+        mock_email_service.return_value.generate_verification_code.return_value = (
+            "123456"
+        )
+        mock_email_service.return_value.get_verification_expiry.return_value = datetime(
+            2024, 1, 1, 0, 10, 0
+        )
         mock_email_service.return_value.send_verification_email.return_value = True
         mock_email_service.return_value.hash_email.return_value = "hashed_email"
 
@@ -60,7 +66,7 @@ class TestVerificationService:
     def test_send_verification_code_invalid_email(self, mock_email_service, mock_repo):
         """Test verification code sending with invalid email."""
         service = VerificationService()
-        
+
         # Mock repository response
         mock_user_session = Mock()
         mock_user_session.can_resend_verification = True
@@ -81,9 +87,7 @@ class TestVerificationService:
         service = VerificationService()
         mock_repo.return_value.get_by_session_id.return_value = None
 
-        result = service.send_verification_code(
-            "test-session-id", "test@example.com"
-        )
+        result = service.send_verification_code("test-session-id", "test@example.com")
 
         assert result["status"] == "error"
         assert result["nextTransition"] == "SESSION_ERROR"
@@ -95,7 +99,7 @@ class TestVerificationService:
     def test_verify_code_success(self, mock_audit, mock_email_service, mock_repo):
         """Test successful code verification."""
         service = VerificationService()
-        
+
         # Mock repository response
         mock_user_session = Mock()
         mock_user_session.is_email_verified = False
@@ -198,7 +202,7 @@ class TestVerificationService:
     def test_resend_code_success(self, mock_audit, mock_email_service, mock_repo):
         """Test successful code resending."""
         service = VerificationService()
-        
+
         # Mock repository response
         mock_user_session = Mock()
         mock_user_session.is_email_verified = False
@@ -209,8 +213,12 @@ class TestVerificationService:
         mock_repo.return_value.increment_resend_attempts.return_value = True
 
         # Mock email service response
-        mock_email_service.return_value.generate_verification_code.return_value = "654321"
-        mock_email_service.return_value.get_verification_expiry.return_value = datetime(2024, 1, 1, 0, 10, 0)
+        mock_email_service.return_value.generate_verification_code.return_value = (
+            "654321"
+        )
+        mock_email_service.return_value.get_verification_expiry.return_value = datetime(
+            2024, 1, 1, 0, 10, 0
+        )
         mock_email_service.return_value.send_verification_email.return_value = True
         mock_email_service.return_value.hash_email.return_value = "hashed_email"
 

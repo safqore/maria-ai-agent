@@ -91,6 +91,7 @@ def app(request):
         "TESTING": True,
         "SKIP_MIDDLEWARE": True,
         "REQUIRE_AUTH": False,
+        "RATELIMIT_ENABLED": False,
     }
 
     # Create app without test_config parameter
