@@ -7,9 +7,8 @@ This module tests the integration of middleware with Flask blueprints.
 import json
 
 import pytest
-from flask import Blueprint, Flask, g, jsonify, request
-
 from app.utils.middleware import apply_middleware_to_blueprint
+from flask import Blueprint, Flask, g, jsonify, request
 
 
 @pytest.fixture

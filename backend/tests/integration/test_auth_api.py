@@ -8,11 +8,10 @@ import json
 import uuid
 
 import pytest
-from flask import Blueprint, Flask, g, jsonify, request
-
 from app import create_app
 from app.utils.auth import require_api_key, setup_auth_middleware
 from app.utils.middleware import apply_middleware_to_blueprint
+from flask import Blueprint, Flask, g, jsonify, request
 
 
 @pytest.fixture

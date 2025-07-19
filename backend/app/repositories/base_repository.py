@@ -9,15 +9,14 @@ model-specific repositories.
 import uuid
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 
-from sqlalchemy import inspect
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
-from sqlalchemy.dialects.postgresql import UUID
-
-from app.database_core import Base, get_db_session
 from app.database.transaction import TransactionContext
+from app.database_core import Base, get_db_session
 from app.errors import ResourceNotFoundError as NotFoundError
 from app.errors import ServerError
+from sqlalchemy import inspect
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 # Define a TypeVar for SQLAlchemy models
 T = TypeVar("T", bound=Base)

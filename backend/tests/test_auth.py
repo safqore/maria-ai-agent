@@ -5,9 +5,8 @@ Tests for the authentication module.
 from unittest.mock import patch
 
 import pytest
-from flask import Flask, g, request
-
 from app.utils.auth import require_api_key, setup_auth_middleware
+from flask import Flask, g, request
 
 
 class TestAuth:

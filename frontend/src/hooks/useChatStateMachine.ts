@@ -154,6 +154,22 @@ const useChatStateMachine = ({
         };
         setMessages(prevMessages => [...prevMessages, botMessage]);
       }
+    } else if (fsm.getState() === States.COLLECTING_EMAIL) {
+      // Email input is handled by EmailInput component, not text input
+      // This is just a fallback for direct text input
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (emailRegex.test(userInput)) {
+        fsm.transition(Transitions.EMAIL_PROVIDED);
+        // The actual email verification will be handled by the EmailInput component
+      } else {
+        const botMessage: Message = {
+          text: 'Please enter a valid email address.',
+          isUser: false,
+          isTyping: true,
+          id: messages.length + 1,
+        };
+        setMessages(prevMessages => [...prevMessages, botMessage]);
+      }
     }
 
     // const botResponse = "This is a placeholder response."; // Get responses from LLM later down the line

@@ -18,8 +18,8 @@ try:
     print("Starting repository test...")
 
     # Import models and repositories
-    from app.database_core import get_db_session
     from app.database.transaction import TransactionContext
+    from app.database_core import get_db_session
     from app.models import UserSession
     from app.repositories.factory import get_user_session_repository
 

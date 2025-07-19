@@ -11,6 +11,7 @@ marshmallow
 sqlalchemy
 alembic
 gunicorn
+bcrypt
 
 # Dev tools
 black

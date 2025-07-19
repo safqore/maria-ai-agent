@@ -23,22 +23,17 @@ os.environ["TESTING"] = "true"
 
 # Ensure we can import from app
 import pytest
+from app import models
+from app.database_core import Base, get_engine, init_database
 from flask import Flask
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
-
-from app.database_core import get_engine, Base, init_database
-from app import models
 
 
 @pytest.fixture(scope="session", autouse=True)
 def initialize_test_database():
     """Initialize the test database with proper schema and migrations."""
     print("DEBUG: Initializing test database with migrations...")
-
-    # Clean up any existing test database file
-    import tempfile
-    import os
 
     # Force initialization of database
     init_database()
@@ -79,8 +74,8 @@ def initialize_test_database():
 
         # For file-based SQLite, clean up any existing database file
         if not db_url.endswith(":memory:"):
-            import tempfile
             import os
+            import tempfile
 
             test_db_path = os.path.join(tempfile.gettempdir(), "maria_ai_test.db")
             if os.path.exists(test_db_path):
@@ -128,8 +123,8 @@ def initialize_test_database():
 
     # Cleanup - remove test database file
     if is_sqlite and not db_url.endswith(":memory:"):
-        import tempfile
         import os
+        import tempfile
 
         test_db_path = os.path.join(tempfile.gettempdir(), "maria_ai_test.db")
         if os.path.exists(test_db_path):
@@ -240,8 +235,8 @@ def session_uuid(client):
     This fixture creates a test session in the database and returns the UUID object.
     After the test completes, it cleans up by deleting the session.
     """
-    from app.repositories.factory import get_user_session_repository
     from app.database_core import Base, get_engine
+    from app.repositories.factory import get_user_session_repository
 
     # Ensure tables exist (should already be created by initialize_test_database)
     Base.metadata.create_all(bind=get_engine())

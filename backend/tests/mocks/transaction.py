@@ -9,7 +9,6 @@ from contextlib import contextmanager
 from typing import Iterator
 
 from sqlalchemy.orm import Session
-
 from tests.mocks.database import get_db_session
 
 

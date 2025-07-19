@@ -9,6 +9,9 @@ import ButtonGroup from '../ButtonGroup';
 import useChatStateMachine from '../../hooks/useChatStateMachine';
 import { States, Transitions } from '../../state/FiniteStateMachine';
 import { Button } from '../../types/buttonTypes';
+import { EmailInput } from '../EmailInput';
+import { CodeVerification } from '../CodeVerification';
+import '../EmailVerification.css';
 import '../../styles.css';
 
 /**
@@ -28,13 +31,16 @@ interface ChatContainerInnerProps {
 const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID }) => {
   // Get chat state and actions from context
   const {
-    state: { messages, isInputDisabled, isButtonGroupVisible, error: chatError },
+    state: { messages, isInputDisabled, isButtonGroupVisible, error: chatError, emailVerification },
     setMessageTypingComplete,
     addUserMessage,
     addBotMessage,
     setInputDisabled,
     removeMessageButtons,
     setButtonGroupVisible,
+    startEmailVerification,
+    emailCodeSent,
+    emailVerificationComplete,
     // setError is available but not currently used in this component
   } = useChat();
 
@@ -151,6 +157,37 @@ const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID }) 
     setInputDisabled(false);
   };
 
+  // Email verification handlers
+  const handleEmailSent = (email: string) => {
+    startEmailVerification(email);
+    fsm.transition(Transitions.EMAIL_CODE_SENT);
+    addBotMessage(
+      `I've sent a verification code to ${email}. Please check your email and enter the 6-digit code below.`
+    );
+    setInputDisabled(true); // Disable regular input during code verification
+  };
+
+  const handleEmailError = (error: string) => {
+    addBotMessage(`Sorry, I couldn't send the verification code: ${error}. Please try again.`);
+  };
+
+  const handleCodeVerified = () => {
+    emailVerificationComplete();
+    fsm.transition(Transitions.EMAIL_CODE_VERIFIED);
+    addBotMessage(
+      "Perfect! Your email has been verified. I'll now create your personalized AI agent."
+    );
+    setInputDisabled(true); // Disable input during bot creation
+  };
+
+  const handleCodeError = (error: string) => {
+    addBotMessage(`Sorry, I couldn't verify the code: ${error}. Please try again.`);
+  };
+
+  const handleResendCode = () => {
+    addBotMessage("I've sent a new verification code to your email. Please check your inbox.");
+  };
+
   // Display state-based buttons based on the current state
   React.useEffect(() => {
     const currentState = fsm.getState();
@@ -177,6 +214,30 @@ const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID }) 
             onFileUploaded={fileUploadHandler}
             onDone={handleFileUploadDone}
           />
+        )}
+
+        {/* Email verification components */}
+        {fsm.getState() === States.COLLECTING_EMAIL && (
+          <div className="email-verification-section">
+            <EmailInput
+              onEmailSent={handleEmailSent}
+              onError={handleEmailError}
+              disabled={isInputDisabled}
+              autoFocus={true}
+            />
+          </div>
+        )}
+
+        {fsm.getState() === States.EMAIL_VERIFICATION_CODE_INPUT && (
+          <div className="code-verification-section">
+            <CodeVerification
+              onCodeVerified={handleCodeVerified}
+              onError={handleCodeError}
+              onResendCode={handleResendCode}
+              disabled={isInputDisabled}
+              autoFocus={true}
+            />
+          </div>
         )}
       </div>
 

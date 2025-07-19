@@ -14,7 +14,7 @@ from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool, NullPool
+from sqlalchemy.pool import NullPool, StaticPool
 
 # Global variable to store a custom database URL (used for testing)
 _custom_database_url = None

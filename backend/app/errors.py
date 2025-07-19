@@ -13,10 +13,10 @@ from typing import Any, Callable, Dict, Tuple, TypeVar, cast
 
 from flask import Response, current_app, jsonify, request
 from werkzeug.exceptions import (
-    HTTPException,
-    UnsupportedMediaType,
-    MethodNotAllowed,
     BadRequest,
+    HTTPException,
+    MethodNotAllowed,
+    UnsupportedMediaType,
 )
 
 # Type variable for function return type
