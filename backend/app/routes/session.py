@@ -268,7 +268,7 @@ def persist_session():
         return cors_options_response()
 
     data = request.get_json()
-    
+
     # Log the incoming request for debugging
     current_app.logger.info(f"persist_session request data: {data}")
 

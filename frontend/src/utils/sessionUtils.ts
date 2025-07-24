@@ -40,9 +40,16 @@ export async function getOrCreateSessionUUID(): Promise<string> {
   if (valResp.status === 'success') {
     return uuid as string;
   } else if (valResp.status === 'collision') {
-    // UUID already exists in backend - this is actually SUCCESS for existing sessions!
-    // It means our UUID is valid and already persisted
-    return uuid as string;
+    // UUID collision - backend provides a new UUID to use instead
+    if (valResp.uuid) {
+      localStorage.setItem('session_uuid', valResp.uuid);
+      if (!isTest) {
+        window.location.reload();
+      }
+      return valResp.uuid;
+    } else {
+      throw new Error('Collision response missing new UUID');
+    }
   } else if (valResp.status === 'invalid' || valResp.status === 'error') {
     // Tampered or invalid, reset session
     localStorage.removeItem('session_uuid');

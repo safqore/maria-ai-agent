@@ -218,8 +218,10 @@ class EmailService:
             environment = os.getenv("ENVIRONMENT", "production").lower()
             if environment == "development":
                 # Mock email sending in development
-                current_app.logger.info(f"DEVELOPMENT MODE: Mock sending verification email to {email} with code: {code}")
-                
+                current_app.logger.info(
+                    f"DEVELOPMENT MODE: Mock sending verification email to {email} with code: {code}"
+                )
+
                 # Log audit event for development
                 log_audit_event(
                     event_type="email_verification_sent_mock",

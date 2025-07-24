@@ -18,9 +18,7 @@ email_verification_bp = Blueprint("email_verification", __name__)
 verification_service = VerificationService()
 
 
-@email_verification_bp.route(
-    "/email-verification/verify-email", methods=["POST"]
-)
+@email_verification_bp.route("/email-verification/verify-email", methods=["POST"])
 @cross_origin()
 @require_api_key
 @api_route

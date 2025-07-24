@@ -94,8 +94,8 @@ export const SessionApi = {
 
       const payload = {
         session_uuid: sessionUuid,
-        ...(name && { name }),
-        ...(email && { email }),
+        name: name || '',
+        email: email || '',
       };
 
       console.log('Sending payload:', payload);

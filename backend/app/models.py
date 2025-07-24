@@ -152,7 +152,7 @@ class UserSession(Base):
             if last_resend.tzinfo is None:
                 # Assume UTC if timezone-naive
                 last_resend = last_resend.replace(tzinfo=UTC)
-            
+
             cooldown_expires = last_resend + timedelta(seconds=30)
             if datetime.now(UTC) < cooldown_expires:
                 return False

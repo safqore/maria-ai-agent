@@ -84,23 +84,31 @@ def create_app(config=None):
     # Enable CORS with proper headers
     # Get allowed origins from environment variable, fall back to localhost:3000 for development
     cors_origins_str = os.getenv(
-        "CORS_ALLOWED_ORIGINS", 
-        "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001"
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001",
     )
-    cors_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
-    
+    cors_origins = [
+        origin.strip() for origin in cors_origins_str.split(",") if origin.strip()
+    ]
+
     logging.info(f"[Startup] CORS origins configured: {cors_origins}")
-    
+
     # Custom CORS handler to properly handle origin matching
     @app.after_request
     def after_request(response):
-        origin = request.headers.get('Origin')
+        origin = request.headers.get("Origin")
         if origin in cors_origins:
-            response.headers['Access-Control-Allow-Origin'] = origin
-            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-API-Key, X-Correlation-ID, X-Session-ID'
-            response.headers['Access-Control-Expose-Headers'] = 'X-API-Version, X-Correlation-ID'
-            response.headers['Access-Control-Allow-Credentials'] = 'true'
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Methods"] = (
+                "GET, POST, PUT, DELETE, OPTIONS"
+            )
+            response.headers["Access-Control-Allow-Headers"] = (
+                "Content-Type, Authorization, X-API-Key, X-Correlation-ID, X-Session-ID"
+            )
+            response.headers["Access-Control-Expose-Headers"] = (
+                "X-API-Version, X-Correlation-ID"
+            )
+            response.headers["Access-Control-Allow-Credentials"] = "true"
         return response
 
     # Initialize rate limiting
@@ -215,8 +223,12 @@ def create_app(config=None):
             origin = request.headers.get("Origin", "No Origin")
             logging.info(f"OPTIONS request to {request.path}")
             logging.info(f"Origin header: {origin}")
-            logging.info(f"Access-Control-Request-Method: {request.headers.get('Access-Control-Request-Method', 'None')}")
-            logging.info(f"Access-Control-Request-Headers: {request.headers.get('Access-Control-Request-Headers', 'None')}")
+            logging.info(
+                f"Access-Control-Request-Method: {request.headers.get('Access-Control-Request-Method', 'None')}"
+            )
+            logging.info(
+                f"Access-Control-Request-Headers: {request.headers.get('Access-Control-Request-Headers', 'None')}"
+            )
 
     # Setup request context
     @app.before_request
