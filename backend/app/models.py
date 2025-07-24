@@ -147,7 +147,13 @@ class UserSession(Base):
 
         # Check cooldown period (30 seconds)
         if self.last_resend_at:
-            cooldown_expires = self.last_resend_at + timedelta(seconds=30)
+            # Ensure both datetimes are timezone-aware for comparison
+            last_resend = self.last_resend_at
+            if last_resend.tzinfo is None:
+                # Assume UTC if timezone-naive
+                last_resend = last_resend.replace(tzinfo=UTC)
+            
+            cooldown_expires = last_resend + timedelta(seconds=30)
             if datetime.now(UTC) < cooldown_expires:
                 return False
 

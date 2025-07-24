@@ -19,7 +19,7 @@ verification_service = VerificationService()
 
 
 @email_verification_bp.route(
-    "/api/v1/email-verification/verify-email", methods=["POST"]
+    "/email-verification/verify-email", methods=["POST"]
 )
 @cross_origin()
 @require_api_key
@@ -95,7 +95,7 @@ def verify_email():
         )
 
 
-@email_verification_bp.route("/api/v1/email-verification/verify-code", methods=["POST"])
+@email_verification_bp.route("/email-verification/verify-code", methods=["POST"])
 @cross_origin()
 @require_api_key
 @api_route
@@ -183,7 +183,7 @@ def verify_code():
         )
 
 
-@email_verification_bp.route("/api/v1/email-verification/resend-code", methods=["POST"])
+@email_verification_bp.route("/email-verification/resend-code", methods=["POST"])
 @cross_origin()
 @require_api_key
 @api_route

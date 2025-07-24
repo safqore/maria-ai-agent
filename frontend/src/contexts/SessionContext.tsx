@@ -194,16 +194,22 @@ export function SessionProvider({ children, enableNotifications = true }: Sessio
     if (state.isLoading) return;
 
     dispatch({ type: SessionActionTypes.SET_LOADING, payload: true });
+    console.log('SessionContext: Initializing session...');
 
     try {
       const sessionUUID = await getOrCreateSessionUUID();
+      console.log('SessionContext: Session UUID obtained:', sessionUUID);
+
       dispatch({ type: SessionActionTypes.SET_SESSION_UUID, payload: sessionUUID });
       dispatch({ type: SessionActionTypes.SET_INITIALIZED, payload: true });
+
+      console.log('SessionContext: Session initialization complete');
 
       if (enableNotifications) {
         toast.success('Session initialized successfully');
       }
     } catch (error) {
+      console.error('SessionContext: Error initializing session:', error);
       const errorMessage = getErrorMessage(error);
       dispatch({ type: SessionActionTypes.SET_ERROR, payload: errorMessage });
 

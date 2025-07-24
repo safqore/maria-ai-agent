@@ -268,12 +268,16 @@ def persist_session():
         return cors_options_response()
 
     data = request.get_json()
+    
+    # Log the incoming request for debugging
+    current_app.logger.info(f"persist_session request data: {data}")
 
     # Validate request data
     try:
         schema = SessionPersistSchema()
         validated_data = schema.load(data)
     except ValidationError as err:
+        current_app.logger.error(f"persist_session validation error: {err.messages}")
         return jsonify({"error": "Invalid request data", "details": err.messages}), 400
 
     session_uuid = validated_data["session_uuid"]

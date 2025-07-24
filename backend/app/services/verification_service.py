@@ -104,8 +104,8 @@ class VerificationService:
 
                 # Log successful code generation
                 log_audit_event(
-                    session_id=session_id,
                     event_type="verification_code_generated",
+                    user_uuid=session_id,
                     details={
                         "email": self.email_service.hash_email(email),
                         "expires_at": expires_at.isoformat(),
@@ -218,8 +218,8 @@ class VerificationService:
 
                 # Log successful verification
                 log_audit_event(
-                    session_id=session_id,
                     event_type="email_verified",
+                    user_uuid=session_id,
                     details={
                         "verification_attempts": user_session.verification_attempts + 1
                     },
@@ -314,8 +314,8 @@ class VerificationService:
 
                 # Log successful resend
                 log_audit_event(
-                    session_id=session_id,
                     event_type="verification_code_resent",
+                    user_uuid=session_id,
                     details={
                         "email": self.email_service.hash_email(user_session.email),
                         "expires_at": expires_at.isoformat(),

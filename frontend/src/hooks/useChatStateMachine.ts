@@ -23,7 +23,8 @@ const useChatStateMachine = ({
   fsm,
 }: ChatStateMachineOptions) => {
   // Use provided FSM or create a new one if not provided
-  const stateMachine = fsm || React.useMemo(() => createStateMachine(), []);
+  const defaultStateMachine = React.useMemo(() => createStateMachine(), []);
+  const stateMachine = fsm || defaultStateMachine;
 
   const typingCompleteHandler = (messageId: number) => {
     setMessages(prevMessages =>
@@ -115,6 +116,9 @@ const useChatStateMachine = ({
       // Handle email input in regular chat input
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (emailRegex.test(userInput)) {
+        // First transition to EMAIL_VERIFICATION_SENDING state
+        stateMachine.transition(Transitions.EMAIL_PROVIDED);
+
         try {
           // Call the email verification API
           const response = await emailVerificationApi.verifyEmail(sessionUUID!, {

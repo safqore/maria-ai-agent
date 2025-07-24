@@ -59,6 +59,18 @@ export const SessionApi = {
         correlationId: response.correlationId,
       };
     } catch (error) {
+      // Handle 409 (UUID collision) as a valid business response, not an error
+      if (error instanceof ApiError && error.status === 409) {
+        // Extract the response data from the error details
+        const errorDetails = error.details as any;
+        return {
+          status: errorDetails?.status || 'collision',
+          uuid: errorDetails?.uuid || uuid,
+          message: errorDetails?.message || 'UUID already exists',
+          correlationId: errorDetails?.correlationId,
+        };
+      }
+
       throw error instanceof ApiError
         ? error
         : new ApiError(`Failed to validate UUID: ${(error as Error).message}`);
@@ -66,17 +78,31 @@ export const SessionApi = {
   },
 
   /**
-   * Persist the session with user data consent flags
-   * @param uuid - The session UUID to persist
-   * @param consentUserData - Whether the user has consented to data storage
+   * Persist the session with user data
+   * @param sessionUuid - The session UUID to persist
+   * @param name - The user's name (optional)
+   * @param email - The user's email (optional)
    * @returns Promise resolving to the session persistence response
    */
-  persistSession: async (uuid: string, consentUserData = false): Promise<UUIDResponse> => {
+  persistSession: async (
+    sessionUuid: string,
+    name?: string,
+    email?: string
+  ): Promise<UUIDResponse> => {
     try {
-      const response = await post<UUIDResponse>('persist_session', {
-        uuid,
-        consent_user_data: consentUserData,
-      });
+      console.log('SessionApi.persistSession called with:', { sessionUuid, name, email });
+
+      const payload = {
+        session_uuid: sessionUuid,
+        ...(name && { name }),
+        ...(email && { email }),
+      };
+
+      console.log('Sending payload:', payload);
+
+      const response = await post<UUIDResponse>('persist_session', payload);
+
+      console.log('SessionApi.persistSession response:', response);
 
       // Add correlation ID to the response
       return {
@@ -84,6 +110,17 @@ export const SessionApi = {
         correlationId: response.correlationId,
       };
     } catch (error) {
+      console.error('SessionApi.persistSession error:', error);
+
+      if (error instanceof ApiError) {
+        // Log additional details for debugging
+        console.error('ApiError details:', {
+          message: error.message,
+          status: error.status,
+          details: error.details,
+        });
+      }
+
       throw error instanceof ApiError
         ? error
         : new ApiError(`Failed to persist session: ${(error as Error).message}`);

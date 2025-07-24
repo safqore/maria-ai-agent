@@ -214,6 +214,24 @@ class EmailService:
             True if email sent successfully, False otherwise
         """
         try:
+            # Check if running in development mode
+            environment = os.getenv("ENVIRONMENT", "production").lower()
+            if environment == "development":
+                # Mock email sending in development
+                current_app.logger.info(f"DEVELOPMENT MODE: Mock sending verification email to {email} with code: {code}")
+                
+                # Log audit event for development
+                log_audit_event(
+                    event_type="email_verification_sent_mock",
+                    user_uuid=session_id,
+                    details={
+                        "email": self.hash_email(email),
+                        "code": code,
+                        "mock_mode": True,
+                    },
+                )
+                return True
+
             # Validate email format
             if not self.validate_email_format(email):
                 current_app.logger.warning(f"Invalid email format: {email}")
@@ -245,8 +263,8 @@ class EmailService:
 
             # Log successful email send
             log_audit_event(
-                session_id=session_id,
                 event_type="email_verification_sent",
+                user_uuid=session_id,
                 details={
                     "email": self.hash_email(email),
                     "code_length": len(code),
