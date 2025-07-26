@@ -51,6 +51,8 @@ This is a basic test email from {sender_name}.
 
 If you received this email, the SMTP configuration is working correctly.
 
+Please note: Replies to this email are not monitored.
+
 Sent at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
 Best regards,
@@ -64,6 +66,7 @@ The Maria AI Team
     <p>Hello!</p>
     <p>This is a basic test email from <strong>{sender_name}</strong>.</p>
     <p>If you received this email, the SMTP configuration is working correctly.</p>
+    <p style=\"color: #b94a48;\"><strong>Please note:</strong> Replies to this email are not monitored.</p>
     <p><em>Sent at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</em></p>
     <hr>
     <p>Best regards,<br>The Maria AI Team</p>
@@ -87,6 +90,8 @@ This PIN will expire in 10 minutes for security reasons.
 
 If you didn't request this verification, please ignore this email.
 
+Please note: Replies to this email are not monitored.
+
 Sent at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
 Best regards,
@@ -107,7 +112,7 @@ The Maria AI Team
         
         <p><strong>Important:</strong> This PIN will expire in 10 minutes for security reasons.</p>
         <p>If you didn't request this verification, please ignore this email.</p>
-        
+        <p style=\"color: #b94a48;\"><strong>Please note:</strong> Replies to this email are not monitored.</p>
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #dee2e6;">
         <p style="font-size: 12px; color: #6c757d;">
             Sent at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}<br>
@@ -129,6 +134,8 @@ Features tested:
 - Inline styles
 - Responsive design
 - Fallback text content
+
+Please note: Replies to this email are not monitored.
 
 Sent at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
@@ -166,6 +173,8 @@ The Maria AI Team
             <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; margin: 20px 0; border-radius: 4px;">
                 <p style="margin: 0;"><strong>⚠️ Note:</strong> This is a test email to verify SMTP configuration.</p>
             </div>
+            
+            <p style=\"color: #b94a48;\"><strong>Please note:</strong> Replies to this email are not monitored.</p>
             
             <p style="text-align: center; margin: 30px 0;">
                 <a href="https://safqore.com" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Visit Safqore</a>
