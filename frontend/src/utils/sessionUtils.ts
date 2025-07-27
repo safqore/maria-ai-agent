@@ -1,5 +1,13 @@
 import { generateUUID, validateUUID, UUIDResponse } from './uuidApi';
 
+// Add request deduplication to prevent multiple simultaneous UUID requests
+let pendingUUIDRequest: Promise<string> | null = null;
+
+// Add this configuration option
+export const SKIP_UUID_VALIDATION_IN_DEV = 
+  process.env.NODE_ENV === 'development' && 
+  process.env.REACT_APP_SKIP_UUID_VALIDATION === 'true';
+
 /**
  * Checks if a string is a valid UUID v4.
  * @param uuid - The string to validate as a UUID.
@@ -18,54 +26,69 @@ function isValidUUID(uuid: string | null): boolean {
  * @throws Error if unable to obtain a valid session UUID from backend.
  */
 export async function getOrCreateSessionUUID(): Promise<string> {
-  // For tests only: Skip reload for better testability
-  const isTest = process.env.NODE_ENV === 'test';
+  // Return existing pending request if one exists
+  if (pendingUUIDRequest) {
+    return pendingUUIDRequest;
+  }
 
-  const uuid = localStorage.getItem('session_uuid');
-  if (!isValidUUID(uuid)) {
-    // No valid UUID, generate via backend
-    const genResp: UUIDResponse = await generateUUID();
-    if (genResp.status === 'success' && genResp.uuid) {
-      localStorage.setItem('session_uuid', genResp.uuid);
-      if (!isTest) {
-        window.location.reload();
+  // Create new request and store it
+  pendingUUIDRequest = (async () => {
+    try {
+      const isTest = process.env.NODE_ENV === 'test';
+      const uuid = localStorage.getItem('session_uuid');
+      
+      if (!isValidUUID(uuid)) {
+        const genResp: UUIDResponse = await generateUUID();
+        if (genResp.status === 'success' && genResp.uuid) {
+          localStorage.setItem('session_uuid', genResp.uuid);
+          if (!isTest) {
+            window.location.reload();
+          }
+          return genResp.uuid;
+        } else {
+          throw new Error(genResp.message || 'Failed to generate session UUID');
+        }
       }
-      return genResp.uuid;
-    } else {
-      throw new Error(genResp.message || 'Failed to generate session UUID');
-    }
-  }
-  // Validate with backend
-  const valResp: UUIDResponse = await validateUUID(uuid as string);
-  if (valResp.status === 'success') {
-    return uuid as string;
-  } else if (valResp.status === 'collision') {
-    // UUID collision - backend provides a new UUID to use instead
-    if (valResp.uuid) {
-      localStorage.setItem('session_uuid', valResp.uuid);
-      if (!isTest) {
-        window.location.reload();
+
+      // Skip validation in development if configured
+      if (SKIP_UUID_VALIDATION_IN_DEV) {
+        return uuid as string;
       }
-      return valResp.uuid;
-    } else {
-      throw new Error('Collision response missing new UUID');
-    }
-  } else if (valResp.status === 'invalid' || valResp.status === 'error') {
-    // Tampered or invalid, reset session
-    localStorage.removeItem('session_uuid');
-    const genResp: UUIDResponse = await generateUUID();
-    if (genResp.status === 'success' && genResp.uuid) {
-      localStorage.setItem('session_uuid', genResp.uuid);
-      if (!isTest) {
-        window.location.reload();
+      
+      const valResp: UUIDResponse = await validateUUID(uuid as string);
+      if (valResp.status === 'success') {
+        return uuid as string;
+      } else if (valResp.status === 'collision') {
+        if (valResp.uuid) {
+          localStorage.setItem('session_uuid', valResp.uuid);
+          if (!isTest) {
+            window.location.reload();
+          }
+          return valResp.uuid;
+        } else {
+          throw new Error('Collision response missing new UUID');
+        }
+      } else if (valResp.status === 'invalid' || valResp.status === 'error') {
+        localStorage.removeItem('session_uuid');
+        const genResp: UUIDResponse = await generateUUID();
+        if (genResp.status === 'success' && genResp.uuid) {
+          localStorage.setItem('session_uuid', genResp.uuid);
+          if (!isTest) {
+            window.location.reload();
+          }
+          return genResp.uuid;
+        } else {
+          throw new Error(genResp.message || 'Failed to reset session UUID');
+        }
       }
-      return genResp.uuid;
-    } else {
-      throw new Error(genResp.message || 'Failed to reset session UUID');
+      throw new Error(valResp.message || 'Unknown error validating session UUID');
+    } finally {
+      // Clear the pending request when done
+      pendingUUIDRequest = null;
     }
-  }
-  // Defensive fallback
-  throw new Error(valResp.message || 'Unknown error validating session UUID');
+  })();
+
+  return pendingUUIDRequest;
 }
 
 /**

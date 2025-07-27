@@ -194,30 +194,38 @@ export function SessionProvider({ children, enableNotifications = true }: Sessio
     if (state.isLoading) return;
 
     dispatch({ type: SessionActionTypes.SET_LOADING, payload: true });
-    console.log('SessionContext: Initializing session...');
+    
+    if (enableNotifications) {
+      console.log('SessionContext: Initializing session...');
+    }
 
     try {
       const sessionUUID = await getOrCreateSessionUUID();
-      console.log('SessionContext: Session UUID obtained:', sessionUUID);
-
-      dispatch({ type: SessionActionTypes.SET_SESSION_UUID, payload: sessionUUID });
+      
+      dispatch({
+        type: SessionActionTypes.SET_SESSION_UUID,
+        payload: sessionUUID,
+      });
       dispatch({ type: SessionActionTypes.SET_INITIALIZED, payload: true });
 
-      console.log('SessionContext: Session initialization complete');
-
       if (enableNotifications) {
-        toast.success('Session initialized successfully');
+        console.log('SessionContext: Session initialized successfully');
       }
     } catch (error) {
-      console.error('SessionContext: Error initializing session:', error);
       const errorMessage = getErrorMessage(error);
-      dispatch({ type: SessionActionTypes.SET_ERROR, payload: errorMessage });
+      dispatch({
+        type: SessionActionTypes.SET_ERROR,
+        payload: errorMessage,
+      });
 
       if (enableNotifications) {
-        toast.error(`Session initialization failed: ${errorMessage}`);
+        console.error('SessionContext: Error initializing session:', errorMessage);
+        toast.error(`Session error: ${errorMessage}`);
       }
+    } finally {
+      dispatch({ type: SessionActionTypes.SET_LOADING, payload: false });
     }
-  }, [state.isLoading, enableNotifications]);
+  }, [enableNotifications]);
 
   /**
    * Reset session with optional confirmation
@@ -286,10 +294,65 @@ export function SessionProvider({ children, enableNotifications = true }: Sessio
    * Initialize session on mount
    */
   useEffect(() => {
-    if (!state.isInitialized && !state.isLoading) {
-      initializeSession();
+    let isMounted = true;
+    let isInitializing = false;
+
+    const initializeSessionSafely = async () => {
+      // Prevent multiple simultaneous initialization attempts
+      if (isInitializing) return;
+      
+      isInitializing = true;
+      
+      try {
+        dispatch({ type: SessionActionTypes.SET_LOADING, payload: true });
+        
+        if (enableNotifications) {
+          console.log('SessionContext: Initializing session...');
+        }
+
+        const sessionUUID = await getOrCreateSessionUUID();
+        
+        if (isMounted) {
+          dispatch({
+            type: SessionActionTypes.SET_SESSION_UUID,
+            payload: sessionUUID,
+          });
+          dispatch({ type: SessionActionTypes.SET_INITIALIZED, payload: true });
+          
+          if (enableNotifications) {
+            console.log('SessionContext: Session initialized successfully');
+          }
+        }
+      } catch (error) {
+        if (isMounted) {
+          const errorMessage = getErrorMessage(error);
+          dispatch({
+            type: SessionActionTypes.SET_ERROR,
+            payload: errorMessage,
+          });
+          
+          if (enableNotifications) {
+            console.error('SessionContext: Error initializing session:', errorMessage);
+            toast.error(`Session error: ${errorMessage}`);
+          }
+        }
+      } finally {
+        if (isMounted) {
+          dispatch({ type: SessionActionTypes.SET_LOADING, payload: false });
+        }
+        isInitializing = false;
+      }
+    };
+
+    // Only initialize if not already initialized
+    if (!state.isInitialized && !state.sessionUUID) {
+      initializeSessionSafely();
     }
-  }, [state.isInitialized, state.isLoading, initializeSession]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array - only run once
 
   const contextValue: SessionContextType = {
     state,
