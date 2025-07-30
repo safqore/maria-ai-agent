@@ -163,24 +163,31 @@ def validate_uuid():
         current_app.logger.info("OPTIONS request to /validate-uuid")
         return cors_options_response()
 
+    # Log full request details for debugging
     current_app.logger.info(
-        f"POST /validate-uuid called from IP: {request.remote_addr}, Headers: {dict(request.headers)}"
+        f"Full Request Details:\n"
+        f"Method: {request.method}\n"
+        f"Headers: {dict(request.headers)}\n"
+        f"Remote Address: {request.remote_addr}\n"
+        f"Content Type: {request.content_type}\n"
+        f"Request Data: {request.get_data(as_text=True)}"
     )
-    current_app.logger.info(
-        f"SESSION_RATE_LIMIT: {current_app.config.get('SESSION_RATE_LIMIT', 'not set')}"
-    )
-    current_app.logger.info(
-        f"RATELIMIT_ENABLED: {current_app.config.get('RATELIMIT_ENABLED', 'not set')}"
-    )
-    current_app.logger.info(f"TESTING: {current_app.config.get('TESTING', 'not set')}")
-    current_app.logger.info(
-        f"limiter._default_limits: {getattr(limiter, '_default_limits', 'unknown')}"
-    )
-    current_app.logger.info(
-        f"limiter._enabled: {getattr(limiter, '_enabled', 'unknown')}"
-    )
-    data = request.get_json()
-    current_app.logger.info(f"Request data: {data}")
+
+    # Validate request data
+    try:
+        data = request.get_json()
+        current_app.logger.info(f"Parsed JSON data: {data}")
+    except Exception as e:
+        current_app.logger.error(f"JSON parsing error: {e}")
+        return (
+            jsonify({
+                "status": "error",
+                "uuid": None,
+                "message": "Invalid JSON",
+                "details": str(e)
+            }),
+            400
+        )
 
     # Validate request data
     try:
@@ -189,27 +196,39 @@ def validate_uuid():
     except ValidationError as err:
         current_app.logger.warning(f"UUID validation error: {err.messages}")
         return (
-            jsonify(
-                {
-                    "status": "invalid",
-                    "uuid": None,
-                    "message": "Invalid UUID format",
-                    "details": err.messages,
-                }
-            ),
-            400,
+            jsonify({
+                "status": "invalid",
+                "uuid": None,
+                "message": "Invalid UUID format",
+                "details": err.messages,
+            }),
+            400
         )
 
     session_uuid = validated_data["uuid"]
-    response_data, status_code = g.session_service.validate_uuid(session_uuid)
-    current_app.logger.info(
-        f"validate_uuid response: {response_data}, status_code: {status_code}"
-    )
-    if status_code == 429:
-        current_app.logger.error(
-            f"429 TOO MANY REQUESTS for UUID: {session_uuid}, IP: {request.remote_addr}"
+    current_app.logger.info(f"Validating UUID: {session_uuid}")
+
+    try:
+        response_data, status_code = g.session_service.validate_uuid(session_uuid)
+        current_app.logger.info(
+            f"validate_uuid response: {response_data}, status_code: {status_code}"
         )
-    return jsonify(response_data), status_code
+        if status_code == 429:
+            current_app.logger.error(
+                f"429 TOO MANY REQUESTS for UUID: {session_uuid}, IP: {request.remote_addr}"
+            )
+        return jsonify(response_data), status_code
+    except Exception as e:
+        current_app.logger.error(f"Unexpected error in validate_uuid: {e}", exc_info=True)
+        return (
+            jsonify({
+                "status": "error",
+                "uuid": session_uuid,
+                "message": "Unexpected server error",
+                "details": str(e)
+            }),
+            500
+        )
 
 
 @session_bp.route("/generate-uuid", methods=["POST", "OPTIONS"])

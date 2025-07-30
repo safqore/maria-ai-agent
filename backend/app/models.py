@@ -123,10 +123,19 @@ class UserSession(Base):
     # Email verification methods
     @property
     def is_verification_expired(self) -> bool:
-        """Check if the verification code has expired."""
+        """
+        Check if the verification code has expired.
+        
+        Ensures timezone-aware comparison and handles None cases.
+        """
         if not self.verification_expires_at:
-            return False
-        return datetime.now(UTC) > self.verification_expires_at
+            return True
+        
+        # Ensure both datetimes are timezone-aware
+        current_time = datetime.now(UTC)
+        expires_at = self.verification_expires_at if self.verification_expires_at.tzinfo else self.verification_expires_at.replace(tzinfo=UTC)
+        
+        return current_time > expires_at
 
     @property
     def verification_attempts_remaining(self) -> int:

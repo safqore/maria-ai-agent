@@ -32,65 +32,93 @@ def set_database_url(url):
 # Create SQLAlchemy engine from environment variables
 def get_database_url():
     """Create database URL from environment variables or use custom URL."""
+    import traceback
+    import sys
+
+    # Extensive logging and tracing
+    print("=" * 50)
+    print("DATABASE URL GENERATION TRACE")
+    print("=" * 50)
+    
+    # Print full stack trace to understand call origin
+    print("FULL STACK TRACE:")
+    traceback.print_stack(file=sys.stdout)
+    
+    print("\nENVIRONMENT VARIABLES:")
+    print(f"POSTGRES_USER: {os.getenv('POSTGRES_USER')}")
+    print(f"POSTGRES_DB: {os.getenv('POSTGRES_DB')}")
+    print(f"POSTGRES_HOST: {os.getenv('POSTGRES_HOST')}")
+    print(f"POSTGRES_PORT: {os.getenv('POSTGRES_PORT')}")
+    print(f"POSTGRES_PASSWORD: {'*' * len(os.getenv('POSTGRES_PASSWORD', ''))}")
+
     # Debug output
     pytest_test = os.getenv("PYTEST_CURRENT_TEST")
     ci_env = os.getenv("CI")
-    print(f"DEBUG: PYTEST_CURRENT_TEST = {repr(pytest_test)}")
+    print(f"\nDEBUG: PYTEST_CURRENT_TEST = {repr(pytest_test)}")
     print(f"DEBUG: CI environment = {repr(ci_env)}")
 
     # If a custom URL has been set (for testing purposes), use that first
     global _custom_database_url
     if _custom_database_url is not None:
-        print(f"DEBUG: Using custom URL: {_custom_database_url}")
+        print(f"\nDEBUG: Using custom URL: {_custom_database_url}")
         return _custom_database_url
+
+    # Determine the database name, with a consistent default
+    default_db_name = "maria_ai_agent"
+
+    # Check if PostgreSQL environment variables are set
+    db_user = os.getenv("POSTGRES_USER")
+    db_password = os.getenv("POSTGRES_PASSWORD", "")
+    db_host = os.getenv("POSTGRES_HOST", "localhost")
+    db_port = os.getenv("POSTGRES_PORT", "5432")
+    
+    # Prioritize environment variable, but use default if not set
+    db_name = os.getenv("POSTGRES_DB", default_db_name)
+
+    print(f"\nCONSTRUCTED DATABASE PARAMETERS:")
+    print(f"User: {db_user}")
+    print(f"Host: {db_host}")
+    print(f"Port: {db_port}")
+    print(f"Database Name: {db_name}")
+
+    if db_user and db_name:
+        # Use PostgreSQL if environment variables are set
+        postgres_url = (
+            f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+        )
+        print(f"\nDEBUG: Using PostgreSQL URL: {postgres_url}")
+        return postgres_url
 
     # If running in CI environment, always use PostgreSQL
     if ci_env:
-        print("DEBUG: Using PostgreSQL for CI environment")
+        print("\nDEBUG: Using PostgreSQL for CI environment")
         db_user = os.getenv("POSTGRES_USER", "postgres")
         db_password = os.getenv("POSTGRES_PASSWORD", "postgres")
         db_host = os.getenv("POSTGRES_HOST", "localhost")
         db_port = os.getenv("POSTGRES_PORT", "5432")
-        db_name = os.getenv("POSTGRES_DB", "maria_ai")
+        db_name = os.getenv("POSTGRES_DB", default_db_name)
 
         postgres_url = (
             f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
         )
-        print(f"DEBUG: Using PostgreSQL URL: {postgres_url}")
+        print(f"\nDEBUG: Using PostgreSQL URL: {postgres_url}")
         return postgres_url
 
     # If running under pytest locally, use file-based SQLite for sharing
     if pytest_test:
-        print("DEBUG: Using file-based SQLite for local pytest")
+        print("\nDEBUG: Using file-based SQLite for local pytest")
         # Use a temporary file that can be shared across connections
         import tempfile
 
         test_db_path = os.path.join(tempfile.gettempdir(), "maria_ai_test.db")
         return f"sqlite:///{test_db_path}"
 
-    # Check if PostgreSQL environment variables are set
-    db_user = os.getenv("POSTGRES_USER")
-    db_password = os.getenv("POSTGRES_PASSWORD")
-    db_host = os.getenv("POSTGRES_HOST", "localhost")
-    db_port = os.getenv("POSTGRES_PORT", "5432")
-    db_name = os.getenv("POSTGRES_DB")
-
-    if db_user and db_password and db_name:
-        # Use PostgreSQL if environment variables are set
-        postgres_url = (
-            f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
-        )
-        print(f"DEBUG: Using PostgreSQL URL: {postgres_url}")
-        return postgres_url
-    else:
-        # Fallback to SQLite for local development
-        print("DEBUG: Using SQLite for local development")
-        return "sqlite:///maria_ai_dev.db"
+    # Fallback to SQLite for local development
+    print("\nDEBUG: Using SQLite for local development")
+    return "sqlite:///maria_ai_dev.db"
 
 
 # Lazy initialization of database components
-
-
 def init_database():
     """Initialize database engine and session factory."""
     global _engine, _SessionLocal
