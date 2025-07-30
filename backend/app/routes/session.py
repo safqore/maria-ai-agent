@@ -181,6 +181,7 @@ def validate_uuid():
         current_app.logger.error(f"JSON parsing error: {e}")
         # Raise UnsupportedMediaType for incorrect content types
         from werkzeug.exceptions import UnsupportedMediaType
+
         raise UnsupportedMediaType("Invalid Content-Type. Expected application/json")
 
     # Validate request data

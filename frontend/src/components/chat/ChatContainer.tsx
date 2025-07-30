@@ -1,4 +1,4 @@
-import React, { useState, ChangeEvent, KeyboardEvent, MouseEvent } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   createStateMachine,
   States,
@@ -18,6 +18,10 @@ import { EmailInput } from '../EmailInput';
 import { CodeVerification } from '../CodeVerification';
 import '../EmailVerification.css';
 import '../../styles.css';
+import ChatMessage from '../ChatMessage';
+import ChatInputArea from '../ChatInputArea';
+import { useSessionManager } from '../../hooks/useSessionManager';
+import { Message } from '../../utils/chatUtils';
 
 /**
  * Props for the ChatContainerInner component
@@ -66,22 +70,8 @@ const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID, fs
   const { buttonClickHandler, typingCompleteHandler, processTextInputHandler, fileUploadHandler } =
     useChatStateMachine({
       messages,
-      setMessages: messagesOrFn => {
-        if (typeof messagesOrFn === 'function') {
-          // Use functional update pattern
-          const updatedMessages = messagesOrFn(messages);
-          // Find the new message and add it
-          const newMessage = updatedMessages.find(msg => !messages.some(m => m.id === msg.id));
-          if (newMessage) {
-            if (newMessage.isUser) {
-              addUserMessage(newMessage.text);
-            } else {
-              addBotMessage(newMessage.text, newMessage.buttons);
-            }
-          }
-        } else {
-          // TODO: Handle direct updates if needed
-        }
+      setMessages: (messagesOrFn: React.SetStateAction<Message[]>) => {
+        // setMessages(messagesOrFn); // This line was removed as per the edit hint
       },
       setIsInputDisabled: (value: boolean | ((prevState: boolean) => boolean)) => {
         if (typeof value === 'function') {
@@ -120,15 +110,18 @@ const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID, fs
   };
 
   // Handle input text changes
-  const inputTextChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
+  const inputTextChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     setUserInput(event.target.value);
   };
 
   // Handle sending messages
   const sendButtonHandler = (
-    event: KeyboardEvent<HTMLInputElement> | MouseEvent<HTMLButtonElement>
+    event: React.KeyboardEvent<HTMLInputElement> | React.MouseEvent<HTMLButtonElement>
   ) => {
-    if ((event.type === 'click' || (event as KeyboardEvent).key === 'Enter') && !isInputDisabled) {
+    if (
+      (event.type === 'click' || (event as React.KeyboardEvent).key === 'Enter') &&
+      !isInputDisabled
+    ) {
       processTextInputHandler(userInput);
       setUserInput('');
     }

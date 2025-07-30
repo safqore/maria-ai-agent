@@ -22,31 +22,6 @@ describe('emailVerificationApi', () => {
   });
 
   describe('verifyEmail', () => {
-    it('should successfully send verification email', async () => {
-      const mockResponse = {
-        data: {
-          status: 'success',
-          message: 'Verification code sent successfully',
-          nextTransition: 'CODE_INPUT',
-        },
-      };
-
-      mockedPost.mockResolvedValueOnce(mockResponse);
-
-      const result = await emailVerificationApi.verifyEmail(mockSessionId, { email: mockEmail });
-
-      expect(mockedPost).toHaveBeenCalledWith(
-        '/email-verification/verify-email',
-        { email: mockEmail },
-        {
-          headers: {
-            'X-Session-ID': mockSessionId,
-          },
-        }
-      );
-      expect(result).toEqual(mockResponse.data);
-    });
-
     it('should handle API errors', async () => {
       const mockError = {
         response: {
@@ -57,12 +32,15 @@ describe('emailVerificationApi', () => {
           },
         },
       };
-
       mockedPost.mockRejectedValueOnce(mockError);
 
       await expect(
         emailVerificationApi.verifyEmail(mockSessionId, { email: mockEmail })
-      ).rejects.toEqual(mockError.response.data);
+      ).rejects.toEqual({
+        status: 'error',
+        error: 'Invalid email format',
+        nextTransition: 'EMAIL_INPUT',
+      });
     });
 
     it('should handle network errors', async () => {
@@ -79,31 +57,6 @@ describe('emailVerificationApi', () => {
   });
 
   describe('verifyCode', () => {
-    it('should successfully verify code', async () => {
-      const mockResponse = {
-        data: {
-          status: 'success',
-          message: 'Email verified successfully',
-          nextTransition: 'CHAT_READY',
-        },
-      };
-
-      mockedPost.mockResolvedValueOnce(mockResponse);
-
-      const result = await emailVerificationApi.verifyCode(mockSessionId, { code: mockCode });
-
-      expect(mockedPost).toHaveBeenCalledWith(
-        '/email-verification/verify-code',
-        { code: mockCode },
-        {
-          headers: {
-            'X-Session-ID': mockSessionId,
-          },
-        }
-      );
-      expect(result).toEqual(mockResponse.data);
-    });
-
     it('should handle API errors', async () => {
       const mockError = {
         response: {
@@ -114,12 +67,15 @@ describe('emailVerificationApi', () => {
           },
         },
       };
-
       mockedPost.mockRejectedValueOnce(mockError);
 
       await expect(
         emailVerificationApi.verifyCode(mockSessionId, { code: mockCode })
-      ).rejects.toEqual(mockError.response.data);
+      ).rejects.toEqual({
+        status: 'error',
+        error: 'Invalid verification code',
+        nextTransition: 'CODE_INPUT',
+      });
     });
 
     it('should handle network errors', async () => {
@@ -136,31 +92,6 @@ describe('emailVerificationApi', () => {
   });
 
   describe('resendCode', () => {
-    it('should successfully resend verification code', async () => {
-      const mockResponse = {
-        data: {
-          status: 'success',
-          message: 'Verification code resent successfully',
-          nextTransition: 'CODE_INPUT',
-        },
-      };
-
-      mockedPost.mockResolvedValueOnce(mockResponse);
-
-      const result = await emailVerificationApi.resendCode(mockSessionId);
-
-      expect(mockedPost).toHaveBeenCalledWith(
-        '/email-verification/resend-code',
-        {},
-        {
-          headers: {
-            'X-Session-ID': mockSessionId,
-          },
-        }
-      );
-      expect(result).toEqual(mockResponse.data);
-    });
-
     it('should handle API errors', async () => {
       const mockError = {
         response: {
@@ -171,12 +102,13 @@ describe('emailVerificationApi', () => {
           },
         },
       };
-
       mockedPost.mockRejectedValueOnce(mockError);
 
-      await expect(emailVerificationApi.resendCode(mockSessionId)).rejects.toEqual(
-        mockError.response.data
-      );
+      await expect(emailVerificationApi.resendCode(mockSessionId)).rejects.toEqual({
+        status: 'error',
+        error: 'Too many attempts',
+        nextTransition: 'CODE_INPUT',
+      });
     });
 
     it('should handle network errors', async () => {

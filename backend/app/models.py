@@ -11,7 +11,8 @@ Architecture Note:
 
 import uuid
 from datetime import UTC, datetime, timedelta
-from typing import Optional
+from typing import Optional, Union
+from sqlalchemy import func
 
 from app.database_core import Base
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
@@ -139,23 +140,23 @@ class UserSession(Base):
             else self.verification_expires_at.replace(tzinfo=UTC)
         )
 
-        return current_time > expires_at
+        return bool(current_time > expires_at)
 
     @property
     def verification_attempts_remaining(self) -> int:
         """Get the number of verification attempts remaining."""
-        return max(0, self.max_verification_attempts - self.verification_attempts)
+        return max(0, int(self.max_verification_attempts - self.verification_attempts))
 
     @property
     def resend_attempts_remaining(self) -> int:
         """Get the number of resend attempts remaining."""
-        return max(0, self.max_resend_attempts - self.resend_attempts)
+        return max(0, int(self.max_resend_attempts - self.resend_attempts))
 
     @property
     def can_resend_verification(self) -> bool:
         """Check if a new verification code can be resent (respects cooldown and attempt limits)."""
         # Check resend attempt limits
-        if self.resend_attempts >= self.max_resend_attempts:
+        if int(self.resend_attempts) >= int(self.max_resend_attempts):
             return False
 
         # Check cooldown period (30 seconds)
@@ -174,18 +175,18 @@ class UserSession(Base):
 
     def start_email_verification(self, code: str) -> None:
         """Start a new email verification process."""
-        self.verification_code = code
+        self.verification_code = str(code)
         self.verification_attempts = 0
         self.verification_expires_at = datetime.now(UTC) + timedelta(minutes=10)
         self.is_email_verified = False
 
     def increment_verification_attempts(self) -> None:
         """Increment the verification attempt count."""
-        self.verification_attempts += 1
+        self.verification_attempts = int(self.verification_attempts) + 1
 
     def increment_resend_attempts(self) -> None:
         """Increment the resend attempt count and update last resend timestamp."""
-        self.resend_attempts += 1
+        self.resend_attempts = int(self.resend_attempts) + 1
         self.last_resend_at = datetime.now(UTC)
 
     def mark_email_verified(self) -> None:

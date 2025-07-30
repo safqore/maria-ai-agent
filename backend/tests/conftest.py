@@ -30,6 +30,14 @@ from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 
 
+def pytest_configure(config):
+    """Register custom markers to avoid warnings."""
+    config.addinivalue_line(
+        "markers", "sqlite_incompatible: mark test as incompatible with SQLite backend"
+    )
+    config.addinivalue_line("markers", "performance: mark performance-related tests")
+
+
 @pytest.fixture(scope="session", autouse=True)
 def initialize_test_database():
     """Initialize the test database with proper schema and migrations."""

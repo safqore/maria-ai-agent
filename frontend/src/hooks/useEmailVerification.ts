@@ -7,7 +7,7 @@
 
 import { useState, useCallback } from 'react';
 import { useSession } from '../contexts/SessionContext';
-import { emailVerificationApi, EmailVerificationResponse } from '../api/emailVerificationApi';
+import { emailVerificationApi, ApiResponse } from '../api/emailVerificationApi';
 
 export interface EmailVerificationState {
   isLoading: boolean;
@@ -17,9 +17,9 @@ export interface EmailVerificationState {
 }
 
 export interface EmailVerificationActions {
-  verifyEmail: (email: string) => Promise<EmailVerificationResponse>;
-  verifyCode: (code: string) => Promise<EmailVerificationResponse>;
-  resendCode: () => Promise<EmailVerificationResponse>;
+  verifyEmail: (email: string) => Promise<ApiResponse>;
+  verifyCode: (code: string) => Promise<ApiResponse>;
+  resendCode: () => Promise<ApiResponse>;
   clearError: () => void;
   reset: () => void;
 }
@@ -50,7 +50,7 @@ export const useEmailVerification = (): EmailVerificationState & EmailVerificati
   }, []);
 
   const verifyEmail = useCallback(
-    async (email: string): Promise<EmailVerificationResponse> => {
+    async (email: string): Promise<ApiResponse> => {
       if (!sessionUUID) {
         throw new Error('No active session');
       }
@@ -90,7 +90,7 @@ export const useEmailVerification = (): EmailVerificationState & EmailVerificati
   );
 
   const verifyCode = useCallback(
-    async (code: string): Promise<EmailVerificationResponse> => {
+    async (code: string): Promise<ApiResponse> => {
       if (!sessionUUID) {
         throw new Error('No active session');
       }
@@ -129,7 +129,7 @@ export const useEmailVerification = (): EmailVerificationState & EmailVerificati
     [sessionUUID]
   );
 
-  const resendCode = useCallback(async (): Promise<EmailVerificationResponse> => {
+  const resendCode = useCallback(async (): Promise<ApiResponse> => {
     if (!sessionUUID) {
       throw new Error('No active session');
     }

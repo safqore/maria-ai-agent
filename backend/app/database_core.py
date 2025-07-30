@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from typing import Generator
 
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import NullPool, StaticPool
 
@@ -75,7 +75,7 @@ def get_database_url():
     # Prioritize environment variable, but use default if not set
     db_name = os.getenv("POSTGRES_DB", default_db_name)
 
-    print(f"\nCONSTRUCTED DATABASE PARAMETERS:")
+    print("\nCONSTRUCTED DATABASE PARAMETERS:")
     print(f"User: {db_user}")
     print(f"Host: {db_host}")
     print(f"Port: {db_port}")

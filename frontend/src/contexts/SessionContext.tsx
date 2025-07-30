@@ -225,7 +225,7 @@ export function SessionProvider({ children, enableNotifications = true }: Sessio
     } finally {
       dispatch({ type: SessionActionTypes.SET_LOADING, payload: false });
     }
-  }, [enableNotifications]);
+  }, [state.isLoading, enableNotifications, dispatch]);
 
   /**
    * Reset session with optional confirmation
@@ -352,7 +352,7 @@ export function SessionProvider({ children, enableNotifications = true }: Sessio
     return () => {
       isMounted = false;
     };
-  }, []); // Empty dependency array - only run once
+  }, [state.isInitialized, state.sessionUUID, enableNotifications, dispatch]);
 
   const contextValue: SessionContextType = {
     state,
