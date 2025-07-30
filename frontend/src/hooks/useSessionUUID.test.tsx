@@ -18,6 +18,7 @@ describe('useSessionUUID', () => {
     const spy = jest.spyOn(sessionUtils, 'getOrCreateSessionUUID').mockResolvedValue('mock-uuid');
     render(<TestComponent />);
     const uuidDiv = await screen.findByTestId('uuid');
+    expect(uuidDiv.textContent).not.toBe('loading');
     expect(uuidDiv.textContent).toBe('mock-uuid');
     spy.mockRestore();
   });
