@@ -179,15 +179,9 @@ def validate_uuid():
         current_app.logger.info(f"Parsed JSON data: {data}")
     except Exception as e:
         current_app.logger.error(f"JSON parsing error: {e}")
-        return (
-            jsonify({
-                "status": "error",
-                "uuid": None,
-                "message": "Invalid JSON",
-                "details": str(e)
-            }),
-            400
-        )
+        # Raise UnsupportedMediaType for incorrect content types
+        from werkzeug.exceptions import UnsupportedMediaType
+        raise UnsupportedMediaType("Invalid Content-Type. Expected application/json")
 
     # Validate request data
     try:
@@ -196,13 +190,15 @@ def validate_uuid():
     except ValidationError as err:
         current_app.logger.warning(f"UUID validation error: {err.messages}")
         return (
-            jsonify({
-                "status": "invalid",
-                "uuid": None,
-                "message": "Invalid UUID format",
-                "details": err.messages,
-            }),
-            400
+            jsonify(
+                {
+                    "status": "invalid",
+                    "uuid": None,
+                    "message": "Invalid UUID format",
+                    "details": err.messages,
+                }
+            ),
+            400,
         )
 
     session_uuid = validated_data["uuid"]
@@ -219,15 +215,19 @@ def validate_uuid():
             )
         return jsonify(response_data), status_code
     except Exception as e:
-        current_app.logger.error(f"Unexpected error in validate_uuid: {e}", exc_info=True)
+        current_app.logger.error(
+            f"Unexpected error in validate_uuid: {e}", exc_info=True
+        )
         return (
-            jsonify({
-                "status": "error",
-                "uuid": session_uuid,
-                "message": "Unexpected server error",
-                "details": str(e)
-            }),
-            500
+            jsonify(
+                {
+                    "status": "error",
+                    "uuid": session_uuid,
+                    "message": "Unexpected server error",
+                    "details": str(e),
+                }
+            ),
+            500,
         )
 
 
