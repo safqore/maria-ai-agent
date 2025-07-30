@@ -194,14 +194,14 @@ export function SessionProvider({ children, enableNotifications = true }: Sessio
     if (state.isLoading) return;
 
     dispatch({ type: SessionActionTypes.SET_LOADING, payload: true });
-    
+
     if (enableNotifications) {
       console.log('SessionContext: Initializing session...');
     }
 
     try {
       const sessionUUID = await getOrCreateSessionUUID();
-      
+
       dispatch({
         type: SessionActionTypes.SET_SESSION_UUID,
         payload: sessionUUID,
@@ -300,25 +300,25 @@ export function SessionProvider({ children, enableNotifications = true }: Sessio
     const initializeSessionSafely = async () => {
       // Prevent multiple simultaneous initialization attempts
       if (isInitializing) return;
-      
+
       isInitializing = true;
-      
+
       try {
         dispatch({ type: SessionActionTypes.SET_LOADING, payload: true });
-        
+
         if (enableNotifications) {
           console.log('SessionContext: Initializing session...');
         }
 
         const sessionUUID = await getOrCreateSessionUUID();
-        
+
         if (isMounted) {
           dispatch({
             type: SessionActionTypes.SET_SESSION_UUID,
             payload: sessionUUID,
           });
           dispatch({ type: SessionActionTypes.SET_INITIALIZED, payload: true });
-          
+
           if (enableNotifications) {
             console.log('SessionContext: Session initialized successfully');
           }
@@ -330,7 +330,7 @@ export function SessionProvider({ children, enableNotifications = true }: Sessio
             type: SessionActionTypes.SET_ERROR,
             payload: errorMessage,
           });
-          
+
           if (enableNotifications) {
             console.error('SessionContext: Error initializing session:', errorMessage);
             toast.error(`Session error: ${errorMessage}`);

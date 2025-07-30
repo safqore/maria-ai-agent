@@ -39,11 +39,11 @@ def get_database_url():
     print("=" * 50)
     print("DATABASE URL GENERATION TRACE")
     print("=" * 50)
-    
+
     # Print full stack trace to understand call origin
     print("FULL STACK TRACE:")
     traceback.print_stack(file=sys.stdout)
-    
+
     print("\nENVIRONMENT VARIABLES:")
     print(f"POSTGRES_USER: {os.getenv('POSTGRES_USER')}")
     print(f"POSTGRES_DB: {os.getenv('POSTGRES_DB')}")
@@ -71,7 +71,7 @@ def get_database_url():
     db_password = os.getenv("POSTGRES_PASSWORD", "")
     db_host = os.getenv("POSTGRES_HOST", "localhost")
     db_port = os.getenv("POSTGRES_PORT", "5432")
-    
+
     # Prioritize environment variable, but use default if not set
     db_name = os.getenv("POSTGRES_DB", default_db_name)
 

@@ -307,7 +307,9 @@ class BaseRepository(Generic[T]):
 
                 # Check if the record exists
                 # Use .first() instead of .exists() to avoid potential query complexity
-                record = session.query(self.model_class).filter(filter_condition).first()
+                record = (
+                    session.query(self.model_class).filter(filter_condition).first()
+                )
                 return record is not None
         except SQLAlchemyError as e:
             raise ServerError(f"Database error in exists: {str(e)}")

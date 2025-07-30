@@ -4,9 +4,8 @@ import { generateUUID, validateUUID, UUIDResponse } from './uuidApi';
 let pendingUUIDRequest: Promise<string> | null = null;
 
 // Add this configuration option
-export const SKIP_UUID_VALIDATION_IN_DEV = 
-  process.env.NODE_ENV === 'development' && 
-  process.env.REACT_APP_SKIP_UUID_VALIDATION === 'true';
+export const SKIP_UUID_VALIDATION_IN_DEV =
+  process.env.NODE_ENV === 'development' && process.env.REACT_APP_SKIP_UUID_VALIDATION === 'true';
 
 /**
  * Checks if a string is a valid UUID v4.
@@ -36,7 +35,7 @@ export async function getOrCreateSessionUUID(): Promise<string> {
     try {
       const isTest = process.env.NODE_ENV === 'test';
       const uuid = localStorage.getItem('session_uuid');
-      
+
       if (!isValidUUID(uuid)) {
         const genResp: UUIDResponse = await generateUUID();
         if (genResp.status === 'success' && genResp.uuid) {
@@ -54,7 +53,7 @@ export async function getOrCreateSessionUUID(): Promise<string> {
       if (SKIP_UUID_VALIDATION_IN_DEV) {
         return uuid as string;
       }
-      
+
       const valResp: UUIDResponse = await validateUUID(uuid as string);
       if (valResp.status === 'success') {
         return uuid as string;

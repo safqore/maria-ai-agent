@@ -180,7 +180,7 @@ export const apiClient = async <T>(
       if (response.status === 429) {
         const retryAfter = response.headers.get('Retry-After');
         const delay = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, attempts) * 1000;
-        
+
         if (VERBOSE_LOGGING) {
           console.warn(`Rate limited. Waiting ${delay}ms before retry...`);
         }
