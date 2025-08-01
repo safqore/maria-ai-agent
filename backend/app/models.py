@@ -12,10 +12,10 @@ Architecture Note:
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Optional, Union
-from sqlalchemy import func
 
+import pytz
 from app.database_core import Base
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 
 
@@ -53,7 +53,7 @@ class UserSession(Base):
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(Text, nullable=False)
-    email = Column(Text, nullable=False)
+    email = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
@@ -161,14 +161,22 @@ class UserSession(Base):
 
         # Check cooldown period (30 seconds)
         if self.last_resend_at:
-            # Ensure both datetimes are timezone-aware for comparison
+            # Convert database timestamp to UTC for proper comparison
             last_resend = self.last_resend_at
             if last_resend.tzinfo is None:
-                # Assume UTC if timezone-naive
-                last_resend = last_resend.replace(tzinfo=UTC)
+                # If timezone-naive, assume it's in local timezone and convert to UTC
+                import pytz
+
+                local_tz = pytz.timezone("Europe/London")  # Database timezone
+                last_resend = local_tz.localize(last_resend).astimezone(UTC)
+            else:
+                # If already timezone-aware, convert to UTC
+                last_resend = last_resend.astimezone(UTC)
 
             cooldown_expires = last_resend + timedelta(seconds=30)
-            if datetime.now(UTC) < cooldown_expires:
+            current_utc = datetime.now(UTC)
+
+            if current_utc < cooldown_expires:
                 return False
 
         return True

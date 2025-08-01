@@ -32,13 +32,14 @@ Author: Maria AI Agent Development Team
 Last Updated: 2024-12-21
 """
 
+import logging
 import os
 import sys
-import logging
 import uuid
 from datetime import datetime, timedelta
-from sqlalchemy import text
+
 from dotenv import load_dotenv
+from sqlalchemy import text
 
 # Load environment variables from .env file
 load_dotenv()
@@ -46,10 +47,10 @@ load_dotenv()
 # Add the app directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "app"))
 
-from app.database_core import get_engine, get_db_session
-from app.services.verification_service import VerificationService
-from app.services.email_service import EmailService
+from app.database_core import get_db_session, get_engine
 from app.repositories.email_verification_repository import EmailVerificationRepository
+from app.services.email_service import EmailService
+from app.services.verification_service import VerificationService
 
 # Configure logging
 logging.basicConfig(

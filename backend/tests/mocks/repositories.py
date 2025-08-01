@@ -6,7 +6,7 @@ limitations, particularly for UUID handling.
 """
 
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.errors import ResourceNotFoundError, ServerError
 from sqlalchemy.exc import SQLAlchemyError
@@ -85,15 +85,31 @@ class UserSessionRepository:
         except SQLAlchemyError as e:
             raise ServerError(f"Database error in get_by_uuid: {str(e)}")
 
-    def exists(self, session_uuid: str) -> bool:
+    def get(self, session_uuid: str) -> Optional[UserSession]:
+        """
+        Get a user session by UUID (alias for get_by_uuid for compatibility).
+
+        Args:
+            session_uuid: The UUID of the session to retrieve (string or UUID object)
+
+        Returns:
+            UserSession object if found, None otherwise
+
+        Raises:
+            ServerError: If a database error occurs
+        """
+        return self.get_by_uuid(session_uuid)
+
+    def exists(self, session_uuid: str, require_data: bool = False) -> bool:
         """
         Check if a session with the given UUID exists.
 
         Args:
             session_uuid: The UUID to check (string or UUID object)
+            require_data: If True, also check that the session has a name (meaningful data)
 
         Returns:
-            True if the session exists, False otherwise
+            True if the session exists (and has name if require_data=True), False otherwise
 
         Raises:
             ServerError: If a database error occurs
@@ -113,11 +129,17 @@ class UserSessionRepository:
 
             # Use database session directly for more reliable check in tests
             with get_db_session() as db_session:
-                result = (
-                    db_session.query(UserSession)
-                    .filter(UserSession.uuid == uuid_object)
-                    .first()
+                query = db_session.query(UserSession).filter(
+                    UserSession.uuid == uuid_object
                 )
+
+                # If require_data is True, also check that the session has a name
+                if require_data:
+                    query = query.filter(
+                        UserSession.name.isnot(None), UserSession.name != ""
+                    )
+
+                result = query.first()
                 return result is not None
 
         except SQLAlchemyError as e:
@@ -259,3 +281,98 @@ class UserSessionRepository:
                 return True
         except SQLAlchemyError as e:
             raise ServerError(f"Database error in delete: {str(e)}")
+
+    def create_or_update_session(
+        self,
+        session_uuid: str,
+        name: Optional[str] = None,
+        email: Optional[str] = None,
+        **kwargs,
+    ) -> Tuple[UserSession, bool]:
+        """
+        Create a new session or update an existing one with partial information.
+
+        Args:
+            session_uuid: The UUID of the session
+            name: Optional name to update
+            email: Optional email to update
+            kwargs: Additional optional fields
+
+        Returns:
+            Tuple of (UserSession, bool) where bool indicates if session was created (True) or updated (False)
+        """
+        try:
+            with get_db_session() as db_session:
+                # Convert UUID
+                uuid_obj = uuid.UUID(session_uuid)
+
+                # Find existing session
+                existing_session = (
+                    db_session.query(UserSession)
+                    .filter(UserSession.uuid == uuid_obj)
+                    .first()
+                )
+
+                if existing_session:
+                    # Track whether we need to update
+                    needs_update = False
+
+                    # Update name if provided and different
+                    if name is not None and (
+                        not existing_session.name
+                        or existing_session.name != name.strip()
+                    ):
+                        existing_session.name = name.strip()
+                        needs_update = True
+
+                    # Update email if provided and different
+                    if email is not None and (
+                        not existing_session.email
+                        or existing_session.email != email.strip()
+                    ):
+                        existing_session.email = email.strip()
+                        needs_update = True
+
+                    # Update any additional fields
+                    for key, value in kwargs.items():
+                        if (
+                            hasattr(existing_session, key)
+                            and getattr(existing_session, key) != value
+                        ):
+                            setattr(existing_session, key, value)
+                            needs_update = True
+
+                    # Only commit if something actually changed
+                    if needs_update:
+                        db_session.add(existing_session)
+                        db_session.commit()
+                        db_session.refresh(existing_session)
+
+                    # Detach the object from the session to avoid binding issues
+                    db_session.expunge(existing_session)
+                    return existing_session, False  # Updated existing session
+
+                # Create new session if not exists
+                # Ensure name is not None since it's required
+                if not name or not name.strip():
+                    raise ValueError("Name is required and cannot be empty")
+
+                new_session = UserSession(
+                    uuid=uuid_obj,
+                    name=name.strip(),
+                    email=email.strip() if email and email.strip() else None,
+                    **kwargs,
+                )
+
+                db_session.add(new_session)
+                db_session.commit()
+                db_session.refresh(new_session)
+
+                # Detach the object from the session to avoid binding issues
+                db_session.expunge(new_session)
+                return new_session, True  # Created new session
+
+        except SQLAlchemyError as e:
+            if "db_session" in locals():
+                db_session.rollback()
+            raise ValueError(f"Database error: {str(e)}")

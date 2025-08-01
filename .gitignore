@@ -85,5 +85,8 @@ data/
 *.env
 *.env.*
 
+# Environment backup directory
+.env-backups/
+
 # Node js
 node_modules/

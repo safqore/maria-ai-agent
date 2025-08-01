@@ -62,12 +62,23 @@ export const SessionApi = {
       // Handle 409 (UUID collision) as a valid business response, not an error
       if (error instanceof ApiError && error.status === 409) {
         // Extract the response data from the error details
-        const errorDetails = error.details as any;
+        const errorDetails = error.details as Record<string, unknown>;
         return {
-          status: errorDetails?.status || 'collision',
-          uuid: errorDetails?.uuid || uuid,
-          message: errorDetails?.message || 'UUID already exists',
-          correlationId: errorDetails?.correlationId,
+          status: (errorDetails?.status as 'collision') || 'collision',
+          uuid: (errorDetails?.uuid as string) || uuid,
+          message: (errorDetails?.message as string) || 'Session already exists with complete data',
+          correlationId: errorDetails?.correlationId as string,
+        };
+      }
+
+      // Handle 400 (invalid/expired session) as a valid business response
+      if (error instanceof ApiError && error.status === 400) {
+        const errorDetails = error.details as Record<string, unknown>;
+        return {
+          status: (errorDetails?.status as 'invalid') || 'invalid',
+          uuid: null,
+          message: (errorDetails?.message as string) || 'Session invalid or expired',
+          correlationId: errorDetails?.correlationId as string,
         };
       }
 

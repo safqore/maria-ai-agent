@@ -17,10 +17,10 @@ def client():
         yield client
 
 
-@patch("app.services.session_service.SessionService.check_uuid_exists")
-def test_generate_uuid_success(mock_check_uuid_exists, client):
+@patch("app.repositories.user_session_repository.UserSessionRepository.exists")
+def test_generate_uuid_success(mock_exists, client):
     # Mock UUID existence check to always return False (no collision)
-    mock_check_uuid_exists.return_value = False
+    mock_exists.return_value = False
     response = client.post("/api/v1/generate-uuid")
     try:
         data = response.get_json()
@@ -28,14 +28,14 @@ def test_generate_uuid_success(mock_check_uuid_exists, client):
         print("Raw response:", response.get_data(as_text=True))
         raise
     assert isinstance(data, dict), f"Expected dict, got {type(data)}: {data}"
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert data["status"] == "success"
     assert data["uuid"]
     assert data["message"] == "Generated unique UUID"
 
 
-@patch("app.services.session_service.SessionService.check_uuid_exists")
-def test_validate_uuid_invalid(mock_check_uuid_exists, client):
+@patch("app.repositories.user_session_repository.UserSessionRepository.exists")
+def test_validate_uuid_invalid(mock_exists, client):
     response = client.post("/api/v1/validate-uuid", json={"uuid": "not-a-uuid"})
     data = response.get_json()
     assert response.status_code == 400
@@ -43,10 +43,10 @@ def test_validate_uuid_invalid(mock_check_uuid_exists, client):
     assert data["uuid"] is None
 
 
-@patch("app.services.session_service.SessionService.check_uuid_exists")
-def test_validate_uuid_success(mock_check_uuid_exists, client):
+@patch("app.repositories.user_session_repository.UserSessionRepository.exists")
+def test_validate_uuid_success(mock_exists, client):
     # Mock UUID existence check to return False (no collision)
-    mock_check_uuid_exists.return_value = False
+    mock_exists.return_value = False
     # Generate a new UUID and validate it (should be unique)
     gen_response = client.post("/api/v1/generate-uuid")
     try:
@@ -73,10 +73,10 @@ def test_validate_uuid_success(mock_check_uuid_exists, client):
 @pytest.mark.skip(
     reason="Rate limiting tests are unreliable with in-memory storage in test environments"
 )
-@patch("app.services.session_service.SessionService.check_uuid_exists")
-def test_rate_limit(mock_check_uuid_exists, client, app):
+@patch("app.repositories.user_session_repository.UserSessionRepository.exists")
+def test_rate_limit(mock_exists, client, app):
     # Mock UUID existence check to always return False (no collision)
-    mock_check_uuid_exists.return_value = False
+    mock_exists.return_value = False
 
     with app.app_context():
         # Enable rate limiting for this test
@@ -98,11 +98,11 @@ def test_rate_limit(mock_check_uuid_exists, client, app):
         # Make requests to trigger rate limiting
         # First request should succeed
         response1 = client.post("/api/v1/generate-uuid")
-        assert response1.status_code == 200
+        assert response1.status_code == 201
 
         # Second request should succeed
         response2 = client.post("/api/v1/generate-uuid")
-        assert response2.status_code == 200
+        assert response2.status_code == 201
 
         # Third request should be rate limited (if rate limiting is working)
         response3 = client.post("/api/v1/generate-uuid")

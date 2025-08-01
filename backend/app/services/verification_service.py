@@ -79,7 +79,16 @@ class VerificationService:
                 code = self.email_service.generate_verification_code()
                 expires_at = self.email_service.get_verification_expiry()
 
-                # Update session with new code
+                # Update session with email and new code
+                if not self.email_verification_repository.update_email(
+                    session_id, email
+                ):
+                    return {
+                        "status": "error",
+                        "error": "Failed to update email address",
+                        "nextTransition": "EMAIL_INPUT",
+                    }
+
                 if not self.email_verification_repository.update_verification_code(
                     session_id, code, expires_at
                 ):
@@ -268,6 +277,14 @@ class VerificationService:
                         "status": "success",
                         "message": "Email already verified",
                         "nextTransition": "CHAT_READY",
+                    }
+
+                # Check if email exists for resend
+                if not user_session.email:
+                    return {
+                        "status": "error",
+                        "error": "No email address found for this session. Please provide an email address first.",
+                        "nextTransition": "EMAIL_INPUT",
                     }
 
                 # Check rate limiting

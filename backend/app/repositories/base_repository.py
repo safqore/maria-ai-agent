@@ -279,15 +279,20 @@ class BaseRepository(Generic[T]):
         except SQLAlchemyError as e:
             raise ServerError(f"Database error in delete: {str(e)}")
 
-    def exists(self, id_value: Union[int, str, uuid.UUID]) -> bool:
+    def exists(
+        self, id_value: Union[int, str, uuid.UUID], require_data: bool = False
+    ) -> bool:
         """
         Check if a record with the given primary key exists.
 
         Args:
             id_value: The primary key value
+            require_data: If True, also check that the record has meaningful data.
+                         This is a base implementation that should be overridden
+                         by specific repositories to define what "meaningful data" means.
 
         Returns:
-            True if the record exists, False otherwise
+            True if the record exists (and has data if require_data=True), False otherwise
 
         Raises:
             ServerError: If a database error occurs

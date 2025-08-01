@@ -4,11 +4,12 @@ Test script for sending emails from noreply@safqore.com
 This script tests the Google Workspace email configuration using SMTP.
 """
 
-import smtplib
 import os
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import smtplib
 from datetime import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 from dotenv import load_dotenv
 
 # Load environment variables

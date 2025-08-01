@@ -36,12 +36,19 @@ export const emailVerificationApi = {
         },
       });
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Preserve original error message from API if available
-      if (error.response?.data) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (error.response as any)?.data
+      ) {
         throw {
           status: 'error',
-          error: error.response.data.error || 'Failed to send verification code',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          error: (error.response as any).data.error || 'Failed to send verification code',
           nextTransition: 'EMAIL_INPUT',
         };
       }
@@ -66,12 +73,19 @@ export const emailVerificationApi = {
         },
       });
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Preserve original error message from API if available
-      if (error.response?.data) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (error.response as any)?.data
+      ) {
         throw {
           status: 'error',
-          error: error.response.data.error || 'Failed to verify code',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          error: (error.response as any).data.error || 'Failed to verify code',
           nextTransition: 'CODE_INPUT',
         };
       }
@@ -100,12 +114,19 @@ export const emailVerificationApi = {
         }
       );
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Preserve original error message from API if available
-      if (error.response?.data) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (error.response as any)?.data
+      ) {
         throw {
           status: 'error',
-          error: error.response.data.error || 'Failed to resend verification code',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          error: (error.response as any).data.error || 'Failed to resend verification code',
           nextTransition: 'CODE_INPUT',
         };
       }

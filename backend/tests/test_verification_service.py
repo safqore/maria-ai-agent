@@ -2,12 +2,12 @@
 Tests for VerificationService functionality.
 """
 
-from unittest.mock import Mock, patch
 from datetime import datetime
+from unittest.mock import Mock, patch
 
 import pytest
-from app.services.verification_service import VerificationService
 from app.app_factory import create_app
+from app.services.verification_service import VerificationService
 
 
 class TestVerificationService:
@@ -36,6 +36,7 @@ class TestVerificationService:
         mock_user_session = Mock()
         mock_user_session.can_resend_verification = True
         mock_repo.return_value.get_by_session_id.return_value = mock_user_session
+        mock_repo.return_value.update_email.return_value = True
         mock_repo.return_value.update_verification_code.return_value = True
         mock_repo.return_value.increment_resend_attempts.return_value = True
 

@@ -143,6 +143,36 @@ class EmailVerificationRepository(BaseRepository[UserSession]):
             session.commit()
             return True
 
+    def update_email(self, session_id: str, email: str) -> bool:
+        """
+        Update email address for a session.
+
+        Args:
+            session_id: The session UUID as string
+            email: Email address to update
+
+        Returns:
+            True if updated successfully, False otherwise
+        """
+        try:
+            session_uuid = uuid.UUID(session_id)
+        except ValueError:
+            return False
+
+        with get_db_session() as session:
+            user_session = (
+                session.query(UserSession).filter_by(uuid=session_uuid).first()
+            )
+
+            if not user_session:
+                return False
+
+            user_session.email = email.strip()
+            user_session.updated_at = datetime.now(UTC)
+
+            session.commit()
+            return True
+
     def mark_email_verified(self, session_id: str) -> bool:
         """
         Mark email as verified for a session.

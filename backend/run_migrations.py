@@ -35,8 +35,9 @@ def get_migration_files() -> List[Path]:
     # Define migration files in the correct order
     migration_files = [
         "001_create_user_sessions.sql",
-        "002_create_email_verification.sql",
+        "002_create_email_verification_sqlite.sql",
         "003_add_performance_indexes.sql",
+        "004_allow_null_email.sql",
     ]
 
     # Check if all migration files exist
@@ -190,14 +191,24 @@ def main():
             sys.exit(1)
 
     elif is_sqlite:
-        print("Using SQLite - running ORM migrations...")
+        print("Using SQLite - running SQL migrations...")
 
-        # For SQLite, use ORM to create tables
-        try:
-            Base.metadata.create_all(bind=engine)
-            print("✅ SQLite tables created with ORM")
-        except Exception as e:
-            print(f"❌ SQLite table creation failed: {e}")
+        # Get migration files
+        migration_files = get_migration_files()
+
+        if not migration_files:
+            print("No migration files found!")
+            sys.exit(1)
+
+        # Run migrations
+        success = True
+        for migration_file in migration_files:
+            if not run_sql_migration(engine, migration_file):
+                success = False
+                break
+
+        if not success:
+            print("❌ Migration failed")
             sys.exit(1)
 
     else:

@@ -12,8 +12,7 @@ from contextlib import contextmanager
 from typing import Generator
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, declarative_base, sessionmaker
 from sqlalchemy.pool import NullPool, StaticPool
 
 # Global variable to store a custom database URL (used for testing)
@@ -30,37 +29,20 @@ def set_database_url(url):
 
 
 # Create SQLAlchemy engine from environment variables
-def get_database_url():
-    """Create database URL from environment variables or use custom URL."""
-    import traceback
-    import sys
+def get_database_url() -> str:
+    """
+    Get the database URL based on environment variables and context.
 
-    # Extensive logging and tracing
-    print("=" * 50)
-    print("DATABASE URL GENERATION TRACE")
-    print("=" * 50)
-
-    # Print full stack trace to understand call origin
-    print("FULL STACK TRACE:")
-    traceback.print_stack(file=sys.stdout)
-
-    print("\nENVIRONMENT VARIABLES:")
-    print(f"POSTGRES_USER: {os.getenv('POSTGRES_USER')}")
-    print(f"POSTGRES_DB: {os.getenv('POSTGRES_DB')}")
-    print(f"POSTGRES_HOST: {os.getenv('POSTGRES_HOST')}")
-    print(f"POSTGRES_PORT: {os.getenv('POSTGRES_PORT')}")
-    print(f"POSTGRES_PASSWORD: {'*' * len(os.getenv('POSTGRES_PASSWORD', ''))}")
-
-    # Debug output
-    pytest_test = os.getenv("PYTEST_CURRENT_TEST")
-    ci_env = os.getenv("CI")
-    print(f"\nDEBUG: PYTEST_CURRENT_TEST = {repr(pytest_test)}")
-    print(f"DEBUG: CI environment = {repr(ci_env)}")
-
+    Priority order:
+    1. Custom URL (for testing)
+    2. PostgreSQL environment variables
+    3. CI environment (always PostgreSQL)
+    4. Pytest environment (file-based SQLite)
+    5. Local development (SQLite)
+    """
     # If a custom URL has been set (for testing purposes), use that first
     global _custom_database_url
     if _custom_database_url is not None:
-        print(f"\nDEBUG: Using custom URL: {_custom_database_url}")
         return _custom_database_url
 
     # Determine the database name, with a consistent default
@@ -75,23 +57,16 @@ def get_database_url():
     # Prioritize environment variable, but use default if not set
     db_name = os.getenv("POSTGRES_DB", default_db_name)
 
-    print("\nCONSTRUCTED DATABASE PARAMETERS:")
-    print(f"User: {db_user}")
-    print(f"Host: {db_host}")
-    print(f"Port: {db_port}")
-    print(f"Database Name: {db_name}")
-
     if db_user and db_name:
         # Use PostgreSQL if environment variables are set
         postgres_url = (
             f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
         )
-        print(f"\nDEBUG: Using PostgreSQL URL: {postgres_url}")
         return postgres_url
 
     # If running in CI environment, always use PostgreSQL
+    ci_env = os.getenv("CI")
     if ci_env:
-        print("\nDEBUG: Using PostgreSQL for CI environment")
         db_user = os.getenv("POSTGRES_USER", "postgres")
         db_password = os.getenv("POSTGRES_PASSWORD", "postgres")
         db_host = os.getenv("POSTGRES_HOST", "localhost")
@@ -101,20 +76,17 @@ def get_database_url():
         postgres_url = (
             f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
         )
-        print(f"\nDEBUG: Using PostgreSQL URL: {postgres_url}")
         return postgres_url
 
     # If running under pytest locally, use file-based SQLite for sharing
+    pytest_test = os.getenv("PYTEST_CURRENT_TEST")
     if pytest_test:
-        print("\nDEBUG: Using file-based SQLite for local pytest")
-        # Use a temporary file that can be shared across connections
-        import tempfile
-
-        test_db_path = os.path.join(tempfile.gettempdir(), "maria_ai_test.db")
+        # Use the test database in the backend directory
+        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        test_db_path = os.path.join(backend_dir, "maria_ai_test.db")
         return f"sqlite:///{test_db_path}"
 
     # Fallback to SQLite for local development
-    print("\nDEBUG: Using SQLite for local development")
     return "sqlite:///maria_ai_dev.db"
 
 

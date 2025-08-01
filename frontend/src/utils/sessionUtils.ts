@@ -25,18 +25,17 @@ function isValidUUID(uuid: string | null): boolean {
  * @throws Error if unable to obtain a valid session UUID from backend.
  */
 export async function getOrCreateSessionUUID(): Promise<string> {
-  // Return existing pending request if one exists
   if (pendingUUIDRequest) {
     return pendingUUIDRequest;
   }
 
-  // Create new request and store it
   pendingUUIDRequest = (async () => {
     try {
       const isTest = process.env.NODE_ENV === 'test';
       const uuid = localStorage.getItem('session_uuid');
 
       if (!isValidUUID(uuid)) {
+        // No valid UUID - generate new one
         const genResp: UUIDResponse = await generateUUID();
         if (genResp.status === 'success' && genResp.uuid) {
           localStorage.setItem('session_uuid', genResp.uuid);
@@ -49,25 +48,18 @@ export async function getOrCreateSessionUUID(): Promise<string> {
         }
       }
 
-      // Skip validation in development if configured
       if (SKIP_UUID_VALIDATION_IN_DEV) {
         return uuid as string;
       }
 
+      // Validate existing UUID
       const valResp: UUIDResponse = await validateUUID(uuid as string);
+
       if (valResp.status === 'success') {
+        // UUID is valid and session is active - continue
         return uuid as string;
       } else if (valResp.status === 'collision') {
-        if (valResp.uuid) {
-          localStorage.setItem('session_uuid', valResp.uuid);
-          if (!isTest) {
-            window.location.reload();
-          }
-          return valResp.uuid;
-        } else {
-          throw new Error('Collision response missing new UUID');
-        }
-      } else if (valResp.status === 'invalid' || valResp.status === 'error') {
+        // Complete session exists - start new session
         localStorage.removeItem('session_uuid');
         const genResp: UUIDResponse = await generateUUID();
         if (genResp.status === 'success' && genResp.uuid) {
@@ -77,12 +69,23 @@ export async function getOrCreateSessionUUID(): Promise<string> {
           }
           return genResp.uuid;
         } else {
-          throw new Error(genResp.message || 'Failed to reset session UUID');
+          throw new Error(genResp.message || 'Failed to start new session');
+        }
+      } else {
+        // Invalid or expired - start new session
+        localStorage.removeItem('session_uuid');
+        const genResp: UUIDResponse = await generateUUID();
+        if (genResp.status === 'success' && genResp.uuid) {
+          localStorage.setItem('session_uuid', genResp.uuid);
+          if (!isTest) {
+            window.location.reload();
+          }
+          return genResp.uuid;
+        } else {
+          throw new Error(genResp.message || 'Failed to start new session');
         }
       }
-      throw new Error(valResp.message || 'Unknown error validating session UUID');
     } finally {
-      // Clear the pending request when done
       pendingUUIDRequest = null;
     }
   })();
