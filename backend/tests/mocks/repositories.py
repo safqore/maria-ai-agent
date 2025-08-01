@@ -81,6 +81,20 @@ class UserSessionRepository:
                         except Exception:
                             pass
 
+                # If we found a result, create a detached copy to avoid DetachedInstanceError
+                if result:
+                    # Create a new detached object with all the attributes
+                    detached_result = UserSession(
+                        uuid=str(result.uuid) if result.uuid else None,
+                        name=result.name,
+                        email=result.email,
+                        is_email_verified=result.is_email_verified,
+                        consent_user_data=result.consent_user_data,
+                        ip_address=result.ip_address,
+                        created_at=result.created_at,
+                        updated_at=result.updated_at,
+                    )
+                    return detached_result
                 return result
         except SQLAlchemyError as e:
             raise ServerError(f"Database error in get_by_uuid: {str(e)}")
@@ -195,9 +209,16 @@ class UserSessionRepository:
 
                 # Create a new UserSession object that's not attached to any session
                 # This prevents DetachedInstanceError when the session is closed
-                return UserSession(
+                detached_session = UserSession(
                     uuid=uuid_value, **{k: v for k, v in kwargs.items() if k != "uuid"}
                 )
+                
+                # Ensure all attributes are properly set on the detached object
+                for key, value in kwargs.items():
+                    if key != "uuid" and hasattr(detached_session, key):
+                        setattr(detached_session, key, value)
+                
+                return detached_session
         except SQLAlchemyError as e:
             raise ServerError(f"Database error in create: {str(e)}")
         except Exception as e:

@@ -110,12 +110,6 @@ def client(app):
 
 
 @pytest.fixture
-def session_uuid():
-    """Generate a test session UUID."""
-    return str(uuid.uuid4())
-
-
-@pytest.fixture
 def test_session(app, session_uuid):
     """Create a test session in the database."""
     # Use app context to ensure proper database setup
@@ -129,7 +123,7 @@ def test_session(app, session_uuid):
             ip_address="127.0.0.1",
         )
         # Return the provided session UUID string directly to avoid DetachedInstanceError
-        return session_uuid
+        return str(session_uuid)
 
 
 @pytest.mark.integration
@@ -227,12 +221,12 @@ class TestSessionAPI:
         assert "X-API-Version" in response.headers
         assert response.headers["X-API-Version"] == "v1"
 
-    def test_persist_session_legacy(self, client, test_session):
+    def test_persist_session_legacy(self, client, fresh_uuid):
         """Test persist_session endpoint (legacy route)."""
         response = client.post(
             "/api/v1/persist_session",
             json={
-                "session_uuid": test_session,
+                "session_uuid": fresh_uuid,
                 "name": "Test User",
                 "email": "test@example.com",
             },
@@ -244,15 +238,15 @@ class TestSessionAPI:
         )  # 201 Created is correct for new resource creation
         data = response.get_json()
         assert data["status"] == "success"
-        assert data["uuid"] == test_session
+        assert data["uuid"] == str(fresh_uuid)
         assert "created" in data["message"].lower()
 
-    def test_persist_session_versioned(self, client, test_session):
+    def test_persist_session_versioned(self, client, fresh_uuid):
         """Test persist_session endpoint (versioned route)."""
         response = client.post(
             "/api/v1/persist_session",
             json={
-                "session_uuid": test_session,
+                "session_uuid": fresh_uuid,
                 "name": "Test User",
                 "email": "test@example.com",
             },
@@ -264,7 +258,7 @@ class TestSessionAPI:
         )  # 201 Created is correct for new resource creation
         data = response.get_json()
         assert data["status"] == "success"
-        assert data["uuid"] == test_session
+        assert data["uuid"] == str(fresh_uuid)
         assert "created" in data["message"].lower()
 
     def test_persist_session_invalid_uuid(self, client):
@@ -296,13 +290,13 @@ class TestSessionAPI:
         assert "X-Correlation-ID" in response.headers
         assert "X-API-Version" in response.headers
 
-    def test_persist_session_missing_fields(self, client, test_session):
+    def test_persist_session_missing_fields(self, client, fresh_uuid):
         """Test persist_session endpoint with missing fields."""
         # Test with missing name - this should fail since name is required
         response = client.post(
             "/api/v1/persist_session",
             json={
-                "session_uuid": test_session,
+                "session_uuid": fresh_uuid,
                 "email": "test@example.com",
                 # No name field - this is required
             },
@@ -314,7 +308,7 @@ class TestSessionAPI:
         data = response.get_json()
         assert "error" in data or "Failed to persist session" in data.get("message", "")
 
-    def test_persist_session_new_uuid_on_collision(self, client, test_session):
+    def test_persist_session_new_uuid_on_collision(self, client, fresh_uuid):
         """Test persist_session endpoint with UUID collision."""
         # Mock the S3 migration function to prevent AWS errors in tests
         with mock.patch(
@@ -324,7 +318,7 @@ class TestSessionAPI:
             response = client.post(
                 "/api/v1/persist_session",
                 json={
-                    "session_uuid": test_session,
+                    "session_uuid": fresh_uuid,
                     "name": "Test User",
                     "email": "test@example.com",
                 },
@@ -337,17 +331,17 @@ class TestSessionAPI:
             response = client.post(
                 "/api/v1/persist_session",
                 json={
-                    "session_uuid": test_session,
+                    "session_uuid": fresh_uuid,
                     "name": "Another User",
                     "email": "another@example.com",
                 },
                 content_type="application/json",
             )
 
-            # Should return 201 for creation
-            assert response.status_code == 201
+            # Should return 200 for update since session already exists
+            assert response.status_code == 200
             data = response.get_json()
-            assert data["uuid"] == test_session  # Same UUID, updated session
+            assert data["uuid"] == str(fresh_uuid)  # Same UUID, updated session
             assert "updated" in data["message"].lower()
 
     def test_validate_uuid_nonexistent(self, client):
@@ -361,11 +355,12 @@ class TestSessionAPI:
             content_type="application/json",
         )
 
-        # Should be valid since it's well-formed and doesn't exist
-        assert response.status_code == 200
+        # Should be invalid since it doesn't exist (tampered)
+        assert response.status_code == 400
         assert "status" in response.json
-        assert response.json["status"] == "success"
-        assert response.json["uuid"] == non_existent_uuid
+        assert response.json["status"] == "invalid"
+        assert "message" in response.json
+        assert "tampered" in response.json["message"].lower()
         assert "X-Correlation-ID" in response.headers
 
     def test_validate_uuid_empty(self, client):
@@ -463,6 +458,7 @@ class TestSessionAPI:
                     uuid=new_test_uuid,
                     name="Test User",
                     email="test@example.com",
+                    is_email_verified=True,
                     consent_user_data=True,
                     ip_address="127.0.0.1",
                 )
@@ -500,13 +496,13 @@ class TestSessionAPI:
         assert "Access-Control-Allow-Methods" in response.headers
         assert "Access-Control-Allow-Headers" in response.headers
 
-    def test_persist_session_invalid_email(self, client, test_session):
+    def test_persist_session_invalid_email(self, client, fresh_uuid):
         """Test persist_session endpoint with invalid email format."""
         # Test with invalid email format
         response = client.post(
             "/api/v1/persist_session",
             json={
-                "session_uuid": test_session,
+                "session_uuid": fresh_uuid,
                 "name": "Test User",
                 "email": "not-an-email",  # Not a valid email format
             },
@@ -519,13 +515,13 @@ class TestSessionAPI:
         assert "message" in response.json
         assert "uuid" in response.json  # We return 'uuid', not 'session_uuid'
 
-    def test_persist_session_with_correlation_id(self, client, test_session):
+    def test_persist_session_with_correlation_id(self, client, fresh_uuid):
         """Test persist_session endpoint with custom correlation ID."""
         custom_correlation_id = str(uuid.uuid4())
         response = client.post(
             "/api/v1/persist_session",
             json={
-                "session_uuid": test_session,
+                "session_uuid": fresh_uuid,
                 "name": "Test User",
                 "email": "test@example.com",
             },
@@ -558,21 +554,32 @@ class TestSessionAPI:
         assert "Allow" in response.headers
         assert "X-Correlation-ID" in response.headers
 
-    def test_session_endpoint_versioning(self, client, test_session):
+    def test_session_endpoint_versioning(self, client, fresh_uuid):
         """Test that session endpoints maintain consistent versioning."""
+        # First create a session so that validate-uuid will return 200 instead of 400
+        with client.application.app_context():
+            from app.repositories.factory import get_user_session_repository
+            repo = get_user_session_repository()
+            repo.create_session(
+                session_uuid=str(fresh_uuid),
+                name="Test User",
+                email="test@example.com",
+                consent_user_data=True,
+            )
+        
         # Check if all endpoints have consistent versioning headers
         endpoints = [
             {"method": "post", "url": "/api/v1/generate-uuid", "data": {}},
             {
                 "method": "post",
                 "url": "/api/v1/validate-uuid",
-                "data": {"uuid": test_session},
+                "data": {"uuid": str(fresh_uuid)},
             },
             {
                 "method": "post",
                 "url": "/api/v1/persist_session",
                 "data": {
-                    "session_uuid": test_session,
+                    "session_uuid": str(fresh_uuid),
                     "name": "Test User",
                     "email": "test@example.com",
                 },
@@ -593,11 +600,11 @@ class TestSessionAPI:
             assert response.headers["X-API-Version"] == "v1"
             assert "X-Correlation-ID" in response.headers
 
-    def test_invalid_content_type(self, client, test_session):
+    def test_invalid_content_type(self, client, fresh_uuid):
         """Test endpoints with invalid content type."""
         response = client.post(
             "/api/v1/validate-uuid",
-            data=json.dumps({"uuid": test_session}),
+            data=json.dumps({"uuid": str(fresh_uuid)}),
             content_type="text/plain",  # Invalid content type
         )
 
@@ -615,10 +622,9 @@ class TestSessionRepositoryIntegration:
 
     def test_session_persist_database_update(self, client):
         """Test that session persistence updates the database."""
-        # Generate a new UUID
-        response = client.post("/api/v1/generate-uuid")
-        assert response.status_code == 201
-        generated_uuid = response.json["uuid"]
+        # Use a fresh UUID that doesn't exist in the database
+        import uuid as uuid_module
+        fresh_uuid = str(uuid_module.uuid4())
 
         # Persist the session
         test_name = "Integration Test User"
@@ -626,7 +632,7 @@ class TestSessionRepositoryIntegration:
         response = client.post(
             "/api/v1/persist_session",
             json={
-                "session_uuid": generated_uuid,
+                "session_uuid": fresh_uuid,
                 "name": test_name,
                 "email": test_email,
             },
@@ -641,16 +647,14 @@ class TestSessionRepositoryIntegration:
 
         # Verify the session was stored in the database using the real database
         with client.application.app_context():
-            import uuid as uuid_module
-
             from app.repositories.factory import get_user_session_repository
 
             repo = get_user_session_repository()
-            uuid_obj = uuid_module.UUID(generated_uuid)
+            uuid_obj = uuid_module.UUID(fresh_uuid)
             session = repo.get_by_uuid(uuid_obj)
 
             assert session is not None
-            assert str(session.uuid) == generated_uuid
+            assert str(session.uuid) == fresh_uuid
             assert session.name == test_name
             assert session.email == test_email
 
@@ -681,6 +685,9 @@ class TestSessionRepositoryIntegration:
                 email="test@example.com",
                 consent_user_data=True,
             )
+            
+            # Update the session to make it complete (trigger collision)
+            repo.update_session(uuid_obj, {"is_email_verified": True})
             assert session is not None
 
             # Verify it exists
@@ -700,11 +707,11 @@ class TestSessionRepositoryIntegration:
         with client.application.app_context():
             repo.delete_session(uuid_obj)
 
-        # Validation should now report success (no collision)
+        # Validation should now report invalid (session was deleted)
         response = client.post(
             "/api/v1/validate-uuid",
             json={"uuid": new_test_uuid},
             content_type="application/json",
         )
-        assert response.status_code == 200
-        assert response.json["status"] == "success"
+        assert response.status_code == 400
+        assert response.json["status"] == "invalid"

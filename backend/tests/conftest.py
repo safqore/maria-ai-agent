@@ -289,3 +289,14 @@ def session_uuid(client):
         print(f"DEBUG: Error cleaning up test session: {e}")
         # If deletion fails, that's okay - we tried to clean up
         pass
+
+
+@pytest.fixture
+def fresh_uuid():
+    """
+    Generate a fresh UUID without creating a session.
+
+    This fixture returns a UUID that doesn't exist in the database,
+    suitable for tests that want to create new sessions.
+    """
+    return uuid.uuid4()
