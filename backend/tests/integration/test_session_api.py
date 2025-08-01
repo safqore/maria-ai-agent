@@ -559,6 +559,7 @@ class TestSessionAPI:
         # First create a session so that validate-uuid will return 200 instead of 400
         with client.application.app_context():
             from app.repositories.factory import get_user_session_repository
+
             repo = get_user_session_repository()
             repo.create_session(
                 session_uuid=str(fresh_uuid),
@@ -566,7 +567,7 @@ class TestSessionAPI:
                 email="test@example.com",
                 consent_user_data=True,
             )
-        
+
         # Check if all endpoints have consistent versioning headers
         endpoints = [
             {"method": "post", "url": "/api/v1/generate-uuid", "data": {}},
@@ -624,6 +625,7 @@ class TestSessionRepositoryIntegration:
         """Test that session persistence updates the database."""
         # Use a fresh UUID that doesn't exist in the database
         import uuid as uuid_module
+
         fresh_uuid = str(uuid_module.uuid4())
 
         # Persist the session
@@ -685,7 +687,7 @@ class TestSessionRepositoryIntegration:
                 email="test@example.com",
                 consent_user_data=True,
             )
-            
+
             # Update the session to make it complete (trigger collision)
             repo.update_session(uuid_obj, {"is_email_verified": True})
             assert session is not None

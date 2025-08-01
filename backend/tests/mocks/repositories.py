@@ -212,12 +212,12 @@ class UserSessionRepository:
                 detached_session = UserSession(
                     uuid=uuid_value, **{k: v for k, v in kwargs.items() if k != "uuid"}
                 )
-                
+
                 # Ensure all attributes are properly set on the detached object
                 for key, value in kwargs.items():
                     if key != "uuid" and hasattr(detached_session, key):
                         setattr(detached_session, key, value)
-                
+
                 return detached_session
         except SQLAlchemyError as e:
             raise ServerError(f"Database error in create: {str(e)}")
