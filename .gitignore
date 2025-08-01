@@ -81,6 +81,11 @@ envs/
 # Data files
 data/
 
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
+
 # Variable files
 *.env
 *.env.*
