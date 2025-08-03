@@ -99,17 +99,18 @@ describe('SessionApi', () => {
   });
 
   describe('persistSession', () => {
-    it('should make a POST request with the correct payload', async () => {
+    it('should make a POST request with the correct payload when name and email provided', async () => {
       // Setup mock API client response
       (post as jest.Mock).mockResolvedValueOnce(mockApiResponse);
 
       // Call the API method
-      const response = await SessionApi.persistSession('test-uuid', true);
+      const response = await SessionApi.persistSession('test-uuid', 'John Doe', 'john@example.com');
 
       // Assertions
       expect(post).toHaveBeenCalledWith('persist_session', {
-        uuid: 'test-uuid',
-        consent_user_data: true,
+        session_uuid: 'test-uuid',
+        name: 'John Doe',
+        email: 'john@example.com',
       });
       expect(response).toEqual({
         ...mockUUIDResponse,
@@ -117,17 +118,18 @@ describe('SessionApi', () => {
       });
     });
 
-    it('should use default consentUserData value when not provided', async () => {
+    it('should use empty strings for name and email when not provided', async () => {
       // Setup mock API client response
       (post as jest.Mock).mockResolvedValueOnce(mockApiResponse);
 
-      // Call the API method without the consentUserData parameter
+      // Call the API method without name and email parameters
       await SessionApi.persistSession('test-uuid');
 
       // Assertions
       expect(post).toHaveBeenCalledWith('persist_session', {
-        uuid: 'test-uuid',
-        consent_user_data: false, // Default value should be false
+        session_uuid: 'test-uuid',
+        name: '',
+        email: '',
       });
     });
   });

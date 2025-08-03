@@ -16,7 +16,7 @@
     "build": "react-scripts build",
     "tsc": "tsc",
     "test": "jest",
-    "lint": "eslint --ext .ts,.tsx src/",
+    "lint": "eslint --ext .ts,.tsx src/ --max-warnings 100",
     "lint:fix": "eslint --fix --ext .ts,.tsx src/",
     "lint:fix-legacy": "eslint --fix --ext .ts,.tsx src/ --legacy-peer-deps",
     "format": "prettier --write \"src/**/*.{ts,tsx}\""

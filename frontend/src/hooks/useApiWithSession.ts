@@ -11,7 +11,7 @@ import { useSessionManager } from './useSessionManager';
 /**
  * Options for the useApiWithSession hook
  */
-interface UseApiWithSessionOptions<D = any> {
+interface UseApiWithSessionOptions<D = unknown> {
   /** Whether to execute the request immediately */
   immediate?: boolean;
   /** Initial data to use before the request completes */
@@ -40,7 +40,7 @@ interface UseApiWithSessionOptions<D = any> {
  * };
  * ```
  */
-export function useApiWithSession<T, P extends any[]>(
+export function useApiWithSession<T, P extends unknown[]>(
   apiFunction: (...args: P) => Promise<T>,
   options: UseApiWithSessionOptions<T> = {}
 ) {
@@ -55,19 +55,19 @@ export function useApiWithSession<T, P extends any[]>(
       if (lastArg && typeof lastArg === 'object' && !Array.isArray(lastArg)) {
         // If the last argument is an options object, add headers to it
         const sessionHeaders = getSessionHeaders();
-        const existingHeaders = (lastArg as any).headers || {};
+        const existingHeaders = (lastArg as Record<string, unknown>).headers || {};
 
         // Create a modified version of the last argument
         const modifiedLastArg = {
           ...lastArg,
           headers: {
-            ...existingHeaders,
+            ...(existingHeaders as Record<string, string>),
             ...sessionHeaders,
           },
         };
 
         // Replace the last argument with the modified version
-        args[args.length - 1] = modifiedLastArg as any;
+        args[args.length - 1] = modifiedLastArg as P[number];
       }
 
       return apiFunction(...args);

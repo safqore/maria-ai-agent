@@ -12,13 +12,22 @@ Architecture Note:
 - Provides clear transaction scope for atomic operations
 """
 
+import logging
 import uuid
+from datetime import UTC, datetime, timedelta
 from typing import Any, Dict, Optional, Tuple
 
 from app.database.transaction import TransactionContext
+from app.models import UserSession
 from app.repositories.factory import get_user_session_repository
 from app.utils.audit_utils import log_audit_event
 from app.utils.s3_utils import migrate_s3_files
+
+# Configure more detailed logging
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 
 class SessionService:
@@ -54,25 +63,64 @@ class SessionService:
         except ValueError:
             return False
 
-    def check_uuid_exists(self, session_uuid: str) -> bool:
+    def cleanup_expired_sessions(self) -> int:
         """
-        Check if a UUID exists in the database.
-
-        Args:
-            session_uuid: The UUID to check
+        Clean up sessions that are older than 10 minutes and incomplete.
 
         Returns:
-            bool: True if the UUID exists, False otherwise
+            int: Number of sessions cleaned up
         """
-        uuid_obj = uuid.UUID(session_uuid)
-        return self.user_session_repository.exists(uuid_obj)
+        cutoff_time = datetime.now(UTC) - timedelta(minutes=10)
+
+        try:
+            with TransactionContext() as session:
+                # Find expired incomplete sessions
+                expired_sessions = (
+                    session.query(UserSession)
+                    .filter(
+                        UserSession.created_at < cutoff_time,
+                        (
+                            (UserSession.name.is_(None) | (UserSession.name == ""))
+                            | (UserSession.email.is_(None) | (UserSession.email == ""))
+                            | (UserSession.is_email_verified.is_(False))
+                        ),
+                    )
+                    .all()
+                )
+
+                count = len(expired_sessions)
+
+                # Delete expired sessions
+                for expired_session in expired_sessions:
+                    session.delete(expired_session)
+
+                # Transaction will be committed automatically when context exits
+
+                if count > 0:
+                    logger.info(f"Cleaned up {count} expired sessions")
+                    log_audit_event(
+                        "expired_sessions_cleaned",
+                        details={
+                            "count": count,
+                            "cutoff_time": cutoff_time.isoformat(),
+                        },
+                    )
+
+                return count
+
+        except Exception as e:
+            logger.error(f"Error cleaning up expired sessions: {e}")
+            return 0
 
     def validate_uuid(self, session_uuid: str) -> Tuple[Dict[str, Any], int]:
         """
-        Validate a session UUID.
+        Validate a session UUID with 10-minute expiration rule.
 
-        This method validates the format of a UUID and checks if it exists
-        in the database.
+        Business Logic:
+        - UUID exists with complete data → COLLISION (start new session)
+        - UUID exists with incomplete data + < 10 minutes → SUCCESS (continue)
+        - UUID exists with incomplete data + > 10 minutes → INVALID (start new session)
+        - UUID doesn't exist → INVALID (tampered)
 
         Args:
             session_uuid: String containing the UUID to validate
@@ -82,6 +130,10 @@ class SessionService:
                 response_data: Dictionary with validation result
                 status_code: HTTP status code
         """
+        # Clean up expired sessions first
+        self.cleanup_expired_sessions()
+
+        # Validate UUID format first
         if not session_uuid or not self.is_valid_uuid(session_uuid):
             log_audit_event(
                 "uuid_validation_failed",
@@ -95,186 +147,292 @@ class SessionService:
                 "details": {"reason": "invalid format"},
             }, 400
 
-        exists = self.check_uuid_exists(session_uuid)
+        # Log the validation attempt
+        log_audit_event(
+            "uuid_validation_attempt",
+            user_uuid=session_uuid,
+            details={"validation_type": "format_and_session_state"},
+        )
 
-        if exists:
+        # Get session from database
+        try:
+            session = self.user_session_repository.get(session_uuid)
+        except Exception as e:
+            logger.error(f"Database error during UUID validation: {e}")
+            return {
+                "status": "error",
+                "uuid": None,
+                "message": "Database error",
+                "details": {"reason": "database_error"},
+            }, 500
+
+        if not session:
+            # UUID doesn't exist - tampered
+            log_audit_event(
+                "uuid_validation_tampered",
+                user_uuid=session_uuid,
+                details={"reason": "not_found"},
+            )
+            return {
+                "status": "invalid",
+                "uuid": None,
+                "message": "UUID not found - session may be tampered",
+                "details": {"reason": "not_found"},
+            }, 400
+
+        # Check if session is complete (has name + email + verified email)
+        is_complete = session.name and session.email and session.is_email_verified
+
+        if is_complete:
+            # Session is complete - this is a collision
             log_audit_event(
                 "uuid_validation_collision",
                 user_uuid=session_uuid,
-                details={"reason": "UUID already exists"},
+                details={"reason": "complete_session"},
             )
             return {
                 "status": "collision",
                 "uuid": session_uuid,
-                "message": "UUID already exists",
-                "details": {"reason": "UUID already exists"},
+                "message": "Session already exists with complete data",
+                "details": {"reason": "complete_session"},
             }, 409
 
-        log_audit_event("uuid_validation_success", user_uuid=session_uuid)
+        # Check if session is expired (> 10 minutes)
+        # Handle both naive and timezone-aware datetimes
+        if session.created_at.tzinfo is None:
+            # If created_at is naive, assume it's UTC
+            session_age = datetime.now(UTC) - session.created_at.replace(tzinfo=UTC)
+        else:
+            # If created_at is timezone-aware, use it directly
+            session_age = datetime.now(UTC) - session.created_at
+
+        if session_age > timedelta(minutes=10):
+            # Session is expired - invalid
+            log_audit_event(
+                "uuid_validation_expired",
+                user_uuid=session_uuid,
+                details={
+                    "reason": "expired",
+                    "age_minutes": session_age.total_seconds() / 60,
+                },
+            )
+            return {
+                "status": "invalid",
+                "uuid": None,
+                "message": "Session expired - please start new session",
+                "details": {
+                    "reason": "expired",
+                    "age_minutes": session_age.total_seconds() / 60,
+                },
+            }, 400
+
+        # Session is valid and active (< 10 minutes, incomplete)
+        log_audit_event(
+            "uuid_validation_success",
+            user_uuid=session_uuid,
+            details={
+                "session_state": "active_incomplete",
+                "age_minutes": session_age.total_seconds() / 60,
+            },
+        )
         return {
             "status": "success",
             "uuid": session_uuid,
-            "message": "UUID is valid and unique",
-            "details": {},
+            "message": "UUID is valid and session is active",
+            "details": {
+                "session_state": "active_incomplete",
+                "age_minutes": session_age.total_seconds() / 60,
+            },
         }, 200
 
     def generate_uuid(self) -> Tuple[Dict[str, Any], int]:
         """
-        Generate a unique UUID.
+        Generate a unique UUID and store it in the database immediately.
 
-        This method attempts to generate a unique UUID and checks for
-        collisions with existing UUIDs in the database.
+        This method generates a unique UUID and stores it in the database
+        immediately upon generation for tamper detection.
 
         Returns:
             tuple: (response_data, status_code)
                 response_data: Dictionary with generation result
                 status_code: HTTP status code
         """
-        attempts = 0
-        max_attempts = 3
-        new_uuid = None
+        max_attempts = 10  # Reasonable limit for UUID generation
 
-        while attempts < max_attempts:
-            candidate = str(uuid.uuid4())
-            if not self.check_uuid_exists(candidate):
-                new_uuid = candidate
-                break
-            attempts += 1
+        for attempt in range(max_attempts):
+            # Generate a new UUID
+            new_uuid = str(uuid.uuid4())
+            logger.debug(f"Generated UUID attempt {attempt + 1}: {new_uuid}")
 
-        if new_uuid:
-            log_audit_event("uuid_generation_success", user_uuid=new_uuid)
-            return {
-                "status": "success",
-                "uuid": new_uuid,
-                "message": "Generated unique UUID",
-                "details": {},
-            }, 200
-        else:
-            log_audit_event(
-                "uuid_generation_failed",
-                details={"reason": "Could not generate unique UUID after 3 attempts"},
-            )
-            return {
-                "status": "error",
-                "uuid": None,
-                "message": "Could not generate unique UUID",
-                "details": {
-                    "reason": "Could not generate unique UUID after 3 attempts"
-                },
-            }, 500
+            # Check if this UUID already exists in the database
+            exists = self.user_session_repository.exists(new_uuid, require_data=False)
+
+            if not exists:
+                # UUID is unique - STORE IT IN DATABASE IMMEDIATELY
+                try:
+                    with TransactionContext() as session:
+                        user_session = UserSession(
+                            uuid=uuid.UUID(new_uuid),  # Convert string to UUID object
+                            name="",  # Use empty string as placeholder - will be updated later
+                            email=None,
+                            is_email_verified=False,
+                            created_at=datetime.now(UTC),
+                            updated_at=datetime.now(UTC),
+                        )
+                        session.add(user_session)
+                        # Transaction will be committed automatically when context exits
+
+                    log_audit_event("uuid_generation_success", user_uuid=new_uuid)
+                    return {
+                        "status": "success",
+                        "uuid": new_uuid,
+                        "message": "Generated unique UUID",
+                        "details": {"attempt": attempt + 1},
+                    }, 201  # 201 Created for new resource
+                except Exception as e:
+                    logger.error(f"Failed to store generated UUID: {e}")
+                    log_audit_event(
+                        "uuid_generation_storage_failed",
+                        user_uuid=new_uuid,
+                        details={"error": str(e), "attempt": attempt + 1},
+                    )
+                    continue
+            else:
+                # UUID exists, try again
+                log_audit_event(
+                    "uuid_generation_collision",
+                    user_uuid=new_uuid,
+                    details={"attempt": attempt + 1, "reason": "UUID already exists"},
+                )
+                continue
+
+        # If we get here, we couldn't generate a unique UUID after max attempts
+        log_audit_event(
+            "uuid_generation_failed",
+            details={
+                "reason": f"Could not generate unique UUID after {max_attempts} attempts"
+            },
+        )
+        return {
+            "status": "error",
+            "uuid": None,
+            "message": f"Could not generate unique UUID after {max_attempts} attempts",
+            "details": {
+                "reason": f"Could not generate unique UUID after {max_attempts} attempts"
+            },
+        }, 500
 
     def persist_session(
-        self, session_uuid: str, name: str, email: str
+        self, session_uuid: str, name: Optional[str] = None, email: Optional[str] = None
     ) -> Tuple[Dict[str, Any], int]:
         """
-        Persist a user session with name, email, and session_uuid.
-
-        This method checks UUID uniqueness in the database. If there is a collision,
-        it generates a new UUID and migrates files in S3.
-
-        Uses explicit transaction boundary for atomic session creation.
+        Persist a session with robust UUID collision handling.
 
         Args:
-            session_uuid: The session UUID
-            name: The user's name
-            email: The user's email
+            session_uuid: The UUID to use for the session
+            name: Optional name for the session (required for new sessions)
+            email: Optional email for the session
 
         Returns:
-            tuple: (response_data, status_code)
-                response_data: Dictionary with persistence result
-                status_code: HTTP status code
-
-        Status Codes:
-            201: Created - New session with original UUID
-            200: OK - Session created with new UUID due to collision
-            400: Bad Request - Invalid input
-            500: Internal Server Error - Database/server error
+            Tuple of (response dictionary, status code)
+            - 201: New session created
+            - 200: Existing session updated
+            - 400: Invalid input
+            - 500: Server error
         """
-        if not session_uuid or not self.is_valid_uuid(session_uuid):
-            return {
-                "error": "Invalid or missing session UUID",
-                "code": "invalid session",
-            }, 400
+        max_collision_attempts = 5
+        current_uuid = session_uuid
 
-        try:
-            # Use explicit transaction for atomic session creation
-            with TransactionContext():
-                # Convert string to UUID object for repository calls
-                uuid_obj = uuid.UUID(session_uuid)
+        for attempt in range(max_collision_attempts):
+            try:
+                # Check if session already exists
+                existing_session = self.user_session_repository.get(current_uuid)
 
-                # Track if there was a collision
-                had_collision = False
+                # For new sessions, name is required
+                if not existing_session and (not name or not name.strip()):
+                    raise ValueError(
+                        "Name is required for new sessions and cannot be empty"
+                    )
 
-                # Check if session UUID already exists
-                if self.user_session_repository.exists(uuid_obj):
-                    # Generate new UUID and migrate S3 files
-                    new_uuid = str(uuid.uuid4())
-                    migrate_s3_files(session_uuid, new_uuid)
-                    session_uuid = new_uuid  # Use the new UUID for session creation
-                    had_collision = True
+                # Email validation is optional - if provided, it must not be empty
+                if email and not email.strip():
+                    email = None
 
-                # Create the user session within the transaction
-                user_session = self.user_session_repository.create_session(
-                    session_uuid=session_uuid, name=name, email=email
-                )
+                # Attempt to create or update session
+                try:
+                    user_session, was_created = (
+                        self.user_session_repository.create_or_update_session(
+                            current_uuid, name=name, email=email
+                        )
+                    )
 
+                    # Log successful persistence
+                    log_audit_event(
+                        "session_persisted",
+                        user_uuid=str(user_session.uuid),
+                        details={
+                            "name": name,
+                            "email": email,
+                            "attempt": attempt,
+                            "was_created": was_created,
+                        },
+                    )
+
+                    # Return appropriate status code based on whether session was created or updated
+                    if was_created:
+                        return {
+                            "status": "success",
+                            "uuid": str(user_session.uuid),
+                            "message": "Session created successfully",
+                            "details": {"attempt": attempt, "action": "created"},
+                        }, 201
+                    else:
+                        return {
+                            "status": "success",
+                            "uuid": str(user_session.uuid),
+                            "message": "Session updated successfully",
+                            "details": {"attempt": attempt, "action": "updated"},
+                        }, 200
+
+                except ValueError as ve:
+                    # If a collision or validation error occurs, try generating a new UUID
+                    current_uuid = str(uuid.uuid4())
+                    log_audit_event(
+                        "uuid_collision_retry",
+                        user_uuid=current_uuid,
+                        details={
+                            "original_uuid": session_uuid,
+                            "attempt": attempt,
+                            "error": str(ve),
+                        },
+                    )
+                    continue
+
+            except Exception as e:
+                # Log any unexpected errors
                 log_audit_event(
-                    "session_persisted",
-                    user_uuid=str(user_session.uuid),
-                    details={
-                        "name": name,
-                        "email": email,
-                        "had_collision": had_collision,
-                    },
+                    "session_persistence_fatal_error",
+                    details={"error": str(e), "uuid": current_uuid, "attempt": attempt},
                 )
+                return {
+                    "status": "error",
+                    "message": "Failed to persist session",
+                    "details": {"error": str(e), "attempt": attempt},
+                }, 500
 
-                # Return different status codes based on collision
-                status_code = 200 if had_collision else 201
-                message = (
-                    "UUID collision, new UUID assigned"
-                    if had_collision
-                    else "Session created successfully"
-                )
-
-                # Structure response with consistent "uuid" field plus collision-specific fields
-                if had_collision:
-                    return {
-                        "message": message,
-                        "uuid": str(
-                            user_session.uuid
-                        ),  # Consistent field for all responses
-                        "new_uuid": str(
-                            user_session.uuid
-                        ),  # Specific field for collision tests
-                        "had_collision": had_collision,
-                        "user_data": {
-                            "name": user_session.name,
-                            "email": user_session.email,
-                        },
-                    }, status_code
-                else:
-                    return {
-                        "message": message,
-                        "uuid": str(
-                            user_session.uuid
-                        ),  # Consistent field for all responses
-                        "session_uuid": str(
-                            user_session.uuid
-                        ),  # Specific field for normal tests
-                        "had_collision": had_collision,
-                        "user_data": {
-                            "name": user_session.name,
-                            "email": user_session.email,
-                        },
-                    }, status_code
-
-        except Exception as e:
-            log_audit_event(
-                "session_persistence_failed",
-                user_uuid=session_uuid,
-                details={"error": str(e), "name": name, "email": email},
-            )
-            return {
-                "error": "Failed to create session",
-                "details": str(e),
-            }, 500
+        # If all attempts fail
+        log_audit_event(
+            "session_persistence_max_attempts_exceeded",
+            details={
+                "original_uuid": session_uuid,
+                "max_attempts": max_collision_attempts,
+            },
+        )
+        return {
+            "status": "error",
+            "message": "Could not persist session after multiple attempts",
+            "details": {
+                "original_uuid": session_uuid,
+                "max_attempts": max_collision_attempts,
+            },
+        }, 500

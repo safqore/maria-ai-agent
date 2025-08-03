@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { createStateMachine, States, Transitions, StateMachine } from '../state/FiniteStateMachine';
 import { Message } from '../utils/chatUtils';
+import { emailVerificationApi } from '../api/emailVerificationApi';
 
 interface ChatStateMachineOptions {
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   setIsInputDisabled: React.Dispatch<React.SetStateAction<boolean>>;
   setIsButtonGroupVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  sessionUUID?: string;
+  setUserName?: (name: string) => void;
+  fsm?: StateMachine; // Accept FSM as parameter
 }
 
 const useChatStateMachine = ({
@@ -14,105 +18,59 @@ const useChatStateMachine = ({
   setMessages,
   setIsInputDisabled,
   setIsButtonGroupVisible,
+  sessionUUID,
+  setUserName,
+  fsm,
 }: ChatStateMachineOptions) => {
-  console.log('useChatStateMachine initialized');
-  // fsm is used but its setter is not needed in current implementation
-  const [fsm] = useState<StateMachine>(createStateMachine());
-  // userName state is declared for future use but not currently used
-  const [, setUserName] = useState<string>('');
-
-  // Initialize state machine when welcome message completes typing
-  useEffect(() => {
-    if (messages.length > 0 && !messages[0].isTyping && messages[0].id === 0) {
-      console.log('Welcome message complete, transitioning to USR_INIT_OPTIONS');
-      // Transition to initial options state when welcome message is done typing
-      fsm.transition(Transitions.WELCOME_MSG_COMPLETE);
-      // Make sure buttons are visible
-      setIsButtonGroupVisible(true);
-      // Enable input
-      setIsInputDisabled(false);
-    }
-  }, [messages, fsm, setIsButtonGroupVisible, setIsInputDisabled]);
+  // Use provided FSM or create a new one if not provided
+  const defaultStateMachine = React.useMemo(() => createStateMachine(), []);
+  const stateMachine = fsm || defaultStateMachine;
 
   const typingCompleteHandler = (messageId: number) => {
     setMessages(prevMessages =>
       prevMessages.map(msg => (msg.id === messageId ? { ...msg, isTyping: false } : msg))
     );
-
-    // When welcome message completes
-    if (messageId === 0) {
-      fsm.transition(Transitions.WELCOME_MSG_COMPLETE);
-      setIsInputDisabled(false);
-      setIsButtonGroupVisible(true);
-    } else {
-      setIsInputDisabled(false);
-    }
-
-    if (fsm.getState() === States.OPPTYS_EXIST_MSG && messageId === messages.length - 1) {
-      fsm.transition(Transitions.OPPTYS_EXIST_MSG_COMPLETE);
-      setIsButtonGroupVisible(true);
-    }
-
-    if (fsm.getState() === States.ENGAGE_USR_AGAIN && messageId === messages.length - 1) {
-      setIsButtonGroupVisible(true);
-    }
-
-    if (fsm.getState() === States.UPLOAD_DOCS_MSG && messageId === messages.length - 1) {
-      fsm.transition(Transitions.UPLOAD_DOCS_MSG_COMPLETE);
-    }
-
-    // Always ensure buttons are visible in relevant states
-    if (fsm.getState() === States.USR_INIT_OPTIONS || fsm.getState() === States.ENGAGE_USR_AGAIN) {
-      setIsButtonGroupVisible(true);
-    }
+    setIsInputDisabled(false);
   };
 
   const buttonClickHandler = (response: string) => {
-    console.log('Button clicked:', response);
-    const displayValue = fsm.getResponseDisplayValue(response) || response;
-    const userMessage: Message = {
-      text: displayValue,
-      isUser: true,
-      isTyping: false,
-      id: messages.length,
-    };
-    setMessages([...messages, userMessage]);
-
-    // Hide the button group after clicking any button
-    setIsButtonGroupVisible(false);
-
-    // We don't have message buttons anymore, so no need to filter
-
-    if (
-      (fsm.canTransition(Transitions.YES_CLICKED) && response === 'YES_CLICKED') ||
-      (fsm.canTransition(Transitions.LETS_GO_CLICKED) && response === 'LETS_GO_CLICKED')
-    ) {
-      fsm.transition(
-        response === 'YES_CLICKED' ? Transitions.YES_CLICKED : Transitions.LETS_GO_CLICKED
-      );
+    if (stateMachine.canTransition(Transitions.YES_CLICKED) && response === 'YES_CLICKED') {
+      stateMachine.transition(Transitions.YES_CLICKED);
       const botMessage: Message = {
-        text: 'Absolutely! Let’s get started. First things first — what’s your name?',
+        text: "Absolutely! Let's get started. First things first — what's your name?",
         isUser: false,
         isTyping: true,
         id: messages.length + 1,
       };
       setMessages(prevMessages => [...prevMessages, botMessage]);
-    } else if (fsm.canTransition(Transitions.NO_CLICKED) && response === 'NO_CLICKED') {
-      fsm.transition(Transitions.NO_CLICKED);
+    } else if (stateMachine.canTransition(Transitions.NO_CLICKED) && response === 'NO_CLICKED') {
+      stateMachine.transition(Transitions.NO_CLICKED);
       const botMessage: Message = {
-        text: '💡 Psst… Great opportunities start with a “yes.” Change your mind? Click “Let’s Go” anytime!',
+        text: 'I understand! But I think there are some great opportunities we could explore together. Would you like to hear about them?',
         isUser: false,
         isTyping: true,
         id: messages.length + 1,
       };
       setMessages(prevMessages => [...prevMessages, botMessage]);
     } else if (
-      fsm.canTransition(Transitions.MAYBE_NEXT_TIME_CLICKED) &&
+      stateMachine.canTransition(Transitions.LETS_GO_CLICKED) &&
+      response === 'LETS_GO_CLICKED'
+    ) {
+      stateMachine.transition(Transitions.LETS_GO_CLICKED);
+      const botMessage: Message = {
+        text: "Great! Let's get started. First things first — what's your name?",
+        isUser: false,
+        isTyping: true,
+        id: messages.length + 1,
+      };
+      setMessages(prevMessages => [...prevMessages, botMessage]);
+    } else if (
+      stateMachine.canTransition(Transitions.MAYBE_NEXT_TIME_CLICKED) &&
       response === 'MAYBE_NEXT_TIME_CLICKED'
     ) {
-      fsm.transition(Transitions.MAYBE_NEXT_TIME_CLICKED);
+      stateMachine.transition(Transitions.MAYBE_NEXT_TIME_CLICKED);
       const botMessage: Message = {
-        text: 'I’ll be here when you’re ready!',
+        text: "I'll be here when you're ready!",
         isUser: false,
         isTyping: true,
         id: messages.length + 1,
@@ -122,7 +80,7 @@ const useChatStateMachine = ({
     }
   };
 
-  const processTextInputHandler = (userInput: string) => {
+  const processTextInputHandler = async (userInput: string) => {
     if (userInput.trim() === '') return;
 
     const newUserMessage: Message = {
@@ -134,12 +92,12 @@ const useChatStateMachine = ({
     setMessages([...messages, newUserMessage]);
     setIsInputDisabled(true);
 
-    if (fsm.getState() === States.COLLECTING_NAME) {
+    if (stateMachine.getState() === States.COLLECTING_NAME) {
       if (/^[a-zA-Z\s]+$/.test(userInput)) {
-        setUserName(userInput);
-        fsm.transition(Transitions.NAME_PROVIDED);
+        setUserName?.(userInput);
+        stateMachine.transition(Transitions.NAME_PROVIDED);
         const botMessage: Message = {
-          text: `Nice to meet you, ${userInput}! Let’s build your personalized AI agent.\n\nTo get started, I’ll need a document to train on—like a PDF of your business materials, process guides, or product details. This helps me tailor insights just for you!`,
+          text: `Nice to meet you, ${userInput}! Let's build your personalized AI agent.\n\nTo get started, I'll need a document to train on—like a PDF of your business materials, process guides, or product details. This helps me tailor insights just for you!`,
           isUser: false,
           isTyping: true,
           id: messages.length + 1,
@@ -154,13 +112,49 @@ const useChatStateMachine = ({
         };
         setMessages(prevMessages => [...prevMessages, botMessage]);
       }
-    } else if (fsm.getState() === States.COLLECTING_EMAIL) {
-      // Email input is handled by EmailInput component, not text input
-      // This is just a fallback for direct text input
+    } else if (stateMachine.getState() === States.COLLECTING_EMAIL) {
+      // Handle email input in regular chat input
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (emailRegex.test(userInput)) {
-        fsm.transition(Transitions.EMAIL_PROVIDED);
-        // The actual email verification will be handled by the EmailInput component
+        // First transition to EMAIL_VERIFICATION_SENDING state
+        stateMachine.transition(Transitions.EMAIL_PROVIDED);
+
+        try {
+          // Call the email verification API
+          const response = await emailVerificationApi.verifyEmail(sessionUUID!, {
+            email: userInput,
+          });
+
+          if (response.status === 'success') {
+            stateMachine.transition(Transitions.EMAIL_CODE_SENT);
+            const botMessage: Message = {
+              text: `I've sent a verification code to ${userInput}. Please check your email and enter the 6-digit code below.`,
+              isUser: false,
+              isTyping: true,
+              id: messages.length + 1,
+            };
+            setMessages(prevMessages => [...prevMessages, botMessage]);
+          } else {
+            stateMachine.transition(Transitions.EMAIL_VERIFICATION_FAILED);
+            const botMessage: Message = {
+              text: `Sorry, I couldn't send the verification code: ${response.error}. Please try again.`,
+              isUser: false,
+              isTyping: true,
+              id: messages.length + 1,
+            };
+            setMessages(prevMessages => [...prevMessages, botMessage]);
+          }
+        } catch (error: any) {
+          stateMachine.transition(Transitions.EMAIL_VERIFICATION_FAILED);
+          const errorMessage = error?.error || error?.message || 'Failed to send verification code';
+          const botMessage: Message = {
+            text: `Sorry, I couldn't send the verification code: ${errorMessage}. Please try again.`,
+            isUser: false,
+            isTyping: true,
+            id: messages.length + 1,
+          };
+          setMessages(prevMessages => [...prevMessages, botMessage]);
+        }
       } else {
         const botMessage: Message = {
           text: 'Please enter a valid email address.',
@@ -194,7 +188,7 @@ const useChatStateMachine = ({
 
   // Don't need to return isButtonGroupVisible as it's now managed by the parent component
   return {
-    fsm,
+    fsm: stateMachine,
     buttonClickHandler,
     typingCompleteHandler,
     processTextInputHandler,

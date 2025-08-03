@@ -19,6 +19,7 @@ import pytest
 from app import create_app
 
 
+@pytest.mark.performance
 class TestAPIPerformance:
     """Performance tests for API endpoints."""
 

@@ -33,7 +33,7 @@ except ImportError as e:
 
 
 def test_repository_pattern():
-    """Test the repository pattern with transaction context."""
+    """Test the repository pattern implementation."""
     try:
         print("Testing repository pattern with TransactionContext...")
         print("Python version:", sys.version)

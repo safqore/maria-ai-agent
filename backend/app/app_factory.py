@@ -16,7 +16,7 @@ from app.utils.middleware import (
     setup_request_logging,
     setup_request_validation,
 )
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -82,30 +82,34 @@ def create_app(config=None):
     )
 
     # Enable CORS with proper headers
-    CORS(
-        app,
-        resources={
-            r"/*": {
-                "origins": ["http://localhost:3000", "http://127.0.0.1:3000"],
-                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-                "allow_headers": [
-                    "Content-Type",
-                    "Authorization",
-                    "X-API-Key",
-                    "X-Correlation-ID",
-                ],
-                "expose_headers": ["X-API-Version", "X-Correlation-ID"],
-                "supports_credentials": True,
-            }
-        },
-        allow_headers=[
-            "Content-Type",
-            "Authorization",
-            "X-API-Key",
-            "X-Correlation-ID",
-        ],
-        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    # Get allowed origins from environment variable, fall back to localhost:3000 for development
+    cors_origins_str = os.getenv(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001",
     )
+    cors_origins = [
+        origin.strip() for origin in cors_origins_str.split(",") if origin.strip()
+    ]
+
+    logging.info(f"[Startup] CORS origins configured: {cors_origins}")
+
+    # Custom CORS handler to properly handle origin matching
+    @app.after_request
+    def after_request(response):
+        origin = request.headers.get("Origin")
+        if origin in cors_origins:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Methods"] = (
+                "GET, POST, PUT, DELETE, OPTIONS"
+            )
+            response.headers["Access-Control-Allow-Headers"] = (
+                "Content-Type, Authorization, X-API-Key, X-Correlation-ID, X-Session-ID"
+            )
+            response.headers["Access-Control-Expose-Headers"] = (
+                "X-API-Version, X-Correlation-ID"
+            )
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response
 
     # Initialize rate limiting
     # Import limiters from route modules to use the same instances
@@ -211,6 +215,20 @@ def create_app(config=None):
             ),
             200,
         )
+
+    # Add OPTIONS request logging
+    @app.before_request
+    def log_request_info():
+        if request.method == "OPTIONS":
+            origin = request.headers.get("Origin", "No Origin")
+            logging.info(f"OPTIONS request to {request.path}")
+            logging.info(f"Origin header: {origin}")
+            logging.info(
+                f"Access-Control-Request-Method: {request.headers.get('Access-Control-Request-Method', 'None')}"
+            )
+            logging.info(
+                f"Access-Control-Request-Headers: {request.headers.get('Access-Control-Request-Headers', 'None')}"
+            )
 
     # Setup request context
     @app.before_request

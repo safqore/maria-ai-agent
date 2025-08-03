@@ -21,6 +21,7 @@ from app.models import UserSession
 from app.repositories.user_session_repository import UserSessionRepository
 
 
+@pytest.mark.performance
 class TestPerformance:
     """Performance tests for database and API operations."""
 
@@ -171,6 +172,7 @@ class TestPerformance:
         )
 
 
+@pytest.mark.performance
 class TestAPIPerformance:
     """Performance tests for API endpoints."""
 

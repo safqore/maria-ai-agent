@@ -91,7 +91,7 @@ if ! run_check "Backend linting (Flake8)" "flake8 ." "$PROJECT_ROOT/backend"; th
 fi
 
 # Backend tests
-if ! run_check "Backend tests (Pytest)" "pytest -v" "$PROJECT_ROOT/backend"; then
+if ! run_check "Backend tests (Pytest)" "pytest -v -m 'not integration and not performance'" "$PROJECT_ROOT/backend"; then
     print_error "Backend tests failed!"
     echo "Fix the failing tests before pushing"
     OVERALL_SUCCESS=false

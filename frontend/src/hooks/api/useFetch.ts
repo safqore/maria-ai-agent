@@ -25,7 +25,7 @@ interface UseFetchState<T> {
 /**
  * Options for the useFetch hook
  */
-interface UseFetchOptions<D = any> {
+interface UseFetchOptions<D = unknown> {
   /** Whether to execute the request immediately */
   immediate?: boolean;
   /** Initial data to use before the request completes */
@@ -39,7 +39,7 @@ interface UseFetchOptions<D = any> {
   /** Custom error handling function */
   customErrorHandler?: (error: Error) => void;
   /** Custom data processor function */
-  customDataProcessor?: (data: any) => any;
+  customDataProcessor?: (data: unknown) => unknown;
 }
 
 /**
@@ -86,7 +86,7 @@ interface UseFetchOptions<D = any> {
  * };
  * ```
  */
-export function useFetch<T, P extends any[] = []>(
+export function useFetch<T, P extends unknown[] = []>(
   apiFunction: (...args: P) => Promise<T>,
   options: UseFetchOptions<T> = {}
 ) {
@@ -159,7 +159,8 @@ export function useFetch<T, P extends any[] = []>(
             !Array.isArray(lastArg) &&
             abortControllerRef.current
           ) {
-            (args[args.length - 1] as any).signal = abortControllerRef.current.signal;
+            (args[args.length - 1] as Record<string, unknown>).signal =
+              abortControllerRef.current.signal;
           }
 
           // Execute the API function
@@ -233,7 +234,7 @@ export function useFetch<T, P extends any[] = []>(
       // Execute the fetch without setTimeout - simpler approach
       // React act() should handle this but there are edge cases especially with async operations
       // For testing, we silence act warnings in the specific test rather than making the code more complex
-      void execute(...([] as any as P));
+      void execute(...([] as unknown as P));
     }
 
     // Clean up on unmount

@@ -43,7 +43,7 @@ class UserSession(Base):
 
     uuid = Column(GUID(), primary_key=True, default=uuid.uuid4)
     name = Column(Text, nullable=False)
-    email = Column(Text, nullable=False)
+    email = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(
         DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)

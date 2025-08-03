@@ -449,7 +449,7 @@ class TestSessionAPIIntegration:
 
         # Generate a UUID
         gen_response = client.post("/api/v1/generate-uuid")
-        assert gen_response.status_code == 200
+        assert gen_response.status_code == 201
 
         gen_data = gen_response.get_json()
         generated_uuid = gen_data["uuid"]

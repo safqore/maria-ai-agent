@@ -5,7 +5,7 @@
 #
 # This is required for all backend operations (tests, server, database, etc.)
 
-.PHONY: help install-dev format lint test test-setup run-backend run-frontend clean git-commit git-status git-add ci-check install-pre-push-hook
+.PHONY: help install-dev format lint test test-setup run-backend run-frontend clean git-commit git-status git-add ci-check install-pre-push-hook backup-env restore-env
 
 help: ## Show help message
 	@echo "Maria AI Agent - Development Commands"
@@ -70,3 +70,9 @@ ci-check: ## Run CI checks locally (same as pre-push hook)
 
 install-pre-push-hook: ## Install pre-push hook that runs CI checks before each push
 	bash scripts/install-pre-push-hook.sh
+
+backup-env: ## Create timestamped backup of .env files
+	./scripts/backup_env.sh
+
+restore-env: ## Show available .env backups and restore options
+	./scripts/restore_env.sh
