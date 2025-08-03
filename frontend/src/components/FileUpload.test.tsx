@@ -12,7 +12,7 @@ const mockedSessionApi = sessionApi.SessionApi as jest.Mocked<typeof sessionApi.
 const mockedFileApi = fileApi.FileApi as jest.Mocked<typeof fileApi.FileApi>;
 
 // Define a simple mock function for progress tracking
-const mockProgressCallback = jest.fn();
+// const mockProgressCallback = jest.fn();
 
 describe('FileUpload Component', () => {
   beforeEach(() => {

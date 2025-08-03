@@ -1,13 +1,7 @@
 import React from 'react';
-import { render, act, waitFor, fireEvent } from '@testing-library/react';
+import { render, act, waitFor } from '@testing-library/react';
 import { ChatProvider, useChat } from '../../contexts/ChatContext';
-import { ChatActionTypes } from '../../contexts/ChatContext';
-import {
-  States,
-  StateMachine,
-  Transitions,
-  createStateMachine,
-} from '../../state/FiniteStateMachine';
+import { States, StateMachine, createStateMachine } from '../../state/FiniteStateMachine';
 
 // Mock FSM for testing
 const createMockFSM = (): StateMachine => {

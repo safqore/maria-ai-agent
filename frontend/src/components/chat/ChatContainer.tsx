@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   createStateMachine,
   States,
@@ -11,17 +11,17 @@ import { ErrorBoundary } from '../shared/ErrorBoundary';
 import ChatMessages from './ChatMessages';
 import ChatControls from './ChatControls';
 import ChatActions from './ChatActions';
-import ButtonGroup from '../ButtonGroup';
+// import ButtonGroup from '../ButtonGroup';
 import useChatStateMachine from '../../hooks/useChatStateMachine';
 import { Button } from '../../types/buttonTypes';
 import { EmailInput } from '../EmailInput';
 import { CodeVerification } from '../CodeVerification';
 import '../EmailVerification.css';
 import '../../styles.css';
-import ChatMessage from '../ChatMessage';
-import ChatInputArea from '../ChatInputArea';
-import { useSessionManager } from '../../hooks/useSessionManager';
-import { Message } from '../../utils/chatUtils';
+// import ChatMessage from '../ChatMessage';
+// import ChatInputArea from '../ChatInputArea';
+// import { useSessionManager } from '../../hooks/useSessionManager';
+// import { Message } from '../../utils/chatUtils';
 
 /**
  * Props for the ChatContainerInner component
@@ -42,15 +42,11 @@ interface ChatContainerInnerProps {
 const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID, fsm }) => {
   // Get chat state and actions from context
   const {
-    state: { messages, isInputDisabled, isButtonGroupVisible, error: chatError, emailVerification },
-    setMessageTypingComplete,
-    addUserMessage,
+    state: { messages, isInputDisabled, isButtonGroupVisible, error: chatError },
     addBotMessage,
     setInputDisabled,
-    removeMessageButtons,
     setButtonGroupVisible,
     startEmailVerification,
-    emailCodeSent,
     emailVerificationComplete,
     // setError is available but not currently used in this component
   } = useChat();
@@ -70,7 +66,7 @@ const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID, fs
   const { buttonClickHandler, typingCompleteHandler, processTextInputHandler, fileUploadHandler } =
     useChatStateMachine({
       messages,
-      setMessages: (messagesOrFn: React.SetStateAction<Message[]>) => {
+      setMessages: () => {
         // setMessages(messagesOrFn); // This line was removed as per the edit hint
       },
       setIsInputDisabled: (value: boolean | ((prevState: boolean) => boolean)) => {

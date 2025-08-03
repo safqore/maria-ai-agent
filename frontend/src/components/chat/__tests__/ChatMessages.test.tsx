@@ -35,9 +35,6 @@ const mockOnButtonClick = jest.fn();
 describe('ChatMessages', () => {
   // Set up and tear down the mock for scrollIntoView
   beforeEach(() => {
-    // Save the original implementation if it exists
-    const originalScrollIntoView = window.HTMLElement.prototype.scrollIntoView;
-
     // Mock scrollIntoView for all elements
     window.HTMLElement.prototype.scrollIntoView = mockScrollIntoView;
 
@@ -49,7 +46,7 @@ describe('ChatMessages', () => {
 
   afterEach(() => {
     // Clean up - restore the original implementation
-    window.HTMLElement.prototype.scrollIntoView = undefined as any;
+    window.HTMLElement.prototype.scrollIntoView = undefined as unknown as () => void;
     jest.clearAllMocks();
   });
 

@@ -80,8 +80,13 @@ export const CodeVerification: React.FC<CodeVerificationProps> = ({
       } else {
         onError(response.error || 'Failed to verify code');
       }
-    } catch (error: any) {
-      const errorMessage = error?.error || error?.message || 'Failed to verify code';
+    } catch (error: unknown) {
+      const errorMessage =
+        error && typeof error === 'object' && 'error' in error
+          ? String(error.error)
+          : error && typeof error === 'object' && 'message' in error
+          ? String(error.message)
+          : 'Failed to verify code';
       onError(errorMessage);
     }
   }, [code, validateCode, verifyCode, onCodeVerified, onError]);
@@ -100,8 +105,13 @@ export const CodeVerification: React.FC<CodeVerificationProps> = ({
       } else {
         onError(response.error || 'Failed to resend code');
       }
-    } catch (error: any) {
-      const errorMessage = error?.error || error?.message || 'Failed to resend code';
+    } catch (error: unknown) {
+      const errorMessage =
+        error && typeof error === 'object' && 'error' in error
+          ? String(error.error)
+          : error && typeof error === 'object' && 'message' in error
+          ? String(error.message)
+          : 'Failed to resend code';
       onError(errorMessage);
     }
   }, [resendCode, resendCooldown, onResendCode, onError]);

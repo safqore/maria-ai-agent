@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, act, renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import useChatStateMachineAdapter from '../useChatStateMachineAdapter';
 import { ChatProvider } from '../../../contexts/ChatContext';
 import { StateMachine, States, Transitions } from '../../../state/FiniteStateMachine';

@@ -8,7 +8,7 @@ import { FileStatus } from './FileStatusItem';
 jest.mock('./FileStatusItem', () => {
   return {
     __esModule: true,
-    default: ({ fileStatus, onRetry, onRemove }: any) => (
+    default: ({ fileStatus }: { fileStatus: FileStatus }) => (
       <div data-testid="file-status-item" data-status={fileStatus.status}>
         {fileStatus.file.name}
       </div>

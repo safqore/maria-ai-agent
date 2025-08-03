@@ -86,7 +86,7 @@ class TestAPIPerformance:
         generate_response = client.post("/api/v1/generate-uuid")
         assert generate_response.status_code == 201
         test_uuid = generate_response.get_json()["uuid"]
-        
+
         execution_times = []
 
         for i in range(50):
@@ -126,7 +126,9 @@ class TestAPIPerformance:
                     # Make multiple API calls
                     for i in range(10):
                         response = thread_client.post("/api/v1/generate-uuid")
-                        assert response.status_code == 201  # 201 Created for new resource
+                        assert (
+                            response.status_code == 201
+                        )  # 201 Created for new resource
                 end_time = time.time()
                 results.put(end_time - start_time)
             except Exception as e:
