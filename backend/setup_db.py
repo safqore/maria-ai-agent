@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Simple database setup script."""
 
+import importlib.util
 import os
 import sys
 from pathlib import Path
-import importlib.util
 
 # Add current directory and parent directory to path
 current_dir = Path(__file__).parent

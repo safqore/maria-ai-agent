@@ -6,6 +6,7 @@ ensuring that repository instances are created consistently.
 """
 
 from app.models import UserSession
+from app.repositories.email_verification_repository import EmailVerificationRepository
 from app.repositories.user_session_repository import UserSessionRepository
 
 
@@ -17,3 +18,13 @@ def get_user_session_repository() -> UserSessionRepository:
         UserSessionRepository: A repository for UserSession operations
     """
     return UserSessionRepository()
+
+
+def get_email_verification_repository() -> EmailVerificationRepository:
+    """
+    Get an EmailVerificationRepository instance.
+
+    Returns:
+        EmailVerificationRepository: A repository for email verification operations
+    """
+    return EmailVerificationRepository()

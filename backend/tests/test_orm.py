@@ -17,6 +17,7 @@ import os
 import sys
 import uuid
 from pathlib import Path
+
 import pytest
 
 # Add the project directory to the Python path
@@ -24,7 +25,7 @@ import pytest
 project_dir = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(project_dir))
 
-from app.database_core import Base, get_engine, get_db_session
+from app.database_core import Base, get_db_session, get_engine
 from app.models import UserSession
 from app.repositories.factory import get_user_session_repository
 

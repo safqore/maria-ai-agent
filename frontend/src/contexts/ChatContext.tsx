@@ -38,6 +38,17 @@ export interface ChatState {
   lastCorrelationId?: string;
   /** API request in progress flag */
   isApiRequestInProgress: boolean;
+  /** Email verification state */
+  emailVerification: {
+    /** Whether email verification is in progress */
+    isInProgress: boolean;
+    /** The email address being verified */
+    email?: string;
+    /** Whether email has been sent */
+    isEmailSent: boolean;
+    /** Whether email has been verified */
+    isVerified: boolean;
+  };
 }
 
 /**
@@ -73,6 +84,14 @@ export enum ChatActionTypes {
   SET_DETAILED_ERROR = 'SET_DETAILED_ERROR',
   /** Reset chat to initial state */
   RESET_CHAT = 'RESET_CHAT',
+  /** Start email verification process */
+  START_EMAIL_VERIFICATION = 'START_EMAIL_VERIFICATION',
+  /** Email verification code sent */
+  EMAIL_CODE_SENT = 'EMAIL_CODE_SENT',
+  /** Email verification completed */
+  EMAIL_VERIFICATION_COMPLETE = 'EMAIL_VERIFICATION_COMPLETE',
+  /** Reset email verification state */
+  RESET_EMAIL_VERIFICATION = 'RESET_EMAIL_VERIFICATION',
 }
 
 /**
@@ -99,7 +118,11 @@ export type ChatAction =
       type: ChatActionTypes.SET_DETAILED_ERROR;
       payload: { error: string; errorType: ApiErrorType; correlationId?: string };
     }
-  | { type: ChatActionTypes.RESET_CHAT; payload: Record<string, never> };
+  | { type: ChatActionTypes.RESET_CHAT; payload: Record<string, never> }
+  | { type: ChatActionTypes.START_EMAIL_VERIFICATION; payload: { email: string } }
+  | { type: ChatActionTypes.EMAIL_CODE_SENT; payload: Record<string, never> }
+  | { type: ChatActionTypes.EMAIL_VERIFICATION_COMPLETE; payload: Record<string, never> }
+  | { type: ChatActionTypes.RESET_EMAIL_VERIFICATION; payload: Record<string, never> };
 
 /**
  * Initial welcome message
@@ -123,6 +146,12 @@ const initialState: ChatState = {
   currentFsmState: States.WELCOME_MSG,
   lastCorrelationId: undefined,
   isApiRequestInProgress: false,
+  emailVerification: {
+    isInProgress: false,
+    email: undefined,
+    isEmailSent: false,
+    isVerified: false,
+  },
 };
 
 /**
@@ -237,6 +266,48 @@ const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
         ...initialState,
       };
 
+    case ChatActionTypes.START_EMAIL_VERIFICATION:
+      return {
+        ...state,
+        emailVerification: {
+          ...state.emailVerification,
+          isInProgress: true,
+          email: action.payload.email,
+          isEmailSent: false,
+          isVerified: false,
+        },
+      };
+
+    case ChatActionTypes.EMAIL_CODE_SENT:
+      return {
+        ...state,
+        emailVerification: {
+          ...state.emailVerification,
+          isEmailSent: true,
+        },
+      };
+
+    case ChatActionTypes.EMAIL_VERIFICATION_COMPLETE:
+      return {
+        ...state,
+        emailVerification: {
+          ...state.emailVerification,
+          isInProgress: false,
+          isVerified: true,
+        },
+      };
+
+    case ChatActionTypes.RESET_EMAIL_VERIFICATION:
+      return {
+        ...state,
+        emailVerification: {
+          isInProgress: false,
+          email: undefined,
+          isEmailSent: false,
+          isVerified: false,
+        },
+      };
+
     default:
       return state;
   }
@@ -281,6 +352,14 @@ interface ChatContextValue {
   setCorrelationId: (correlationId?: string) => void;
   /** Function to set detailed error information */
   setDetailedError: (error: string, errorType: ApiErrorType, correlationId?: string) => void;
+  /** Function to start email verification process */
+  startEmailVerification: (email: string) => void;
+  /** Function to mark email code as sent */
+  emailCodeSent: () => void;
+  /** Function to mark email verification as complete */
+  emailVerificationComplete: () => void;
+  /** Function to reset email verification state */
+  resetEmailVerification: () => void;
 }
 
 /**
@@ -725,6 +804,34 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children, fsm }) => 
     }
   }, [fsm, updateFsmState]);
 
+  /**
+   * Start email verification process
+   */
+  const startEmailVerification = useCallback((email: string): void => {
+    dispatch({ type: ChatActionTypes.START_EMAIL_VERIFICATION, payload: { email } });
+  }, []);
+
+  /**
+   * Mark email code as sent
+   */
+  const emailCodeSent = useCallback((): void => {
+    dispatch({ type: ChatActionTypes.EMAIL_CODE_SENT, payload: {} });
+  }, []);
+
+  /**
+   * Mark email verification as complete
+   */
+  const emailVerificationComplete = useCallback((): void => {
+    dispatch({ type: ChatActionTypes.EMAIL_VERIFICATION_COMPLETE, payload: {} });
+  }, []);
+
+  /**
+   * Reset email verification state
+   */
+  const resetEmailVerification = useCallback((): void => {
+    dispatch({ type: ChatActionTypes.RESET_EMAIL_VERIFICATION, payload: {} });
+  }, []);
+
   // Create the context value with all methods
   const value = {
     state,
@@ -744,6 +851,10 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children, fsm }) => 
     setApiRequestStatus,
     setCorrelationId,
     setDetailedError,
+    startEmailVerification,
+    emailCodeSent,
+    emailVerificationComplete,
+    resetEmailVerification,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

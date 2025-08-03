@@ -2,7 +2,6 @@ import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from app.app_factory import create_app
 
 
@@ -47,9 +46,18 @@ def test_persist_session_collision(client):
 
         # Mock the repository to simulate collision
         service.user_session_repository = MagicMock()
-        service.user_session_repository.exists.return_value = True  # Collision
-        service.user_session_repository.create_session.return_value = MagicMock(
-            uuid=test_uuid, name="Test User", email="test@example.com", created_at=None
+
+        # Mock the get method to return an existing session (simulating collision)
+        existing_session = MagicMock()
+        existing_session.uuid = test_uuid
+        existing_session.name = "Test User"
+        existing_session.email = "test@example.com"
+        service.user_session_repository.get.return_value = existing_session
+
+        # Mock create_or_update_session to return (session, False) indicating update, not creation
+        service.user_session_repository.create_or_update_session.return_value = (
+            existing_session,
+            False,
         )
 
         # Call the service method to test collision logic
@@ -57,13 +65,11 @@ def test_persist_session_collision(client):
             test_uuid, "Test User", "test@example.com"
         )
 
-        # Verify collision handling worked
-        assert status_code == 200  # Collision should return 200 (OK), not 201 (Created)
-        assert "UUID collision, new UUID assigned" in result["message"]
+        # Verify collision handling worked - should return 200 for update
+        assert status_code == 200  # Update should return 200 (OK), not 201 (Created)
+        assert "Session updated successfully" in result["message"]
         assert "uuid" in result
-        assert (
-            mock_migrate.called
-        ), "S3 migration should be called for collision handling"
+        assert result["uuid"] == test_uuid
 
 
 def test_persist_session_invalid_uuid(client):

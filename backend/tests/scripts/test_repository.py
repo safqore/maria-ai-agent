@@ -18,8 +18,8 @@ try:
     print("Starting repository test...")
 
     # Import models and repositories
-    from app.database_core import get_db_session
     from app.database.transaction import TransactionContext
+    from app.database_core import get_db_session
     from app.models import UserSession
     from app.repositories.factory import get_user_session_repository
 
@@ -33,7 +33,7 @@ except ImportError as e:
 
 
 def test_repository_pattern():
-    """Test the repository pattern with transaction context."""
+    """Test the repository pattern implementation."""
     try:
         print("Testing repository pattern with TransactionContext...")
         print("Python version:", sys.version)

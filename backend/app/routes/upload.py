@@ -9,14 +9,13 @@ This module provides routes for:
 
 import os
 
+from app.errors import api_route
+from app.schemas.upload_schemas import UploadSchema
+from app.services.upload_service import UploadService
 from flask import Blueprint, g, jsonify, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from marshmallow import ValidationError
-
-from app.errors import api_route
-from app.schemas.upload_schemas import UploadSchema
-from app.services.upload_service import UploadService
 
 # Create the upload blueprint
 upload_bp = Blueprint("upload", __name__)
@@ -25,7 +24,7 @@ upload_bp = Blueprint("upload", __name__)
 UPLOAD_RATE_LIMIT = os.getenv("UPLOAD_RATE_LIMIT", "5/minute")
 
 # Limiter will be initialized in app factory and attached to app
-limiter = Limiter(key_func=get_remote_address, default_limits=[UPLOAD_RATE_LIMIT])
+limiter = Limiter(key_func=get_remote_address, default_limits=None)
 
 # Apply before_request to all routes in this blueprint
 upload_bp.before_request(lambda: setattr(g, "upload_service", UploadService()))

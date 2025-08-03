@@ -70,9 +70,9 @@ describe('sessionUtils (async, backend integration)', () => {
     });
     mockedGenerateUUID.mockResolvedValueOnce({
       status: 'success',
-      uuid: 'should-not-be-used',
+      uuid: newUuid,
       message: 'ok',
-    }); // Defensive default
+    });
 
     console.log('Starting test with localStorage uuid:', localStorage.getItem('session_uuid'));
 

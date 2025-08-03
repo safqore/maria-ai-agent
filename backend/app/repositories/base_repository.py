@@ -9,15 +9,14 @@ model-specific repositories.
 import uuid
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 
-from sqlalchemy import inspect
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
-from sqlalchemy.dialects.postgresql import UUID
-
-from app.database_core import Base, get_db_session
 from app.database.transaction import TransactionContext
+from app.database_core import Base, get_db_session
 from app.errors import ResourceNotFoundError as NotFoundError
 from app.errors import ServerError
+from sqlalchemy import inspect
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 # Define a TypeVar for SQLAlchemy models
 T = TypeVar("T", bound=Base)
@@ -280,15 +279,20 @@ class BaseRepository(Generic[T]):
         except SQLAlchemyError as e:
             raise ServerError(f"Database error in delete: {str(e)}")
 
-    def exists(self, id_value: Union[int, str, uuid.UUID]) -> bool:
+    def exists(
+        self, id_value: Union[int, str, uuid.UUID], require_data: bool = False
+    ) -> bool:
         """
         Check if a record with the given primary key exists.
 
         Args:
             id_value: The primary key value
+            require_data: If True, also check that the record has meaningful data.
+                         This is a base implementation that should be overridden
+                         by specific repositories to define what "meaningful data" means.
 
         Returns:
-            True if the record exists, False otherwise
+            True if the record exists (and has data if require_data=True), False otherwise
 
         Raises:
             ServerError: If a database error occurs
@@ -307,9 +311,11 @@ class BaseRepository(Generic[T]):
                 )
 
                 # Check if the record exists
-                return session.query(
-                    session.query(self.model_class).filter(filter_condition).exists()
-                ).scalar()
+                # Use .first() instead of .exists() to avoid potential query complexity
+                record = (
+                    session.query(self.model_class).filter(filter_condition).first()
+                )
+                return record is not None
         except SQLAlchemyError as e:
             raise ServerError(f"Database error in exists: {str(e)}")
 

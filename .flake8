@@ -1,11 +1,14 @@
 [flake8]
 max-line-length = 88
 exclude = 
+    .venv,
     venv,
     __pycache__,
     .git,
     .pytest_cache,
-    *.egg-info
+    *.egg-info,
+    frontend/node_modules,
+    node_modules
 
 # Ignore specific error codes that are common in development/test code
 # F401 - module imported but unused
