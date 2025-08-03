@@ -8,6 +8,7 @@ extensions, blueprints, and middleware.
 import os
 
 from app.routes.email_verification import email_verification_bp
+from app.routes.health import health_bp
 from app.routes.session import session_bp, setup_session_service
 from app.routes.upload import upload_bp
 from app.utils.auth import setup_auth_middleware
@@ -181,6 +182,7 @@ def create_app(config=None):
     app.register_blueprint(session_bp, url_prefix="/api/v1")
     app.register_blueprint(upload_bp, url_prefix="/api/v1")
     app.register_blueprint(email_verification_bp, url_prefix="/api/v1")
+    app.register_blueprint(health_bp)
 
     # Add main API info endpoint
     @app.route("/api/info", methods=["GET"])
