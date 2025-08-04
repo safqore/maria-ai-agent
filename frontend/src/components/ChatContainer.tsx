@@ -39,7 +39,6 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
   // Local state that doesn't belong in contexts
   const [userInput, setUserInput] = useState<string>('');
   const [isInputDisabled, setIsInputDisabled] = useState<boolean>(true);
-  const [isButtonGroupVisible, setIsButtonGroupVisible] = useState<boolean>(false);
 
   // Initialize with welcome message if messages is empty
   useEffect(() => {
@@ -72,7 +71,6 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
       }
     },
     setIsInputDisabled,
-    setIsButtonGroupVisible,
   });
 
   // Enable/disable input based on chat state

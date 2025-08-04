@@ -7,7 +7,7 @@ interface ChatStateMachineOptions {
   messages: Message[];
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
   setIsInputDisabled: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsButtonGroupVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsButtonGroupVisible?: React.Dispatch<React.SetStateAction<boolean>>;
   sessionUUID?: string;
   setUserName?: (name: string) => void;
   fsm?: StateMachine; // Accept FSM as parameter
@@ -76,7 +76,7 @@ const useChatStateMachine = ({
         id: messages.length + 1,
       };
       setMessages(prevMessages => [...prevMessages, botMessage]);
-      setIsButtonGroupVisible(true);
+      setIsButtonGroupVisible?.(true);
     }
   };
 
