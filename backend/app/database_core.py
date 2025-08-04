@@ -48,7 +48,7 @@ def get_database_url() -> str:
     # Use the Config class to get the appropriate database URL
     # This handles DATABASE_URL, Supabase configuration, and traditional PostgreSQL
     config_db_url = Config.get_database_url()
-    
+
     # If Config returns a non-SQLite URL, use it
     if not config_db_url.startswith("sqlite://"):
         return config_db_url

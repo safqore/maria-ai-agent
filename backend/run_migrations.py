@@ -35,7 +35,7 @@ def get_migration_files() -> List[Path]:
     # Define migration files in the correct order
     db_url = get_database_url()
     is_postgres = db_url.startswith("postgresql://")
-    
+
     if is_postgres:
         migration_files = [
             "001_create_user_sessions_postgresql.sql",
