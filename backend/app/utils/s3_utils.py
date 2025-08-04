@@ -7,17 +7,19 @@ AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 AWS_REGION = os.getenv("AWS_REGION")
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
+
 # Initialize S3 client only if credentials are available
 def get_s3_client():
     if not all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION]):
         return None
-    
+
     return boto3.client(
         "s3",
         aws_access_key_id=AWS_ACCESS_KEY_ID,
         aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
         region_name=AWS_REGION,
     )
+
 
 s3_client = get_s3_client()
 
@@ -29,7 +31,7 @@ def migrate_s3_files(old_uuid: str, new_uuid: str) -> None:
     if s3_client is None:
         print(f"S3 not configured, skipping migration from {old_uuid} to {new_uuid}")
         return
-        
+
     paginator = s3_client.get_paginator("list_objects_v2")
     prefix = f"uploads/{old_uuid}/"
     for page in paginator.paginate(Bucket=S3_BUCKET_NAME, Prefix=prefix):

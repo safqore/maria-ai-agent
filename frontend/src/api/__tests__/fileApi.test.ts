@@ -5,7 +5,7 @@ import { ApiResponse } from '../apiClient';
 // Mock the API client module for deleteFile tests
 jest.mock('../apiClient', () => ({
   del: jest.fn(),
-  createApiUrl: (endpoint: string) => `http://localhost:5001/api/v1/${endpoint}`,
+  createApiUrl: (endpoint: string) => `${API_BASE_URL}/api/v1/${endpoint}`,
 }));
 
 // Import the mocked functions
