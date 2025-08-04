@@ -15,7 +15,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "tsc": "tsc",
-    "test": "jest",
+    "test": "REACT_APP_API_BASE_URL=https://maria-ai-agent-backend.fly.dev jest",
     "lint": "eslint --ext .ts,.tsx src/ --max-warnings 100",
     "lint:fix": "eslint --fix --ext .ts,.tsx src/",
     "lint:fix-legacy": "eslint --fix --ext .ts,.tsx src/ --legacy-peer-deps",
