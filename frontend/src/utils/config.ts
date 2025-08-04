@@ -25,9 +25,9 @@
 const getApiBaseUrl = (): string => {
   const envUrl = process.env.REACT_APP_API_BASE_URL;
 
-  // If environment variable is not set, use production URL
+  // If environment variable is not set, throw an error
   if (!envUrl) {
-    return 'https://maria-ai-agent-backend.fly.dev';
+    throw new Error('REACT_APP_API_BASE_URL environment variable is required but not set');
   }
 
   // Clean up the URL - remove any quotes or extra characters
