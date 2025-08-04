@@ -32,7 +32,7 @@ jest.mock('../../contexts/SessionContext', () => ({
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ChatProvider } from '../../contexts/ChatContext';
+// import { ChatProvider } from '../../contexts/ChatContext';
 import { SessionProvider } from '../../contexts/SessionContext';
 import { EmailInput } from '../EmailInput';
 import { CodeVerification } from '../CodeVerification';

@@ -21,6 +21,7 @@ from app.models import UserSession
 from app.repositories.user_session_repository import UserSessionRepository
 
 
+@pytest.mark.performance
 class TestPerformance:
     """Performance tests for database and API operations."""
 
@@ -171,6 +172,7 @@ class TestPerformance:
         )
 
 
+@pytest.mark.performance
 class TestAPIPerformance:
     """Performance tests for API endpoints."""
 
@@ -204,7 +206,7 @@ class TestAPIPerformance:
             with self.performance_timer():
                 response = client.post("/api/v1/generate-uuid")
             execution_times.append(self.last_execution_time)
-            assert response.status_code == 200
+            assert response.status_code == 201  # 201 Created for new resource
 
         avg_time = statistics.mean(execution_times)
         max_time = max(execution_times)
@@ -217,7 +219,11 @@ class TestAPIPerformance:
 
     def test_validate_uuid_performance(self, client):
         """Test UUID validation endpoint performance."""
-        test_uuid = str(uuid.uuid4())
+        # First generate a valid UUID to test with
+        generate_response = client.post("/api/v1/generate-uuid")
+        assert generate_response.status_code == 201
+        test_uuid = generate_response.get_json()["uuid"]
+
         execution_times = []
 
         for i in range(20):
@@ -258,7 +264,9 @@ class TestAPIPerformance:
                     # Make multiple API calls
                     for i in range(5):
                         response = thread_client.post("/api/v1/generate-uuid")
-                        assert response.status_code == 200
+                        assert (
+                            response.status_code == 201
+                        )  # 201 Created for new resource
                 end_time = time.time()
                 results.put(end_time - start_time)
             except Exception as e:
@@ -300,7 +308,7 @@ class TestAPIPerformance:
         # Make requests for 3 seconds
         while time.time() - start_time < 3:
             response = client.post("/api/v1/generate-uuid")
-            if response.status_code == 200:
+            if response.status_code == 201:  # 201 Created for new resource
                 successful_requests += 1
 
         total_time = time.time() - start_time

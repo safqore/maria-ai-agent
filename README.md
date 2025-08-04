@@ -32,11 +32,11 @@ git clone <repository-url>
 cd maria-ai-agent
 
 # Create and activate conda environment
-conda create -n maria-ai-agent python=3.9
+conda create -n maria-ai-agent python=3.12.9
 conda activate maria-ai-agent  # ← REQUIRED for all backend operations
 
 # Install dependencies
-make setup
+make install-dev
 ```
 
 ### 2. Development Server

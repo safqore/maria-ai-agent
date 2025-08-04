@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, useCallback, ReactNode } from 'react';
 import { Message } from '../utils/chatUtils';
 import { StateMachine, States, Transitions } from '../state/FiniteStateMachine';
-import { ChatApi, ChatResponse, ApiError, ApiErrorType } from '../api';
+import { ChatApi, ApiError, ApiErrorType } from '../api';
 import { useSessionUUID } from '../hooks/useSessionUUID';
 
 /**

@@ -4,7 +4,7 @@ import ButtonGroup from '../ButtonGroup';
 import FileUpload from '../fileUpload/FileUpload';
 import { States } from '../../state/FiniteStateMachine';
 import { useChat } from '../../contexts/ChatContext';
-import { useFileUpload } from '../../contexts/FileUploadContext';
+// import { useFileUpload } from '../../contexts/FileUploadContext';
 import { sanitizeHtml } from '../../utils/sanitizeUtils';
 
 /**
@@ -45,7 +45,7 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
   } = useChat();
 
   // Get file upload state from context
-  const { state: _ } = useFileUpload(); // Using _ to indicate we're not using this at the moment
+  // const { state: _ } = useFileUpload(); // Using _ to indicate we're not using this at the moment
 
   // Ref for auto-scrolling to the end of messages
   const endOfMessagesRef = useRef<HTMLDivElement>(null);

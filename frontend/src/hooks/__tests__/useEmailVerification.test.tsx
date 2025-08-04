@@ -5,7 +5,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useEmailVerification } from '../useEmailVerification';
 import { useSession } from '../../contexts/SessionContext';
-import { emailVerificationApi, EmailVerificationResponse } from '../../api/emailVerificationApi';
+import { emailVerificationApi, ApiResponse } from '../../api/emailVerificationApi';
 
 // Mock dependencies
 jest.mock('../../contexts/SessionContext');
@@ -65,7 +65,7 @@ describe('useEmailVerification', () => {
 
   describe('verifyEmail', () => {
     it('should successfully verify email', async () => {
-      const mockResponse: EmailVerificationResponse = {
+      const mockResponse: ApiResponse = {
         status: 'success',
         message: 'Verification code sent successfully',
         nextTransition: 'CODE_INPUT',
@@ -89,7 +89,7 @@ describe('useEmailVerification', () => {
     });
 
     it('should handle verification errors', async () => {
-      const mockError: EmailVerificationResponse = {
+      const mockError: ApiResponse = {
         status: 'error',
         error: 'Invalid email format',
         nextTransition: 'EMAIL_INPUT',
@@ -142,7 +142,7 @@ describe('useEmailVerification', () => {
 
   describe('verifyCode', () => {
     it('should successfully verify code', async () => {
-      const mockResponse: EmailVerificationResponse = {
+      const mockResponse: ApiResponse = {
         status: 'success',
         message: 'Email verified successfully',
         nextTransition: 'CHAT_READY',
@@ -166,7 +166,7 @@ describe('useEmailVerification', () => {
     });
 
     it('should handle verification errors', async () => {
-      const mockError: EmailVerificationResponse = {
+      const mockError: ApiResponse = {
         status: 'error',
         error: 'Invalid verification code',
         nextTransition: 'CODE_INPUT',
@@ -191,7 +191,7 @@ describe('useEmailVerification', () => {
 
   describe('resendCode', () => {
     it('should successfully resend code', async () => {
-      const mockResponse: EmailVerificationResponse = {
+      const mockResponse: ApiResponse = {
         status: 'success',
         message: 'Verification code resent successfully',
         nextTransition: 'CODE_INPUT',
@@ -212,7 +212,7 @@ describe('useEmailVerification', () => {
     });
 
     it('should handle resend errors', async () => {
-      const mockError: EmailVerificationResponse = {
+      const mockError: ApiResponse = {
         status: 'error',
         error: 'Too many attempts',
         nextTransition: 'CODE_INPUT',

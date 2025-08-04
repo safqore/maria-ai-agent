@@ -1,6 +1,6 @@
 import React, { memo, useMemo } from 'react';
 import { Message } from '../utils/chatUtils';
-import { ChatButton } from '../contexts/ChatContext';
+// import { ChatButton } from '../contexts/ChatContext';
 
 /**
  * Props for ChatMessage component

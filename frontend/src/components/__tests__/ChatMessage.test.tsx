@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import ChatMessage from '../ChatMessage';
-import { ChatButton } from '../../contexts/ChatContext';
+// import { ChatButton } from '../../contexts/ChatContext';
 
 describe('ChatMessage', () => {
   test('renders user message correctly', () => {

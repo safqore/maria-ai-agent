@@ -74,8 +74,13 @@ export const EmailInput: React.FC<EmailInputProps> = ({
       } else {
         onError(response.error || 'Failed to send verification code');
       }
-    } catch (error: any) {
-      const errorMessage = error?.error || error?.message || 'Failed to send verification code';
+    } catch (error: unknown) {
+      const errorMessage =
+        error && typeof error === 'object' && 'error' in error
+          ? String(error.error)
+          : error && typeof error === 'object' && 'message' in error
+          ? String(error.message)
+          : 'Failed to send verification code';
       onError(errorMessage);
     }
   }, [email, validateEmail, verifyEmail, onEmailSent, onError]);

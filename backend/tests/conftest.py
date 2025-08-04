@@ -30,6 +30,14 @@ from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 
 
+def pytest_configure(config):
+    """Register custom markers to avoid warnings."""
+    config.addinivalue_line(
+        "markers", "sqlite_incompatible: mark test as incompatible with SQLite backend"
+    )
+    config.addinivalue_line("markers", "performance: mark performance-related tests")
+
+
 @pytest.fixture(scope="session", autouse=True)
 def initialize_test_database():
     """Initialize the test database with proper schema and migrations."""
@@ -75,12 +83,13 @@ def initialize_test_database():
         # For file-based SQLite, clean up any existing database file
         if not db_url.endswith(":memory:"):
             import os
-            import tempfile
 
-            test_db_path = os.path.join(tempfile.gettempdir(), "maria_ai_test.db")
-            if os.path.exists(test_db_path):
+            # Use the test database in the backend directory
+            backend_dir = Path(__file__).parent.parent
+            test_db_path = backend_dir / "maria_ai_test.db"
+            if test_db_path.exists():
                 try:
-                    os.remove(test_db_path)
+                    test_db_path.unlink()
                     print(f"DEBUG: Removed existing test database: {test_db_path}")
                 except Exception as e:
                     print(f"DEBUG: Could not remove existing test database: {e}")
@@ -101,6 +110,15 @@ def initialize_test_database():
         # Create all tables (no need to drop for fresh file)
         Base.metadata.create_all(bind=engine)
         print("DEBUG: Created tables with ORM")
+
+        # Verify the email column is nullable
+        inspector = inspect(engine)
+        columns = inspector.get_columns("user_sessions")
+        email_column = next((col for col in columns if col["name"] == "email"), None)
+        if email_column:
+            print(f"DEBUG: Email column nullable: {email_column['nullable']}")
+        else:
+            print("DEBUG: Email column not found!")
 
     # Verify final table state
     inspector = inspect(engine)
@@ -124,12 +142,13 @@ def initialize_test_database():
     # Cleanup - remove test database file
     if is_sqlite and not db_url.endswith(":memory:"):
         import os
-        import tempfile
 
-        test_db_path = os.path.join(tempfile.gettempdir(), "maria_ai_test.db")
-        if os.path.exists(test_db_path):
+        # Use the test database in the backend directory
+        backend_dir = Path(__file__).parent.parent
+        test_db_path = backend_dir / "maria_ai_test.db"
+        if test_db_path.exists():
             try:
-                os.remove(test_db_path)
+                test_db_path.unlink()
                 print("DEBUG: Test database file cleaned up")
             except Exception as e:
                 print(f"DEBUG: Error cleaning up test database file: {e}")
@@ -270,3 +289,14 @@ def session_uuid(client):
         print(f"DEBUG: Error cleaning up test session: {e}")
         # If deletion fails, that's okay - we tried to clean up
         pass
+
+
+@pytest.fixture
+def fresh_uuid():
+    """
+    Generate a fresh UUID without creating a session.
+
+    This fixture returns a UUID that doesn't exist in the database,
+    suitable for tests that want to create new sessions.
+    """
+    return uuid.uuid4()

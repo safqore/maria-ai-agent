@@ -4,7 +4,7 @@ import ChatInputArea from './ChatInputArea';
 import useChatStateMachine from '../hooks/useChatStateMachine';
 import '../styles.css';
 import { Transitions } from '../state/FiniteStateMachine';
-import { Message } from '../utils/chatUtils';
+// import { Message } from '../utils/chatUtils';
 import { useChat } from '../contexts/ChatContext';
 import { useFileUpload } from '../contexts/FileUploadContext';
 import { sanitizeHtml } from '../utils/sanitizeUtils';
@@ -12,7 +12,7 @@ import { sanitizeHtml } from '../utils/sanitizeUtils';
 // Initial welcome message for the chat UI
 const welcomeMessage =
   "👋 Hi there! I'm Maria, your AI guide at Safqore. Ready to discover how we can help you grow?";
-const initialBotMessage: Message = { text: welcomeMessage, isUser: false, isTyping: true, id: 0 };
+// const initialBotMessage: Message = { text: welcomeMessage, isUser: false, isTyping: true, id: 0 };
 
 interface ChatContainerProps {
   sessionUUID: string; // The current session UUID, passed from App
@@ -25,10 +25,9 @@ interface ChatContainerProps {
 function ChatContainer({ sessionUUID }: ChatContainerProps) {
   // Use contexts instead of local state where possible
   const {
-    state: { messages, error: sessionError, isInputDisabled: contextInputDisabled },
+    state: { messages, error: sessionError },
     addUserMessage,
     addBotMessage,
-    setMessageTypingComplete,
     setInputDisabled: setContextInputDisabled,
   } = useChat();
 
@@ -40,7 +39,6 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
   // Local state that doesn't belong in contexts
   const [userInput, setUserInput] = useState<string>('');
   const [isInputDisabled, setIsInputDisabled] = useState<boolean>(true);
-  const [isButtonGroupVisible, setIsButtonGroupVisible] = useState<boolean>(false);
 
   // Initialize with welcome message if messages is empty
   useEffect(() => {
@@ -73,7 +71,6 @@ function ChatContainer({ sessionUUID }: ChatContainerProps) {
       }
     },
     setIsInputDisabled,
-    setIsButtonGroupVisible,
   });
 
   // Enable/disable input based on chat state

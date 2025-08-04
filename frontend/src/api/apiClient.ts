@@ -112,7 +112,7 @@ export const apiClient = async <T>(
   const {
     retryCount = DEFAULT_RETRY_COUNT,
     timeout = API_TIMEOUT,
-    skipRetryFor = [400, 401, 403, 404, 422],
+    skipRetryFor = [400, 401, 403, 404, 422], // Remove 429 from skip list
     ...fetchOptions
   } = options;
 
@@ -176,10 +176,25 @@ export const apiClient = async <T>(
         };
       }
 
+      // Special handling for rate limiting
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('Retry-After');
+        const delay = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, attempts) * 1000;
+
+        if (VERBOSE_LOGGING) {
+          console.warn(`Rate limited. Waiting ${delay}ms before retry...`);
+        }
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+
       // Check if we should retry
       if (attempts <= retryCount && shouldRetry(response.status, skipRetryFor)) {
-        // Linear backoff delay
-        const delay = DEFAULT_RETRY_DELAY + (attempts - 1) * DEFAULT_RETRY_INCREMENT;
+        // Exponential backoff with jitter
+        const delay = Math.min(
+          DEFAULT_RETRY_DELAY * Math.pow(2, attempts - 1) + Math.random() * 1000,
+          10000 // Max 10 seconds
+        );
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
       }

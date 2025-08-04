@@ -1,18 +1,27 @@
-import React, { useState, ChangeEvent, KeyboardEvent, MouseEvent } from 'react';
-import { ErrorBoundary } from '../shared/ErrorBoundary';
+import React, { useState } from 'react';
+import {
+  createStateMachine,
+  States,
+  Transitions,
+  StateMachine,
+} from '../../state/FiniteStateMachine';
 import { ChatProvider, useChat } from '../../contexts/ChatContext';
 import { FileUploadProvider } from '../../contexts/FileUploadContext';
+import { ErrorBoundary } from '../shared/ErrorBoundary';
 import ChatMessages from './ChatMessages';
 import ChatControls from './ChatControls';
 import ChatActions from './ChatActions';
-import ButtonGroup from '../ButtonGroup';
+// import ButtonGroup from '../ButtonGroup';
 import useChatStateMachine from '../../hooks/useChatStateMachine';
-import { States, Transitions } from '../../state/FiniteStateMachine';
 import { Button } from '../../types/buttonTypes';
 import { EmailInput } from '../EmailInput';
 import { CodeVerification } from '../CodeVerification';
 import '../EmailVerification.css';
 import '../../styles.css';
+// import ChatMessage from '../ChatMessage';
+// import ChatInputArea from '../ChatInputArea';
+// import { useSessionManager } from '../../hooks/useSessionManager';
+// import { Message } from '../../utils/chatUtils';
 
 /**
  * Props for the ChatContainerInner component
@@ -20,6 +29,8 @@ import '../../styles.css';
 interface ChatContainerInnerProps {
   /** The session UUID for API calls */
   sessionUUID: string;
+  /** The shared FSM instance */
+  fsm: StateMachine;
 }
 
 /**
@@ -28,18 +39,14 @@ interface ChatContainerInnerProps {
  * This component uses the chat and file upload contexts, and is wrapped
  * with error handling by the outer ChatContainer component.
  */
-const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID }) => {
+const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID, fsm }) => {
   // Get chat state and actions from context
   const {
-    state: { messages, isInputDisabled, isButtonGroupVisible, error: chatError, emailVerification },
-    setMessageTypingComplete,
-    addUserMessage,
+    state: { messages, isInputDisabled, isButtonGroupVisible, error: chatError },
     addBotMessage,
     setInputDisabled,
-    removeMessageButtons,
     setButtonGroupVisible,
     startEmailVerification,
-    emailCodeSent,
     emailVerificationComplete,
     // setError is available but not currently used in this component
   } = useChat();
@@ -55,74 +62,62 @@ const ChatContainerInner: React.FC<ChatContainerInnerProps> = ({ sessionUUID }) 
   // Local state for user input
   const [userInput, setUserInput] = useState<string>('');
 
-  // Create the finite state machine for chat flow
-  const {
-    fsm,
-    buttonClickHandler,
-    typingCompleteHandler,
-    processTextInputHandler,
-    fileUploadHandler,
-  } = useChatStateMachine({
-    messages,
-    setMessages: messagesOrFn => {
-      if (typeof messagesOrFn === 'function') {
-        // Use functional update pattern
-        const updatedMessages = messagesOrFn(messages);
-        // Find the new message and add it
-        const newMessage = updatedMessages.find(msg => !messages.some(m => m.id === msg.id));
-        if (newMessage) {
-          if (newMessage.isUser) {
-            addUserMessage(newMessage.text);
-          } else {
-            addBotMessage(newMessage.text, newMessage.buttons);
-          }
+  // Use the chat state machine hook with the shared FSM
+  const { buttonClickHandler, typingCompleteHandler, processTextInputHandler, fileUploadHandler } =
+    useChatStateMachine({
+      messages,
+      setMessages: () => {
+        // setMessages(messagesOrFn); // This line was removed as per the edit hint
+      },
+      setIsInputDisabled: (value: boolean | ((prevState: boolean) => boolean)) => {
+        if (typeof value === 'function') {
+          // If value is a function, we need to get the current isInputDisabled value
+          const newValue = value(isInputDisabled);
+          setInputDisabled(newValue);
+        } else {
+          setInputDisabled(value);
         }
-      } else {
-        // TODO: Handle direct updates if needed
-      }
-    },
-    setIsInputDisabled: (value: boolean | ((prevState: boolean) => boolean)) => {
-      if (typeof value === 'function') {
-        // If value is a function, we need to get the current isInputDisabled value
-        const newValue = value(isInputDisabled);
-        setInputDisabled(newValue);
-      } else {
-        setInputDisabled(value);
-      }
-    },
-    setIsButtonGroupVisible: (value: boolean | ((prevState: boolean) => boolean)) => {
-      if (typeof value === 'function') {
-        // If value is a function, we need to use the current value
-        const newValue = value(isButtonGroupVisible);
-        setButtonGroupVisible(newValue);
-      } else {
-        setButtonGroupVisible(value);
-      }
-    },
-  });
+      },
+      setIsButtonGroupVisible: (value: boolean | ((prevState: boolean) => boolean)) => {
+        if (typeof value === 'function') {
+          // If value is a function, we need to use the current value
+          const newValue = value(isButtonGroupVisible);
+          setButtonGroupVisible(newValue);
+        } else {
+          setButtonGroupVisible(value);
+        }
+      },
+      sessionUUID,
+      setUserName: (name: string) => {
+        // Store user name in session context if needed
+        console.log('User name set:', name);
+      },
+      fsm, // Pass the shared FSM instance
+    });
 
-  // Handle typing complete event
+  // Handle typing completion
   const handleTypingComplete = (messageId: number) => {
-    setMessageTypingComplete(messageId);
     typingCompleteHandler(messageId);
   };
 
   // Handle button clicks
   const handleButtonClick = (value: string) => {
-    removeMessageButtons();
     buttonClickHandler(value);
   };
 
-  // Handle text input changes
-  const inputTextChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
+  // Handle input text changes
+  const inputTextChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     setUserInput(event.target.value);
   };
 
   // Handle sending messages
   const sendButtonHandler = (
-    event: KeyboardEvent<HTMLInputElement> | MouseEvent<HTMLButtonElement>
+    event: React.KeyboardEvent<HTMLInputElement> | React.MouseEvent<HTMLButtonElement>
   ) => {
-    if ((event.type === 'click' || (event as KeyboardEvent).key === 'Enter') && !isInputDisabled) {
+    if (
+      (event.type === 'click' || (event as React.KeyboardEvent).key === 'Enter') &&
+      !isInputDisabled
+    ) {
       processTextInputHandler(userInput);
       setUserInput('');
     }
@@ -269,6 +264,9 @@ interface ChatContainerProps {
  * for the chat functionality.
  */
 const ChatContainer: React.FC<ChatContainerProps> = ({ sessionUUID }) => {
+  // Create a single FSM instance that will be shared
+  const fsm = React.useMemo(() => createStateMachine(), []);
+
   return (
     <ErrorBoundary
       fallback={
@@ -278,9 +276,9 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ sessionUUID }) => {
         </div>
       }
     >
-      <ChatProvider>
+      <ChatProvider fsm={fsm}>
         <FileUploadProvider>
-          <ChatContainerInner sessionUUID={sessionUUID} />
+          <ChatContainerInner sessionUUID={sessionUUID} fsm={fsm} />
         </FileUploadProvider>
       </ChatProvider>
     </ErrorBoundary>

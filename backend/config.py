@@ -23,11 +23,11 @@ class Config:
     SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")  # Frontend safe
 
     # Option 3: Traditional PostgreSQL (for CI/testing)
-    POSTGRES_DB = os.getenv("POSTGRES_DB")
+    POSTGRES_DB = os.getenv("POSTGRES_DB", "maria_ai_agent")
     POSTGRES_USER = os.getenv("POSTGRES_USER")
-    POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+    POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "")
     POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
-    POSTGRES_PORT = os.getenv("POSTGRES_PORT", 5432)
+    POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
 
     # Deployment Configuration
     ENVIRONMENT = os.getenv(

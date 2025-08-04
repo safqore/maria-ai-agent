@@ -1,7 +1,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useFetch } from '../useFetch';
 // Add async utilities
-import { setTimeout } from 'timers/promises';
+// import { setTimeout } from 'timers/promises';
 
 // Mock the API config module
 jest.mock('../../../api/config', () => {

@@ -81,9 +81,18 @@ envs/
 # Data files
 data/
 
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
+
 # Variable files
 *.env
 *.env.*
 
+# Environment backup directory
+.env-backups/
+
 # Node js
 node_modules/
+.vercel

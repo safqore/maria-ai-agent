@@ -108,6 +108,18 @@ def delete_s3_folder(s3, bucket, folder):
 
 def main():
     logger.info(f"Starting orphaned file cleanup (dry-run={DRY_RUN})")
+
+    # Only initialize S3 if credentials are available
+    if not all(
+        [
+            os.getenv("AWS_ACCESS_KEY_ID"),
+            os.getenv("AWS_SECRET_ACCESS_KEY"),
+            os.getenv("AWS_REGION"),
+        ]
+    ):
+        logger.info("AWS credentials not configured, skipping S3 cleanup")
+        return
+
     s3 = boto3.client("s3")
     valid_uuids = get_valid_session_uuids()
     logger.info(f"Loaded {len(valid_uuids)} valid session UUIDs from DB.")

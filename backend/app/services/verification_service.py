@@ -79,7 +79,16 @@ class VerificationService:
                 code = self.email_service.generate_verification_code()
                 expires_at = self.email_service.get_verification_expiry()
 
-                # Update session with new code
+                # Update session with email and new code
+                if not self.email_verification_repository.update_email(
+                    session_id, email
+                ):
+                    return {
+                        "status": "error",
+                        "error": "Failed to update email address",
+                        "nextTransition": "EMAIL_INPUT",
+                    }
+
                 if not self.email_verification_repository.update_verification_code(
                     session_id, code, expires_at
                 ):
@@ -104,8 +113,8 @@ class VerificationService:
 
                 # Log successful code generation
                 log_audit_event(
-                    session_id=session_id,
                     event_type="verification_code_generated",
+                    user_uuid=session_id,
                     details={
                         "email": self.email_service.hash_email(email),
                         "expires_at": expires_at.isoformat(),
@@ -218,8 +227,8 @@ class VerificationService:
 
                 # Log successful verification
                 log_audit_event(
-                    session_id=session_id,
                     event_type="email_verified",
+                    user_uuid=session_id,
                     details={
                         "verification_attempts": user_session.verification_attempts + 1
                     },
@@ -270,6 +279,14 @@ class VerificationService:
                         "nextTransition": "CHAT_READY",
                     }
 
+                # Check if email exists for resend
+                if not user_session.email:
+                    return {
+                        "status": "error",
+                        "error": "No email address found for this session. Please provide an email address first.",
+                        "nextTransition": "EMAIL_INPUT",
+                    }
+
                 # Check rate limiting
                 if not user_session.can_resend_verification:
                     if user_session.resend_attempts >= user_session.max_resend_attempts:
@@ -314,8 +331,8 @@ class VerificationService:
 
                 # Log successful resend
                 log_audit_event(
-                    session_id=session_id,
                     event_type="verification_code_resent",
+                    user_uuid=session_id,
                     details={
                         "email": self.email_service.hash_email(user_session.email),
                         "expires_at": expires_at.isoformat(),

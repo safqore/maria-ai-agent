@@ -27,19 +27,19 @@ class APIError(Exception):
     """Base exception for API errors with status code and payload."""
 
     def __init__(
-        self, message: str, status_code: int = 400, details: Dict[str, Any] = None
+        self, message: str, status_code: int = 400, details: Dict[str, Any] = {}
     ):
         super().__init__(message)
         self.message = message
         self.status_code = status_code
-        self.details = details or {}
+        self.details = details
 
 
 class InvalidRequestError(APIError):
     """Exception for invalid request data."""
 
     def __init__(
-        self, message: str = "Invalid request data", details: Dict[str, Any] = None
+        self, message: str = "Invalid request data", details: Dict[str, Any] = {}
     ):
         super().__init__(message=message, status_code=400, details=details)
 
@@ -48,7 +48,7 @@ class InvalidSessionError(APIError):
     """Exception for invalid session UUID."""
 
     def __init__(
-        self, message: str = "Invalid session UUID", details: Dict[str, Any] = None
+        self, message: str = "Invalid session UUID", details: Dict[str, Any] = {}
     ):
         super().__init__(message=message, status_code=400, details=details)
 
@@ -57,7 +57,7 @@ class ResourceNotFoundError(APIError):
     """Exception for resource not found."""
 
     def __init__(
-        self, message: str = "Resource not found", details: Dict[str, Any] = None
+        self, message: str = "Resource not found", details: Dict[str, Any] = {}
     ):
         super().__init__(message=message, status_code=404, details=details)
 
@@ -66,7 +66,7 @@ class UnauthorizedError(APIError):
     """Exception for unauthorized access."""
 
     def __init__(
-        self, message: str = "Unauthorized access", details: Dict[str, Any] = None
+        self, message: str = "Unauthorized access", details: Dict[str, Any] = {}
     ):
         super().__init__(message=message, status_code=401, details=details)
 
@@ -75,7 +75,7 @@ class ServerError(APIError):
     """Exception for server errors."""
 
     def __init__(
-        self, message: str = "Internal server error", details: Dict[str, Any] = None
+        self, message: str = "Internal server error", details: Dict[str, Any] = {}
     ):
         super().__init__(message=message, status_code=500, details=details)
 
