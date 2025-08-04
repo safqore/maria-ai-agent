@@ -15,6 +15,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 from sqlalchemy.pool import NullPool, StaticPool
 
+from config import Config
+
 # Global variable to store a custom database URL (used for testing)
 _custom_database_url = None
 
@@ -35,48 +37,21 @@ def get_database_url() -> str:
 
     Priority order:
     1. Custom URL (for testing)
-    2. PostgreSQL environment variables
-    3. CI environment (always PostgreSQL)
-    4. Pytest environment (file-based SQLite)
-    5. Local development (SQLite)
+    2. Config.get_database_url() (handles DATABASE_URL, Supabase, etc.)
+    3. Fallback to SQLite for local development
     """
     # If a custom URL has been set (for testing purposes), use that first
     global _custom_database_url
     if _custom_database_url is not None:
         return _custom_database_url
 
-    # Determine the database name, with a consistent default
-    default_db_name = "maria_ai_agent"
-
-    # Check if PostgreSQL environment variables are set
-    db_user = os.getenv("POSTGRES_USER")
-    db_password = os.getenv("POSTGRES_PASSWORD", "")
-    db_host = os.getenv("POSTGRES_HOST", "localhost")
-    db_port = os.getenv("POSTGRES_PORT", "5432")
-
-    # Prioritize environment variable, but use default if not set
-    db_name = os.getenv("POSTGRES_DB", default_db_name)
-
-    if db_user and db_name:
-        # Use PostgreSQL if environment variables are set
-        postgres_url = (
-            f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
-        )
-        return postgres_url
-
-    # If running in CI environment, always use PostgreSQL
-    ci_env = os.getenv("CI")
-    if ci_env:
-        db_user = os.getenv("POSTGRES_USER", "postgres")
-        db_password = os.getenv("POSTGRES_PASSWORD", "postgres")
-        db_host = os.getenv("POSTGRES_HOST", "localhost")
-        db_port = os.getenv("POSTGRES_PORT", "5432")
-        db_name = os.getenv("POSTGRES_DB", default_db_name)
-
-        postgres_url = (
-            f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
-        )
-        return postgres_url
+    # Use the Config class to get the appropriate database URL
+    # This handles DATABASE_URL, Supabase configuration, and traditional PostgreSQL
+    config_db_url = Config.get_database_url()
+    
+    # If Config returns a non-SQLite URL, use it
+    if not config_db_url.startswith("sqlite://"):
+        return config_db_url
 
     # If running under pytest locally, use file-based SQLite for sharing
     pytest_test = os.getenv("PYTEST_CURRENT_TEST")
@@ -87,7 +62,7 @@ def get_database_url() -> str:
         return f"sqlite:///{test_db_path}"
 
     # Fallback to SQLite for local development
-    return "sqlite:///maria_ai_dev.db"
+    return config_db_url
 
 
 # Lazy initialization of database components

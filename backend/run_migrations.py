@@ -33,12 +33,23 @@ def get_migration_files() -> List[Path]:
     migrations_dir = backend_dir / "migrations"
 
     # Define migration files in the correct order
-    migration_files = [
-        "001_create_user_sessions.sql",
-        "002_create_email_verification_sqlite.sql",
-        "003_add_performance_indexes.sql",
-        "004_allow_null_email.sql",
-    ]
+    db_url = get_database_url()
+    is_postgres = db_url.startswith("postgresql://")
+    
+    if is_postgres:
+        migration_files = [
+            "001_create_user_sessions_postgresql.sql",
+            "002_create_email_verification.sql",
+            "003_add_performance_indexes.sql",
+            "004_allow_null_email.sql",
+        ]
+    else:
+        migration_files = [
+            "001_create_user_sessions.sql",
+            "002_create_email_verification_sqlite.sql",
+            "003_add_performance_indexes.sql",
+            "004_allow_null_email.sql",
+        ]
 
     # Check if all migration files exist
     existing_files = []
