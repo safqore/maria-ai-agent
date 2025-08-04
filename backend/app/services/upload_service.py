@@ -26,13 +26,19 @@ AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 AWS_REGION = os.getenv("AWS_REGION")
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
-# Initialize S3 client
-s3_client = boto3.client(
-    "s3",
-    aws_access_key_id=AWS_ACCESS_KEY_ID,
-    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-    region_name=AWS_REGION,
-)
+# Initialize S3 client only if credentials are available
+def get_s3_client():
+    if not all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION]):
+        return None
+    
+    return boto3.client(
+        "s3",
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+        region_name=AWS_REGION,
+    )
+
+s3_client = get_s3_client()
 
 
 class UploadService:
@@ -128,7 +134,7 @@ class UploadService:
         """
         try:
             # Check if S3 is configured
-            if not S3_BUCKET_NAME:
+            if not S3_BUCKET_NAME or s3_client is None:
                 # For testing, return a mock response
                 filename = secure_filename(file.filename)
                 return {

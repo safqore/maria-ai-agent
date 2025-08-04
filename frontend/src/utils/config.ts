@@ -22,7 +22,37 @@
  *
  * fetch(`${API_BASE_URL}/api/endpoint`);
  */
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001';
+const getApiBaseUrl = (): string => {
+  const envUrl = process.env.REACT_APP_API_BASE_URL;
+
+  // If environment variable is not set, use production URL
+  if (!envUrl) {
+    return 'https://maria-ai-agent-backend.fly.dev';
+  }
+
+  // Clean up the URL - remove any quotes or extra characters
+  let cleanUrl = envUrl.trim();
+
+  // Remove surrounding quotes if present
+  if (
+    (cleanUrl.startsWith('"') && cleanUrl.endsWith('"')) ||
+    (cleanUrl.startsWith("'") && cleanUrl.endsWith("'"))
+  ) {
+    cleanUrl = cleanUrl.slice(1, -1);
+  }
+
+  // Ensure it has a protocol
+  if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+    cleanUrl = `https://${cleanUrl}`;
+  }
+
+  // Remove trailing slash
+  cleanUrl = cleanUrl.replace(/\/$/, '');
+
+  return cleanUrl;
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 /**
  * Default request timeout in milliseconds
